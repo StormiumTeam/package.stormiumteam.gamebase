@@ -8,7 +8,7 @@ using StormiumShared.Core.Networking;
 using Unity.Collections;
 using Unity.Entities;
 
-namespace Runtime
+namespace StormiumTeam.GameBase
 {
     public interface ISystemProviderExcludeComponents : IAppEvent
     {

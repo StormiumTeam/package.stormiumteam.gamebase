@@ -9,7 +9,7 @@ using Unity.Entities;
 using UnityEngine;
 using UnityEngine.Experimental.Input;
 
-namespace Runtime.Systems
+namespace StormiumTeam.GameBase.Systems
 {
 	public abstract class SyncInputSystem : GameBaseSyncMessageSystem
 	{

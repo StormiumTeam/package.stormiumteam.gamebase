@@ -1,7 +1,7 @@
 using StormiumShared.Core.Networking;
 using Unity.Entities;
 
-namespace Runtime.Data
+namespace StormiumTeam.GameBase.Data
 {
 	public struct DeactivateMovement : IComponentData
 	{

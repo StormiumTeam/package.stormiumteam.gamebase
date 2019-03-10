@@ -7,13 +7,13 @@ using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
 
-namespace Runtime.Data
+namespace StormiumTeam.GameBase
 {
     public struct GamePlayer : IComponentData
     {
         public struct WritePayload : IWriteEntityDataPayload<GamePlayer>
         {
-            public ComponentDataFromEntity<StGamePlayerToNetworkClient> ToNetworkClients;
+            public ComponentDataFromEntity<GamePlayerToNetworkClient> ToNetworkClients;
 
             public void Write(int index, Entity entity, ComponentDataFromEntity<GamePlayer> stateFromEntity, ComponentDataFromEntity<DataChanged<GamePlayer>> changeFromEntity, DataBufferWriter data, SnapshotReceiver receiver, StSnapshotRuntime runtime)
             {
@@ -45,7 +45,7 @@ namespace Runtime.Data
         {
             protected override void UpdatePayloadW(ref WritePayload current)
             {
-                current.ToNetworkClients = GetComponentDataFromEntity<StGamePlayerToNetworkClient>();
+                current.ToNetworkClients = GetComponentDataFromEntity<GamePlayerToNetworkClient>();
             }
 
             protected override void UpdatePayloadR(ref ReadPayload current)
@@ -63,7 +63,7 @@ namespace Runtime.Data
         }
     }
 
-    public struct StGamePlayerToNetworkClient : IComponentData
+    public struct GamePlayerToNetworkClient : IComponentData
     {
         /// <summary>
         /// This variable should not be synced between connections and need to be assigned locally.
@@ -71,23 +71,23 @@ namespace Runtime.Data
         /// </summary>
         public Entity Target;
 
-        public StGamePlayerToNetworkClient(Entity target)
+        public GamePlayerToNetworkClient(Entity target)
         {
             Target = target;
         }
     }
 
-    public struct StNetworkClientToGamePlayer : IComponentData
+    public struct NetworkClientToGamePlayer : IComponentData
     {
         public Entity Target;
 
-        public StNetworkClientToGamePlayer(Entity target)
+        public NetworkClientToGamePlayer(Entity target)
         {
             Target = target;
         }
     }
 
-    public class StGamePlayerProvider : SystemProvider
+    public class GamePlayerProvider : SystemProvider
     {
         protected override Entity SpawnEntity(Entity origin, StSnapshotRuntime snapshotRuntime)
         {

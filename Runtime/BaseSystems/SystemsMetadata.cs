@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using StormiumTeam.GameBase;
 using Unity.Entities;
 
-namespace Runtime.SharedSystems
+namespace StormiumTeam.GameBase.SharedSystems
 {
 	public abstract class InstanceSystemMetadata<TSystem>
 		where TSystem : ComponentSystem

@@ -1,11 +1,9 @@
 using package.stormiumteam.networking.runtime.lowlevel;
-using Runtime.Systems;
-using StormiumTeam.GameBase;
 using StormiumShared.Core.Networking;
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace Runtime.Data
+namespace StormiumTeam.GameBase.Data
 {
 	public struct TargetExplosionEvent : IEventData, ISerializableAsPayload
 	{

@@ -1,7 +1,7 @@
 using Unity.Entities;
 using UnityEngine.Experimental.PlayerLoop;
 
-namespace Runtime.Data
+namespace StormiumTeam.GameBase.Data
 {
 	public struct DestroyChainReaction : IComponentData
 	{

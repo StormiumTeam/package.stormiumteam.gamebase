@@ -2,7 +2,7 @@ using package.stormiumteam.shared;
 using StormiumTeam.GameBase;
 using Unity.Entities;
 
-namespace Runtime.Components
+namespace StormiumTeam.GameBase.Components
 {
 	public class CollisionForCharacter : CustomShape, IOnQueryEnableCollisionFor
 	{

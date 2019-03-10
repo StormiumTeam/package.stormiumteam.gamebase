@@ -4,7 +4,7 @@ using Unity.Entities;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
-namespace Runtime
+namespace StormiumTeam.GameBase
 {
     public struct ModelParent : IComponentData
     {

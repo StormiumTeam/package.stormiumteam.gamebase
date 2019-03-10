@@ -1,7 +1,7 @@
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace Runtime.Data
+namespace StormiumTeam.GameBase.Data
 {
     public struct CameraModifierData : IComponentData
     {

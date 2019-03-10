@@ -13,7 +13,7 @@ namespace StormiumTeam.GameBase
 		void DisableCollision();
 	}
 	
-	public class StPhysicQueryManager : ComponentSystem
+	public class PhysicQueryManager : ComponentSystem
 	{
 		private List<IOnQueryEnableCollisionFor> m_ReenableCollisions;
 		private int m_RequestLength;

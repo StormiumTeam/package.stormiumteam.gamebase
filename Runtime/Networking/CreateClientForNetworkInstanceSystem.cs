@@ -1,13 +1,12 @@
 using package.stormiumteam.networking.runtime.highlevel;
-using Runtime;
-using Runtime.Data;
+using StormiumShared.Core.Networking;
 using StormiumTeam.GameBase;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 using UnityEngine.Experimental.PlayerLoop;
 
-namespace StormiumShared.Core.Networking
+namespace StormiumTeam.GameBase.Networking
 {
     [AlwaysUpdateSystem]
     [UpdateInGroup(typeof(LateSimulationSystemGroup))]
@@ -23,7 +22,7 @@ namespace StormiumShared.Core.Networking
             m_Group              = GetComponentGroup(typeof(NetworkInstanceData), ComponentType.Exclude<NetworkInstanceToClient>());
             m_DestroyClientGroup = GetComponentGroup(typeof(ClientTag), typeof(ClientToNetworkInstance));
 
-            m_GamePlayerModel = World.GetOrCreateManager<StGamePlayerProvider>().GetModelIdent();
+            m_GamePlayerModel = World.GetOrCreateManager<GamePlayerProvider>().GetModelIdent();
         }
 
         protected override void OnUpdate()
@@ -50,26 +49,26 @@ namespace StormiumShared.Core.Networking
                         || instanceData.InstanceType == InstanceType.LocalServer)
                     {
                         Entity gamePlayer = default;
-                        if (!EntityManager.HasComponent<StNetworkClientToGamePlayer>(clientEntity))
+                        if (!EntityManager.HasComponent<NetworkClientToGamePlayer>(clientEntity))
                         {
-                            EntityManager.AddComponent(clientEntity, typeof(StNetworkClientToGamePlayer));
+                            EntityManager.AddComponent(clientEntity, typeof(NetworkClientToGamePlayer));
 
                             gamePlayer = gameMgr.SpawnLocal(m_GamePlayerModel);
 
                             if (instanceData.IsLocal())
                                 EntityManager.SetComponentData(gamePlayer, new GamePlayer(0, true));
 
-                            EntityManager.AddComponent(gamePlayer, typeof(StGamePlayerToNetworkClient));
+                            EntityManager.AddComponent(gamePlayer, typeof(GamePlayerToNetworkClient));
                         }
                         else
                         {
                             // it shouldn't happen?
                             Debug.LogWarning("Shouldn't happen.");
-                            gamePlayer = EntityManager.GetComponentData<StNetworkClientToGamePlayer>(clientEntity).Target;
+                            gamePlayer = EntityManager.GetComponentData<NetworkClientToGamePlayer>(clientEntity).Target;
                         }
 
-                        EntityManager.SetComponentData(clientEntity, new StNetworkClientToGamePlayer(gamePlayer));
-                        EntityManager.SetComponentData(gamePlayer, new StGamePlayerToNetworkClient(clientEntity));
+                        EntityManager.SetComponentData(clientEntity, new NetworkClientToGamePlayer(gamePlayer));
+                        EntityManager.SetComponentData(gamePlayer, new GamePlayerToNetworkClient(clientEntity));
                     }
                 }
             }
@@ -83,7 +82,7 @@ namespace StormiumShared.Core.Networking
                 PostUpdateCommands.DestroyEntity(clientEntity);
             }, m_DestroyClientGroup);
             
-            ForEach((Entity entity, ref StGamePlayerToNetworkClient gamePlayerToNetworkClient) =>
+            ForEach((Entity entity, ref GamePlayerToNetworkClient gamePlayerToNetworkClient) =>
             {
                 if (!EntityManager.Exists(gamePlayerToNetworkClient.Target))
                     PostUpdateCommands.DestroyEntity(entity);

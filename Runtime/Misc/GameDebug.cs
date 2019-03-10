@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Runtime
+namespace StormiumTeam.GameBase
 {
     public static class GameDebug
     {

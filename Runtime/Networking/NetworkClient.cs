@@ -1,6 +1,6 @@
 using Unity.Entities;
 
-namespace StormiumShared.Core.Networking
+namespace StormiumTeam.GameBase.Networking
 {
     public struct NetworkClient : IComponentData
     {

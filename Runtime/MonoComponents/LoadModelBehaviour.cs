@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
-namespace Runtime
+namespace StormiumTeam.GameBase
 {
     public class LoadModelBehaviour : MonoBehaviour
     {

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Runtime.Components
+namespace StormiumTeam.GameBase.Components
 {
     [RequireComponent(typeof(Camera))]
     public class GameCamera : MonoBehaviour

@@ -1,13 +1,13 @@
 using System;
 using System.Net;
 using package.stormiumteam.networking.runtime.highlevel;
-using Runtime.Data;
 using StormiumTeam.GameBase;
 using StormiumShared.Core.Networking;
+using StormiumTeam.GameBase.Networking;
 using Unity.Entities;
 using UnityEngine;
 
-namespace Runtime
+namespace StormiumTeam.GameBase
 {
     [Flags]
     public enum GameType
@@ -52,14 +52,14 @@ namespace Runtime
                 if (client != default)
                     EntityManager.DestroyEntity(client);
                 
-                var model = World.GetExistingManager<StGamePlayerProvider>().GetModelIdent();
+                var model = World.GetExistingManager<GamePlayerProvider>().GetModelIdent();
                 client = EntityManager.CreateEntity(typeof(ClientTag), typeof(NetworkClient));
                 
-                EntityManager.AddComponent(client, typeof(StNetworkClientToGamePlayer));
+                EntityManager.AddComponent(client, typeof(NetworkClientToGamePlayer));
 
                 var player = SpawnLocal(model);
 
-                EntityManager.AddComponent(player, typeof(StGamePlayerToNetworkClient));
+                EntityManager.AddComponent(player, typeof(GamePlayerToNetworkClient));
             }
         }
 
