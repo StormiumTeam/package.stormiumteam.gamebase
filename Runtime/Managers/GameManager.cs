@@ -28,8 +28,8 @@ namespace StormiumTeam.GameBase
         public  EntityModelManager EntityModelManager => m_EntityModelManager;
         private EntityModelManager m_EntityModelManager;
 
-        public  StormiumGameServerManager ServerManager => m_ServerManager;
-        private StormiumGameServerManager m_ServerManager;
+        public  GameServerManager ServerManager => m_ServerManager;
+        private GameServerManager m_ServerManager;
 
         protected override void OnCreateManager()
         {
@@ -40,7 +40,7 @@ namespace StormiumTeam.GameBase
             );
 
             m_EntityModelManager = World.GetExistingManager<EntityModelManager>();
-            m_ServerManager      = World.GetExistingManager<StormiumGameServerManager>();
+            m_ServerManager      = World.GetExistingManager<GameServerManager>();
         }
 
         private Entity client;
@@ -65,7 +65,7 @@ namespace StormiumTeam.GameBase
 
         public Entity SpawnLocal(ModelIdent ident, bool assignAuthority = true)
         {
-            var fakeLocalRuntime = default(StSnapshotRuntime);
+            var fakeLocalRuntime = default(SnapshotRuntime);
 
             fakeLocalRuntime.Header.Sender = new SnapshotSender(m_Client, SnapshotFlags.Local);
 
@@ -89,7 +89,7 @@ namespace StormiumTeam.GameBase
         }
     }
 
-    public class StormiumGameServerManager : BaseComponentSystem
+    public class GameServerManager : BaseComponentSystem
     {
         private NetworkManager m_NetworkManager;
 

@@ -103,10 +103,10 @@ namespace StormiumTeam.GameBase
             return m_ModelIdent;
         }
 
-        protected abstract Entity SpawnEntity(Entity origin, StSnapshotRuntime snapshotRuntime);
+        protected abstract Entity SpawnEntity(Entity origin, SnapshotRuntime snapshotRuntime);
         protected abstract void DestroyEntity(Entity worldEntity);
 
-        public Entity ProviderSpawnEntity(Entity origin, StSnapshotRuntime snapshotRuntime)
+        public Entity ProviderSpawnEntity(Entity origin, SnapshotRuntime snapshotRuntime)
         {
             var e = SpawnEntity(origin, snapshotRuntime);
 
@@ -130,10 +130,10 @@ namespace StormiumTeam.GameBase
             excludedComponents = null;
         }
         
-        public virtual void SerializeCollection(ref DataBufferWriter data, SnapshotReceiver receiver, StSnapshotRuntime snapshotRuntime)
+        public virtual void SerializeCollection(ref DataBufferWriter data, SnapshotReceiver receiver, SnapshotRuntime snapshotRuntime)
         {}
         
-        public virtual void DeserializeCollection(ref DataBufferReader data, SnapshotSender sender, StSnapshotRuntime snapshotRuntime)
+        public virtual void DeserializeCollection(ref DataBufferReader data, SnapshotSender sender, SnapshotRuntime snapshotRuntime)
         {}
 
         public virtual Entity SpawnLocalEntityDelayed(EntityCommandBuffer entityCommandBuffer)
@@ -152,14 +152,14 @@ namespace StormiumTeam.GameBase
             return m_SnapshotPattern;
         }
 
-        public DataBufferWriter WriteData(SnapshotReceiver receiver, StSnapshotRuntime runtime)
+        public DataBufferWriter WriteData(SnapshotReceiver receiver, SnapshotRuntime runtime)
         {
             var buffer = new DataBufferWriter(4096, Allocator.TempJob);
             SerializeCollection(ref buffer, receiver, runtime);
             return buffer;
         }
 
-        public void ReadData(SnapshotSender sender, StSnapshotRuntime runtime, DataBufferReader sysData)
+        public void ReadData(SnapshotSender sender, SnapshotRuntime runtime, DataBufferReader sysData)
         {
             DeserializeCollection(ref sysData, sender, runtime);
         }

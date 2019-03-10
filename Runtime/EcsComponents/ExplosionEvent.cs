@@ -14,12 +14,12 @@ namespace StormiumTeam.GameBase.Data
 		public Entity Shooter;
 		public Entity Victim;
 
-		public void Write(ref DataBufferWriter data, SnapshotReceiver receiver, StSnapshotRuntime runtime)
+		public void Write(ref DataBufferWriter data, SnapshotReceiver receiver, SnapshotRuntime runtime)
 		{
 			data.WriteUnmanaged(this);
 		}
 
-		public void Read(ref DataBufferReader data, SnapshotSender sender, StSnapshotRuntime runtime)
+		public void Read(ref DataBufferReader data, SnapshotSender sender, SnapshotRuntime runtime)
 		{
 			this = data.ReadValue<TargetExplosionEvent>();
 
@@ -39,12 +39,12 @@ namespace StormiumTeam.GameBase.Data
 		public Entity Shooter;
 		public Entity Victim;
 		
-		public void Write(ref DataBufferWriter data, SnapshotReceiver receiver, StSnapshotRuntime runtime)
+		public void Write(ref DataBufferWriter data, SnapshotReceiver receiver, SnapshotRuntime runtime)
 		{
 			data.WriteUnmanaged(this);
 		}
 
-		public void Read(ref DataBufferReader data, SnapshotSender sender, StSnapshotRuntime runtime)
+		public void Read(ref DataBufferReader data, SnapshotSender sender, SnapshotRuntime runtime)
 		{
 			this = data.ReadValue<TargetDamageEvent>();
 

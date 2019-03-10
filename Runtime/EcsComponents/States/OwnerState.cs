@@ -135,12 +135,12 @@ namespace StormiumTeam.GameBase
     {
         public Entity Target;
 
-        public void Write(ref DataBufferWriter data, SnapshotReceiver receiver, StSnapshotRuntime runtime)
+        public void Write(ref DataBufferWriter data, SnapshotReceiver receiver, SnapshotRuntime runtime)
         {
             data.WriteValue(Target);
         }
 
-        public void Read(ref DataBufferReader data, SnapshotSender sender, StSnapshotRuntime runtime)
+        public void Read(ref DataBufferReader data, SnapshotSender sender, SnapshotRuntime runtime)
         {
             Target = runtime.EntityToWorld(data.ReadValue<Entity>());
         }

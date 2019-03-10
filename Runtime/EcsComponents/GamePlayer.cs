@@ -15,7 +15,7 @@ namespace StormiumTeam.GameBase
         {
             public ComponentDataFromEntity<GamePlayerToNetworkClient> ToNetworkClients;
 
-            public void Write(int index, Entity entity, ComponentDataFromEntity<GamePlayer> stateFromEntity, ComponentDataFromEntity<DataChanged<GamePlayer>> changeFromEntity, DataBufferWriter data, SnapshotReceiver receiver, StSnapshotRuntime runtime)
+            public void Write(int index, Entity entity, ComponentDataFromEntity<GamePlayer> stateFromEntity, ComponentDataFromEntity<DataChanged<GamePlayer>> changeFromEntity, DataBufferWriter data, SnapshotReceiver receiver, SnapshotRuntime runtime)
             {
                 data.WriteUnmanaged(stateFromEntity[entity]);
                 if (ToNetworkClients.Exists(entity))
@@ -32,7 +32,7 @@ namespace StormiumTeam.GameBase
 
         public struct ReadPayload : IReadEntityDataPayload<GamePlayer>
         {
-            public void Read(int index, Entity entity, ComponentDataFromEntity<GamePlayer> dataFromEntity, ref DataBufferReader data, SnapshotSender sender, StSnapshotRuntime runtime)
+            public void Read(int index, Entity entity, ComponentDataFromEntity<GamePlayer> dataFromEntity, ref DataBufferReader data, SnapshotSender sender, SnapshotRuntime runtime)
             {
                 var player = data.ReadValue<GamePlayer>();
                 player.IsSelf = data.ReadValue<byte>();
@@ -89,7 +89,7 @@ namespace StormiumTeam.GameBase
 
     public class GamePlayerProvider : SystemProvider
     {
-        protected override Entity SpawnEntity(Entity origin, StSnapshotRuntime snapshotRuntime)
+        protected override Entity SpawnEntity(Entity origin, SnapshotRuntime snapshotRuntime)
         {
             return EntityManager.CreateEntity
             (

@@ -15,7 +15,7 @@ namespace StormiumTeam.GameBase
 	public abstract class GameBaseSystem : BaseComponentSystem
 	{		
 		public GameManager       GameMgr        { get; private set; }
-		public StormiumGameServerManager ServerMgr      { get; private set; }
+		public GameServerManager ServerMgr      { get; private set; }
 		public EntityModelManager        EntityModelMgr { get; private set; }
 		public GameTimeManager         TimeMgr        { get; private set; }
 		public NetPatternSystem          PatternSystem  { get; private set; }
@@ -29,7 +29,7 @@ namespace StormiumTeam.GameBase
 		protected override void OnCreateManager()
 		{			
 			GameMgr        = World.GetOrCreateManager<GameManager>();
-			ServerMgr      = World.GetOrCreateManager<StormiumGameServerManager>();
+			ServerMgr      = World.GetOrCreateManager<GameServerManager>();
 			EntityModelMgr = World.GetOrCreateManager<EntityModelManager>();
 			TimeMgr        = World.GetOrCreateManager<GameTimeManager>();
 			PatternSystem  = World.GetOrCreateManager<NetPatternSystem>();
