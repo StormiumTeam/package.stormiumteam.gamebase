@@ -2,8 +2,10 @@ using System.Collections.Generic;
 using package.stormiumteam.networking;
 using package.stormiumteam.networking.runtime.highlevel;
 using package.stormiumteam.networking.runtime.lowlevel;
+using StormiumShared.Core;
 using StormiumShared.Core.Networking;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 
 namespace StormiumTeam.GameBase
@@ -18,8 +20,8 @@ namespace StormiumTeam.GameBase
 		public NetPatternSystem          PatternSystem  { get; private set; }
 		public GameEventManager EventManager { get; private set; }
 
-		public int Tick      => TimeMgr.GetTimeFromSingleton().Tick;
-		public int TickDelta => TimeMgr.GetTimeFromSingleton().DeltaTick;
+		public int Tick      => m_GameTimeSingletonGroup.GetSingleton<GameTimeComponent>().Value.Tick;
+		public int TickDelta => m_GameTimeSingletonGroup.GetSingleton<GameTimeComponent>().Value.DeltaTick;
 
 		public PatternBank LocalBank => PatternSystem.GetLocalBank();
 
@@ -36,17 +38,34 @@ namespace StormiumTeam.GameBase
 			(
 				typeof(GamePlayer)
 			);
+
+			m_GameTimeSingletonGroup = GetComponentGroup
+			(
+				typeof(GameTimeComponent)
+			);
 		}
-		
+
+		private ComponentGroup m_GameTimeSingletonGroup;
 		private ComponentGroup m_PlayerGroup;
+
 		public Entity GetFirstSelfGamePlayer()
 		{
-			using (var entityArray = m_PlayerGroup.ToEntityArray(Allocator.TempJob))
-			using (var playerArray = m_PlayerGroup.ToComponentDataArray<GamePlayer>(Allocator.TempJob))
+			var entityType = GetArchetypeChunkEntityType();
+			var playerType = GetArchetypeChunkComponentType<GamePlayer>();
+
+			using (var chunks = m_PlayerGroup.CreateArchetypeChunkArray(Allocator.TempJob))
 			{
-				for (var i = 0; i != playerArray.Length; i++)
-					if (playerArray[i].IsSelf == 1)
-						return entityArray[i];
+				foreach (var chunk in chunks)
+				{
+					var length = chunk.Count;
+
+					var playerArray = chunk.GetNativeArray(playerType);
+					var entityArray = chunk.GetNativeArray(entityType);
+					for (var i = 0; i < length; i++)
+					{
+						if (playerArray[i].IsSelf == 1) return entityArray[i];
+					}
+				}
 			}
 
 			return default;
