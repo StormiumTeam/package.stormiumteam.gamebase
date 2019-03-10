@@ -4,7 +4,7 @@ using Unity.Mathematics;
 using static Unity.Mathematics.math;
 using static Unity.Mathematics.quaternion;
 
-namespace Stormium.Core
+namespace StormiumTeam.GameBase
 {
     public struct TransformState : IStateData, IComponentData
     {

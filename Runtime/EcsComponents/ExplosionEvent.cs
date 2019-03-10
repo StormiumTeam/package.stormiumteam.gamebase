@@ -1,6 +1,6 @@
 using package.stormiumteam.networking.runtime.lowlevel;
 using Runtime.Systems;
-using Stormium.Core;
+using StormiumTeam.GameBase;
 using StormiumShared.Core.Networking;
 using Unity.Entities;
 using Unity.Mathematics;

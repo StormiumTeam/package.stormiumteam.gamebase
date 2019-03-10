@@ -1,4 +1,4 @@
-namespace Stormium.Core
+namespace StormiumTeam.GameBase
 {
     public enum CameraMode
     {

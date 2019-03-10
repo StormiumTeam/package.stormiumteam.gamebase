@@ -2,7 +2,7 @@ using StormiumShared.Core.Networking;
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace Stormium.Core
+namespace StormiumTeam.GameBase
 {
     public struct Velocity : IComponentData
     {

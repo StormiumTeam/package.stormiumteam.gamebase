@@ -3,7 +3,7 @@ using package.stormiumteam.shared;
 using Unity.Entities;
 using UnityEngine;
 
-namespace Stormium.Core
+namespace StormiumTeam.GameBase
 {
 	interface IOnQueryEnableCollisionFor : IAppEvent
 	{

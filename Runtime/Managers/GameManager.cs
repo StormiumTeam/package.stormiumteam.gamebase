@@ -2,8 +2,7 @@ using System;
 using System.Net;
 using package.stormiumteam.networking.runtime.highlevel;
 using Runtime.Data;
-using Stormium.Core;
-using Stormium.Core.Networking;
+using StormiumTeam.GameBase;
 using StormiumShared.Core.Networking;
 using Unity.Entities;
 using UnityEngine;
@@ -18,7 +17,7 @@ namespace Runtime
         Global = 3
     }
 
-    public class StormiumGameManager : BaseComponentSystem
+    public class GameManager : BaseComponentSystem
     {
         public  GameType GameType => m_GameType;
         private GameType m_GameType;
@@ -42,8 +41,6 @@ namespace Runtime
 
             m_EntityModelManager = World.GetExistingManager<EntityModelManager>();
             m_ServerManager      = World.GetExistingManager<StormiumGameServerManager>();
-            
-            Bootstrap.register();
         }
 
         private Entity client;
@@ -89,12 +86,6 @@ namespace Runtime
         public void SetGameAs(GameType gameType)
         {
             m_GameType = gameType;
-        }
-
-        public StSnapshotRuntime GetCurrentSnapshot()
-        {
-            var netSnapshotMgr = World.GetExistingManager<NetworkSnapshotManager>();
-            return netSnapshotMgr.CurrentSnapshot;
         }
     }
 

@@ -9,15 +9,15 @@ using StormiumShared.Core.Networking;
 using Unity.Collections;
 using Unity.Entities;
 
-namespace Stormium.Core
+namespace StormiumTeam.GameBase
 {
 	[InstanceSystem]
 	public abstract class GameBaseSystem : BaseComponentSystem
 	{		
-		public StormiumGameManager       GameMgr        { get; private set; }
+		public GameManager       GameMgr        { get; private set; }
 		public StormiumGameServerManager ServerMgr      { get; private set; }
 		public EntityModelManager        EntityModelMgr { get; private set; }
-		public StGameTimeManager         TimeMgr        { get; private set; }
+		public GameTimeManager         TimeMgr        { get; private set; }
 		public NetPatternSystem          PatternSystem  { get; private set; }
 		public GameEventManager EventManager { get; private set; }
 
@@ -28,16 +28,16 @@ namespace Stormium.Core
 
 		protected override void OnCreateManager()
 		{			
-			GameMgr        = World.GetOrCreateManager<StormiumGameManager>();
+			GameMgr        = World.GetOrCreateManager<GameManager>();
 			ServerMgr      = World.GetOrCreateManager<StormiumGameServerManager>();
 			EntityModelMgr = World.GetOrCreateManager<EntityModelManager>();
-			TimeMgr        = World.GetOrCreateManager<StGameTimeManager>();
+			TimeMgr        = World.GetOrCreateManager<GameTimeManager>();
 			PatternSystem  = World.GetOrCreateManager<NetPatternSystem>();
 			EventManager = World.GetOrCreateManager<GameEventManager>();
 
 			m_PlayerGroup = GetComponentGroup
 			(
-				typeof(StGamePlayer)
+				typeof(GamePlayer)
 			);
 		}
 		
@@ -45,7 +45,7 @@ namespace Stormium.Core
 		public Entity GetFirstSelfGamePlayer()
 		{
 			using (var entityArray = m_PlayerGroup.ToEntityArray(Allocator.TempJob))
-			using (var playerArray = m_PlayerGroup.ToComponentDataArray<StGamePlayer>(Allocator.TempJob))
+			using (var playerArray = m_PlayerGroup.ToComponentDataArray<GamePlayer>(Allocator.TempJob))
 			{
 				for (var i = 0; i != playerArray.Length; i++)
 					if (playerArray[i].IsSelf == 1)

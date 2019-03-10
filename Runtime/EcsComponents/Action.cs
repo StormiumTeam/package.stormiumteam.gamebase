@@ -5,13 +5,13 @@ using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace package.stormium.core
+namespace package.StormiumTeam.GameBase
 {
-    public struct StActionContainer : IBufferElementData
+    public struct ActionContainer : IBufferElementData
     {
         public Entity Target;
 
-        public StActionContainer(Entity actionTarget)
+        public ActionContainer(Entity actionTarget)
         {
             Target = actionTarget;
         }
@@ -22,11 +22,11 @@ namespace package.stormium.core
         }
     }
 
-    public struct StActionTag : IComponentData
+    public struct ActionTag : IComponentData
     {
         public int ActionTypeIndex;
         
-        public StActionTag(int actionTypeIndex)
+        public ActionTag(int actionTypeIndex)
         {
             ActionTypeIndex = actionTypeIndex;
         }
@@ -40,11 +40,11 @@ namespace package.stormium.core
     /// <summary>
     /// (Recommended) Use it if you don't want the order of the action container
     /// </summary>
-    public struct StActionSlot : IComponentData
+    public struct ActionSlot : IComponentData
     {
         public int Value;
 
-        public StActionSlot(int slot)
+        public ActionSlot(int slot)
         {
             Value = slot;
         }
@@ -60,20 +60,20 @@ namespace package.stormium.core
         }
     }
 
-    public struct StActionAmmo : IComponentData
+    public struct ActionAmmo : IComponentData
     {
         public int Value;
         public int Usage;
         public int Max;
 
-        public StActionAmmo(int usage, int max)
+        public ActionAmmo(int usage, int max)
         {
             Value = 0;
             Usage = usage;
             Max = max;
         }
         
-        public StActionAmmo(int usage, int max, int value)
+        public ActionAmmo(int usage, int max, int value)
         {
             Value      = value;
             Usage = usage;
@@ -105,18 +105,18 @@ namespace package.stormium.core
         }
     }
 
-    public struct StActionCooldown : IComponentData
+    public struct ActionCooldown : IComponentData
     {
         public int StartTick;
         public int Cooldown;
 
-        public StActionCooldown(int startTick)
+        public ActionCooldown(int startTick)
         {
             StartTick = startTick;
             Cooldown = -1;
         }
 
-        public StActionCooldown(int startTick, int cooldown) : this(startTick)
+        public ActionCooldown(int startTick, int cooldown) : this(startTick)
         {
             Cooldown = cooldown;
         }
@@ -127,18 +127,18 @@ namespace package.stormium.core
         }
     }
 
-    public struct StActionSimpleFire : IComponentData
+    public struct ActionSimpleFire : IComponentData
     {
     }
 
-    public struct StActionDualSwitch : IComponentData
+    public struct ActionDualSwitch : IComponentData
     {
         public Entity PrimaryTarget;
         public Entity SecondaryTarget;
 
         public Entity this[int index] => index == 1 ? SecondaryTarget : PrimaryTarget;
 
-        public StActionDualSwitch(Entity primary, Entity secondary)
+        public ActionDualSwitch(Entity primary, Entity secondary)
         {
             PrimaryTarget = primary;
             SecondaryTarget = secondary;

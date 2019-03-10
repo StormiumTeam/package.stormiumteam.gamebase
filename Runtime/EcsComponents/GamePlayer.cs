@@ -1,6 +1,6 @@
 using System;
 using package.stormiumteam.networking.runtime.lowlevel;
-using Stormium.Core;
+using StormiumTeam.GameBase;
 using StormiumShared.Core.Networking;
 using Unity.Collections;
 using Unity.Entities;
@@ -9,13 +9,13 @@ using Unity.Mathematics;
 
 namespace Runtime.Data
 {
-    public struct StGamePlayer : IComponentData
+    public struct GamePlayer : IComponentData
     {
-        public struct WritePayload : IWriteEntityDataPayload<StGamePlayer>
+        public struct WritePayload : IWriteEntityDataPayload<GamePlayer>
         {
             public ComponentDataFromEntity<StGamePlayerToNetworkClient> ToNetworkClients;
 
-            public void Write(int index, Entity entity, ComponentDataFromEntity<StGamePlayer> stateFromEntity, ComponentDataFromEntity<DataChanged<StGamePlayer>> changeFromEntity, DataBufferWriter data, SnapshotReceiver receiver, StSnapshotRuntime runtime)
+            public void Write(int index, Entity entity, ComponentDataFromEntity<GamePlayer> stateFromEntity, ComponentDataFromEntity<DataChanged<GamePlayer>> changeFromEntity, DataBufferWriter data, SnapshotReceiver receiver, StSnapshotRuntime runtime)
             {
                 data.WriteUnmanaged(stateFromEntity[entity]);
                 if (ToNetworkClients.Exists(entity))
@@ -30,18 +30,18 @@ namespace Runtime.Data
             }
         }
 
-        public struct ReadPayload : IReadEntityDataPayload<StGamePlayer>
+        public struct ReadPayload : IReadEntityDataPayload<GamePlayer>
         {
-            public void Read(int index, Entity entity, ComponentDataFromEntity<StGamePlayer> dataFromEntity, ref DataBufferReader data, SnapshotSender sender, StSnapshotRuntime runtime)
+            public void Read(int index, Entity entity, ComponentDataFromEntity<GamePlayer> dataFromEntity, ref DataBufferReader data, SnapshotSender sender, StSnapshotRuntime runtime)
             {
-                var player = data.ReadValue<StGamePlayer>();
+                var player = data.ReadValue<GamePlayer>();
                 player.IsSelf = data.ReadValue<byte>();
 
                 dataFromEntity[entity] = player;
             }
         } 
         
-        public class Streamer : SnapshotEntityDataManualStreamer<StGamePlayer, WritePayload, ReadPayload>
+        public class Streamer : SnapshotEntityDataManualStreamer<GamePlayer, WritePayload, ReadPayload>
         {
             protected override void UpdatePayloadW(ref WritePayload current)
             {
@@ -56,7 +56,7 @@ namespace Runtime.Data
         public ulong MasterServerId;
         public byte  IsSelf;
 
-        public StGamePlayer(ulong masterServerId, bool isSelf)
+        public GamePlayer(ulong masterServerId, bool isSelf)
         {
             MasterServerId = masterServerId;
             IsSelf        = isSelf ? (byte) 1 : (byte) 0;
@@ -94,7 +94,7 @@ namespace Runtime.Data
             return EntityManager.CreateEntity
             (
                 ComponentType.ReadWrite<PlayerDescription>(),
-                ComponentType.ReadWrite<StGamePlayer>(),
+                ComponentType.ReadWrite<GamePlayer>(),
                 ComponentType.ReadWrite<ModelIdent>(),
                 ComponentType.ReadWrite<GenerateEntitySnapshot>()
             );

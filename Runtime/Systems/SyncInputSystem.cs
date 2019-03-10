@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using package.stormiumteam.networking;
 using package.stormiumteam.networking.runtime.highlevel;
 using package.stormiumteam.networking.runtime.lowlevel;
-using Stormium.Core;
+using StormiumTeam.GameBase;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;

@@ -1,7 +1,7 @@
 using package.stormiumteam.shared;
 using UnityEngine;
 
-namespace Stormium.Core
+namespace StormiumTeam.GameBase
 {
     public class RayUtility
     {

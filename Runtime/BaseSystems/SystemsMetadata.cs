@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Stormium.Core;
+using StormiumTeam.GameBase;
 using Unity.Entities;
 
 namespace Runtime.SharedSystems

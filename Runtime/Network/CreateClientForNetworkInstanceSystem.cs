@@ -1,7 +1,7 @@
 using package.stormiumteam.networking.runtime.highlevel;
 using Runtime;
 using Runtime.Data;
-using Stormium.Core;
+using StormiumTeam.GameBase;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
@@ -28,7 +28,7 @@ namespace StormiumShared.Core.Networking
 
         protected override void OnUpdate()
         {
-            var gameMgr = World.GetExistingManager<StormiumGameManager>();
+            var gameMgr = World.GetExistingManager<GameManager>();
             var localClient = gameMgr.Client;
             
             using (var entityArray = m_Group.ToEntityArray(Allocator.TempJob))
@@ -57,7 +57,7 @@ namespace StormiumShared.Core.Networking
                             gamePlayer = gameMgr.SpawnLocal(m_GamePlayerModel);
 
                             if (instanceData.IsLocal())
-                                EntityManager.SetComponentData(gamePlayer, new StGamePlayer(0, true));
+                                EntityManager.SetComponentData(gamePlayer, new GamePlayer(0, true));
 
                             EntityManager.AddComponent(gamePlayer, typeof(StGamePlayerToNetworkClient));
                         }

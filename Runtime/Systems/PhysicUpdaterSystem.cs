@@ -4,7 +4,7 @@ using Unity.Entities;
 using UnityEngine;
 using UnityEngine.Experimental.PlayerLoop;
 
-namespace package.stormium.core
+namespace package.StormiumTeam.GameBase
 {
     public enum PhysicUpdateMode
     {

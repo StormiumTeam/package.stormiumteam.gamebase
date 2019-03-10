@@ -7,10 +7,10 @@ using UnityEngine;
 using UnityEngine.Experimental.PlayerLoop;
 using static Unity.Mathematics.math;
 
-namespace Stormium.Core
+namespace StormiumTeam.GameBase
 {
-    [UpdateAfter(typeof(Initialization.PlayerUpdateTime))]
-    public class StGameTimeManager : JobComponentSystem
+    [UpdateInGroup(typeof(InitializationSystemGroup))]
+    public class GameTimeManager : JobComponentSystem
     {
         [RequireComponentTag(typeof(EntityAuthority)), BurstCompile]
         private struct Job : IJobProcessComponentData<GameTimeComponent>

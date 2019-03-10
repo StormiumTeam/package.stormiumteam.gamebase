@@ -5,7 +5,7 @@ using StormiumShared.Core.Networking;
 using Unity.Entities;
 using UnityEngine;
 
-namespace Stormium.Core
+namespace StormiumTeam.GameBase
 {
     public interface IOwnerDescription : IComponentData
     {

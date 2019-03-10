@@ -3,7 +3,7 @@ using Unity.Entities;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace Stormium.Core
+namespace StormiumTeam.GameBase
 {
 	public interface IGameLoop
 	{

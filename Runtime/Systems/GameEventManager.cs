@@ -1,29 +1,20 @@
 using System;
-using Stormium.Core;
+using StormiumTeam.GameBase;
 using StormiumShared.Core.Networking;
 using Unity.Entities;
 using UnityEngine;
 
-namespace Stormium.Core
+namespace StormiumTeam.GameBase
 {
 	public struct GameEvent : IComponentData
 	{
 		public long Tick;
 		public int Snapshot;
 	}
-
-	public class GameEventModelInfo
-	{
-		public void Create()
-		{
-			
-		}
-	}
 	
 	public interface IEventData : IComponentData
 	{}
 	
-	[UpdateInGroup(typeof(STUpdateOrder.UO_EventManager))]
 	public class GameEventManager : GameBaseSystem
 	{
 		protected override void OnUpdate()
@@ -44,10 +35,5 @@ namespace Stormium.Core
 			commandBuffer.CreateEntity();
 			commandBuffer.AddComponent(new GameEvent {Tick = this.Tick, Snapshot = 0});
 		}
-
-		/*public GameEventModelInfo RegisterEvent(string name, ComponentType[] components, EntityModelManager.WriteModel writeFunc, EntityModelManager.ReadModel readFunc)
-		{
-			EntityModelMgr.RegisterFull(name, components, null, null, writeFunc, readFunc);
-		*/
 	}
 }

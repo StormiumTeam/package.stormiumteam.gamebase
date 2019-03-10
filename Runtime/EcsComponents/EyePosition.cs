@@ -1,7 +1,7 @@
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace Stormium.Core
+namespace StormiumTeam.GameBase
 {
 	public struct EyePosition : IComponentData
 	{

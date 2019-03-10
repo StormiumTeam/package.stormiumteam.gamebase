@@ -1,5 +1,5 @@
 using package.stormiumteam.shared.ecs;
-using Stormium.Core;
+using StormiumTeam.GameBase;
 using Unity.Entities;
 using UnityEngine;
 using UnityEngine.AddressableAssets;

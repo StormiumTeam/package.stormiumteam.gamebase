@@ -18,7 +18,7 @@ namespace Runtime
     public abstract class SystemProvider : ComponentSystem, ISnapshotManageForClient, ISystemProviderExcludeComponents
     {
         private EntityModelManager m_ModelManager;
-        private StormiumGameManager m_GameManager;
+        private GameManager m_GameManager;
         private ModelIdent m_ModelIdent;
         private PatternResult m_SnapshotPattern;
         
@@ -46,7 +46,7 @@ namespace Runtime
             if (m_ModelManager == null)
             {
                 m_ModelManager = World.GetExistingManager<EntityModelManager>();
-                m_GameManager  = World.GetExistingManager<StormiumGameManager>();
+                m_GameManager  = World.GetExistingManager<GameManager>();
 
                 GetComponents(out m_EntityComponents, out m_ExcludedComponents);
                 if (EntityComponents == null && ExcludedComponents == null)

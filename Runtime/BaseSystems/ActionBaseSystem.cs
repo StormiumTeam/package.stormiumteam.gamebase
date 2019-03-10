@@ -1,11 +1,11 @@
 using System.Collections.Generic;
-using Stormium.Core;
+using StormiumTeam.GameBase;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
 
-namespace Stormium.Core
+namespace StormiumTeam.GameBase
 {	
 	[UpdateInGroup(typeof(ActionSystemGroup))]
 	public abstract class ActionBaseSystem<TSpawnRequest> : GameBaseSystem

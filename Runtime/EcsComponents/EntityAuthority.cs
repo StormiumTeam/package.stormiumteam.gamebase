@@ -1,6 +1,6 @@
 using Unity.Entities;
 
-namespace Stormium.Core
+namespace StormiumTeam.GameBase
 {
 	public struct EntityAuthority : IComponentData
 	{

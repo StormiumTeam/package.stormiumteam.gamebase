@@ -1,6 +1,6 @@
 using System;
 
-namespace Stormium.Core
+namespace StormiumTeam.GameBase
 {
 	public class PersistentSystemAttribute : Attribute
 	{

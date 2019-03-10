@@ -1,18 +1,17 @@
-﻿using package.stormium.core;
+﻿using package.StormiumTeam.GameBase;
 using Unity.Entities;
 using UnityEngine;
 
-namespace Stormium.Core
+namespace StormiumTeam.GameBase
 {
-	[UpdateInGroup(typeof(STUpdateOrder.UO_FinalizeData))]
 	public class UpdateActionContainerSystem : ComponentSystem
 	{
 		protected override void OnUpdate()
 		{
 			// First clear buffers...
-			ForEach((DynamicBuffer<StActionContainer> buffer) => { buffer.Clear(); });
+			ForEach((DynamicBuffer<ActionContainer> buffer) => { buffer.Clear(); });
 
-			ForEach((Entity entity, ref StActionTag actionTag, ref OwnerState<LivableDescription> livable) =>
+			ForEach((Entity entity, ref ActionTag actionTag, ref OwnerState<LivableDescription> livable) =>
 			{
 				if (!EntityManager.Exists(livable.Target))
 				{
@@ -20,11 +19,11 @@ namespace Stormium.Core
 					return;
 				}
 
-				var newBuffer = EntityManager.HasComponent(livable.Target, typeof(StActionContainer))
-					? PostUpdateCommands.SetBuffer<StActionContainer>(livable.Target)
-					: PostUpdateCommands.AddBuffer<StActionContainer>(livable.Target);
+				var newBuffer = EntityManager.HasComponent(livable.Target, typeof(ActionContainer))
+					? PostUpdateCommands.SetBuffer<ActionContainer>(livable.Target)
+					: PostUpdateCommands.AddBuffer<ActionContainer>(livable.Target);
 
-				newBuffer.Add(new StActionContainer(entity));
+				newBuffer.Add(new ActionContainer(entity));
 			});
 		}
 	}
