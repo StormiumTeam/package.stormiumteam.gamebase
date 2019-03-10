@@ -1,0 +1,21 @@
+{
+    "name": "package.stormiumteam.gamebase",
+    "references": [
+        "package.guerro.shared",
+        "package.stormiumteam.networking",
+        "Unity.Addressables",
+        "Unity.ResourceManager",
+        "Unity.Entities",
+        "Unity.Entities.Hybrid",
+        "Unity.Transforms",
+        "Unity.Transforms.Hybrid",
+        "Unity.Mathematics",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Burst"
+    ],
+    "optionalUnityReferences": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true
+}
