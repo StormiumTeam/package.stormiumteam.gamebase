@@ -1,1 +1,1 @@
-# package.stormiumteam.gamebase
+# Game Base package
