@@ -5,7 +5,7 @@ using Unity.Mathematics;
 
 namespace StormiumTeam.GameBase.Data
 {
-	public struct TargetExplosionEvent : IEventData, ISerializableAsPayload
+	public struct TargetBumpEvent : IEventData, ISerializableAsPayload
 	{
 		public float3 Position;
 		public float3 Direction;
@@ -16,18 +16,26 @@ namespace StormiumTeam.GameBase.Data
 
 		public void Write(ref DataBufferWriter data, SnapshotReceiver receiver, SnapshotRuntime runtime)
 		{
-			data.WriteUnmanaged(this);
+			data.WriteValue(Position);
+			data.WriteValue((half3) Direction);
+			data.WriteValue((half3) Force);
+
+			data.WriteDynamicIntWithMask((ulong) runtime.GetIndex(Victim), (ulong) runtime.GetIndex(Shooter));
 		}
 
 		public void Read(ref DataBufferReader data, SnapshotSender sender, SnapshotRuntime runtime)
 		{
-			this = data.ReadValue<TargetExplosionEvent>();
+			Position  = data.ReadValue<float3>();
+			Direction = data.ReadValue<half3>();
+			Force     = data.ReadValue<half3>();
 
-			Shooter = runtime.EntityToWorld(Shooter);
-			Victim  = runtime.EntityToWorld(Victim);
+			data.ReadDynIntegerFromMask(out var unsignedVictimIdx, out var unsignedShooterIdx);
+
+			Victim  = runtime.GetWorldEntityFromGlobal((int) unsignedVictimIdx);
+			Shooter = runtime.GetWorldEntityFromGlobal((int) unsignedShooterIdx);
 		}
 
-		public class Streamer : SnapshotEntityDataManualValueTypeStreamer<TargetExplosionEvent>
+		public class Streamer : SnapshotEntityDataManualValueTypeStreamer<TargetBumpEvent>
 		{
 		}
 	}
@@ -35,23 +43,24 @@ namespace StormiumTeam.GameBase.Data
 	public struct TargetDamageEvent : IEventData, ISerializableAsPayload
 	{
 		public int DmgValue;
-		
+
 		public Entity Shooter;
 		public Entity Victim;
-		
+
 		public void Write(ref DataBufferWriter data, SnapshotReceiver receiver, SnapshotRuntime runtime)
 		{
-			data.WriteUnmanaged(this);
+			data.WriteDynamicIntWithMask((ulong) DmgValue, (ulong) runtime.GetIndex(Victim), (ulong) runtime.GetIndex(Shooter));
 		}
 
 		public void Read(ref DataBufferReader data, SnapshotSender sender, SnapshotRuntime runtime)
 		{
-			this = data.ReadValue<TargetDamageEvent>();
+			data.ReadDynIntegerFromMask(out var unsignedDmgValue, out var unsignedVictimIdx, out var unsignedShooterIdx);
 
-			Shooter = runtime.EntityToWorld(Shooter);
-			Victim = runtime.EntityToWorld(Victim);
+			DmgValue = (int) unsignedDmgValue;
+			Victim   = runtime.GetWorldEntityFromGlobal((int) unsignedVictimIdx);
+			Shooter  = runtime.GetWorldEntityFromGlobal((int) unsignedShooterIdx);
 		}
-		
+
 		public class Streamer : SnapshotEntityDataManualValueTypeStreamer<TargetDamageEvent>
 		{
 		}
