@@ -29,6 +29,7 @@ namespace StormiumTeam.GameBase
 
         public ComponentType[] EntityComponents => m_EntityComponents;
         public ComponentType[] ExcludedComponents => m_ExcludedComponents;
+        public EntityArchetype EntityArchetype { get; protected set; }
 
         public ComponentType[] ComponentsToExcludeFromStreamers { get; private set; }
 
@@ -83,6 +84,8 @@ namespace StormiumTeam.GameBase
                     {
                         m_BlockedComponents[i] = new BlockComponentSerialization {TypeIdx = ComponentsToExcludeFromStreamers[i].TypeIndex};
                     }
+
+                    EntityArchetype = EntityManager.CreateArchetype(EntityComponents);
 
                     var patternName = $"EntityProvider.Full.{GetType().Name}";
                     m_ModelIdent = m_ModelManager.RegisterFull
