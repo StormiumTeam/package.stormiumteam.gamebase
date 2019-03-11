@@ -1,12 +1,3 @@
-using System;
-using System.Collections.Generic;
-using package.stormiumteam.networking;
-using package.stormiumteam.networking.runtime.highlevel;
-using package.stormiumteam.networking.runtime.lowlevel;
-using StormiumTeam.GameBase;
-using Unity.Collections;
-using Unity.Entities;
-using UnityEngine;
 using UnityEngine.Experimental.Input;
 
 namespace StormiumTeam.GameBase.Systems

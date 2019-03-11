@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using StormiumTeam.GameBase;
 using Unity.Entities;
 
 namespace StormiumTeam.GameBase.SharedSystems

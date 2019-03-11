@@ -29,7 +29,7 @@ namespace StormiumTeam.GameBase
 			if (!m_IsEnabled)
 				return;
 				
-			gameObject.layer = Constants.NoCollision;
+			gameObject.layer = GameBaseConstants.NoCollision;
 			m_IsEnabled = false;
 		}
 	}

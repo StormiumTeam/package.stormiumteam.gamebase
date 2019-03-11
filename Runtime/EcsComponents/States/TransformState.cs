@@ -1,7 +1,6 @@
 using StormiumShared.Core.Networking;
 using Unity.Entities;
 using Unity.Mathematics;
-using static Unity.Mathematics.math;
 using static Unity.Mathematics.quaternion;
 
 namespace StormiumTeam.GameBase

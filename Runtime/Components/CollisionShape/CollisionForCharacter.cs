@@ -1,5 +1,4 @@
 using package.stormiumteam.shared;
-using StormiumTeam.GameBase;
 using Unity.Entities;
 
 namespace StormiumTeam.GameBase.Components

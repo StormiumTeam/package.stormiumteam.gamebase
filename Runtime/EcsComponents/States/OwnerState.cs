@@ -1,4 +1,3 @@
-using System;
 using package.stormiumteam.networking.runtime.lowlevel;
 using package.stormiumteam.shared;
 using StormiumShared.Core.Networking;

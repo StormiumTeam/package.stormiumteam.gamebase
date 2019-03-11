@@ -5,7 +5,6 @@ using package.stormiumteam.networking.runtime.lowlevel;
 using StormiumShared.Core;
 using StormiumShared.Core.Networking;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 
 namespace StormiumTeam.GameBase
@@ -28,7 +27,7 @@ namespace StormiumTeam.GameBase
 		protected override void OnCreateManager()
 		{			
 			GameMgr        = World.GetOrCreateManager<GameManager>();
-			ServerMgr      = World.GetOrCreateManager<GameServerManager>();
+			ServerMgr      = World.GetOrCreateManager<GameServerManager>();	
 			EntityModelMgr = World.GetOrCreateManager<EntityModelManager>();
 			TimeMgr        = World.GetOrCreateManager<GameTimeManager>();
 			PatternSystem  = World.GetOrCreateManager<NetPatternSystem>();

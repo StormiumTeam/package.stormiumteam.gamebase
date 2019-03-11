@@ -1,10 +1,8 @@
-using System;
 using StormiumShared.Core;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Jobs;
 using UnityEngine;
-using UnityEngine.Experimental.PlayerLoop;
 using static Unity.Mathematics.math;
 
 namespace StormiumTeam.GameBase
