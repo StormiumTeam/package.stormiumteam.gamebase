@@ -91,7 +91,7 @@ namespace StormiumTeam.GameBase
                 else
                     EntityManager.AddComponentData(origin, m_OwnerStates[owner]);
 
-                Debug.Log($"({GetType().FullName}) Hierarchy parent {owner} added to {origin}");
+                //Debug.Log($"({GetType().FullName}) Hierarchy parent {owner} added to {origin}");
             }
 
             m_Descriptions = GetComponentDataFromEntity<T>();
@@ -103,7 +103,7 @@ namespace StormiumTeam.GameBase
             else
                 EntityManager.AddComponentData(origin, new OwnerState<T> {Target = owner});
 
-            Debug.Log($"({GetType().FullName}) Owner {owner} added to {origin}");
+            //Debug.Log($"({GetType().FullName}) Owner {owner} added to {origin}");
         }
 
         public void SyncOwnerToEntity(EntityCommandBuffer entityCommandBuffer, Entity origin, Entity owner)

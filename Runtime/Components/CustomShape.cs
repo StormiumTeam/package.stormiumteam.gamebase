@@ -4,7 +4,6 @@ using UnityEngine;
 namespace StormiumTeam.GameBase
 {
 	[ExecuteInEditMode]
-	[RequireComponent(typeof(GameObjectEntity))]
 	public class CustomShape : MonoBehaviour
 	{
 		public const int HitLayer = 21;

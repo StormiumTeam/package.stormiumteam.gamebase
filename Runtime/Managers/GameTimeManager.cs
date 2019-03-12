@@ -11,7 +11,8 @@ namespace StormiumTeam.GameBase
     public class GameTimeManager : JobComponentSystem
     {
         [BurstCompile]
-        private struct Job : IJobProcessComponentData<GameTimeComponent>
+        [RequireComponentTag(typeof(EntityAuthority))]
+        private struct JobUpdateGameTime : IJobProcessComponentData<GameTimeComponent>
         {
             public int ActualTick;
             public int ActualFrame;
@@ -30,21 +31,47 @@ namespace StormiumTeam.GameBase
                 data.Value.FixedTickPerSecond = tps;
             }
         }
+        
+        [BurstCompile]
+        private struct JobUpdateSingleton : IJobProcessComponentData<SingletonGameTime>
+        {
+            public int ActualTick;
+            public int ActualFrame;
+
+            public void Execute(ref SingletonGameTime data)
+            {
+                var tps = clamp(ActualTick - data.Tick, 1, 300);
+
+                data.Tick      = ActualTick;
+                data.Time      = ActualTick * 0.001f;
+                data.Frame     = ActualFrame;
+                data.DeltaTick = tps;
+                data.DeltaTime = tps * 0.001f;
+
+                // For now we estimate it.
+                data.FixedTickPerSecond = tps;
+            }
+        }
 
         protected override void OnCreateManager()
         {
-            EntityManager.CreateEntity(typeof(GameTimeComponent));
-            
-            SetSingleton(default(GameTimeComponent));
+            EntityManager.CreateEntity(typeof(SingletonGameTime));
         }
 
         protected override JobHandle OnUpdate(JobHandle inputDeps)
         {
-            return new Job
+            inputDeps = new JobUpdateSingleton
             {
                 ActualTick  = (int)(Time.unscaledTime * 1000),
                 ActualFrame = Time.frameCount
             }.Schedule(this, inputDeps);
+            inputDeps = new JobUpdateGameTime
+            {
+                ActualTick  = (int)(Time.unscaledTime * 1000),
+                ActualFrame = Time.frameCount
+            }.Schedule(this, inputDeps);
+
+            return inputDeps;
         }
     }
 }

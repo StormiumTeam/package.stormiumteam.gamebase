@@ -7,6 +7,7 @@ using package.stormiumteam.shared;
 using StormiumShared.Core.Networking;
 using Unity.Collections;
 using Unity.Entities;
+using UnityEngine;
 
 namespace StormiumTeam.GameBase
 {
@@ -90,7 +91,7 @@ namespace StormiumTeam.GameBase
                     var patternName = $"EntityProvider.Full.{GetType().Name}";
                     m_ModelIdent = m_ModelManager.RegisterFull
                     (
-                        patternName + ".Model", ComponentsToExcludeFromStreamers, ProviderSpawnEntity, DestroyEntity, SerializeCollection, DeserializeCollection
+                        patternName + ".Model", ComponentsToExcludeFromStreamers, ProviderSpawnEntity, ProviderDestroyEntity, SerializeCollection, DeserializeCollection
                     );
 
                     m_SnapshotPattern = World.GetExistingManager<NetPatternSystem>().GetLocalBank().Register(new PatternIdent(patternName + ".Snapshot"));
@@ -158,13 +159,20 @@ namespace StormiumTeam.GameBase
         public DataBufferWriter WriteData(SnapshotReceiver receiver, SnapshotRuntime runtime)
         {
             var buffer = new DataBufferWriter(4096, Allocator.TempJob);
+            var lengthMarker = buffer.WriteInt(0);
             SerializeCollection(ref buffer, receiver, runtime);
+            buffer.WriteInt(buffer.Length, lengthMarker);
             return buffer;
         }
 
         public void ReadData(SnapshotSender sender, SnapshotRuntime runtime, DataBufferReader sysData)
         {
+            var length = sysData.ReadValue<int>();
             DeserializeCollection(ref sysData, sender, runtime);
+            if (length != sysData.CurrReadIndex)
+            {
+                Debug.LogError($"{GetType()}.ReadData() -> Error! -> length({length}) != sysData.CurrReadIndex({sysData.CurrReadIndex})");
+            }
         }
 
         public virtual void ExcludeComponentsFor(Type type, List<ComponentType> components)

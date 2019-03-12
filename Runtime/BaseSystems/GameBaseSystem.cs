@@ -18,9 +18,10 @@ namespace StormiumTeam.GameBase
 		public GameTimeManager         TimeMgr        { get; private set; }
 		public NetPatternSystem          PatternSystem  { get; private set; }
 		public GameEventManager EventManager { get; private set; }
+		public PhysicQueryManager PhysicQueryManager { get; private set; }
 
-		public int Tick      => m_GameTimeSingletonGroup.GetSingleton<GameTimeComponent>().Value.Tick;
-		public int TickDelta => m_GameTimeSingletonGroup.GetSingleton<GameTimeComponent>().Value.DeltaTick;
+		public int Tick      => m_GameTimeSingletonGroup.GetSingleton<SingletonGameTime>().Tick;
+		public int TickDelta => m_GameTimeSingletonGroup.GetSingleton<SingletonGameTime>().DeltaTick;
 
 		public PatternBank LocalBank => PatternSystem.GetLocalBank();
 
@@ -32,6 +33,7 @@ namespace StormiumTeam.GameBase
 			TimeMgr        = World.GetOrCreateManager<GameTimeManager>();
 			PatternSystem  = World.GetOrCreateManager<NetPatternSystem>();
 			EventManager = World.GetOrCreateManager<GameEventManager>();
+			PhysicQueryManager = World.GetExistingManager<PhysicQueryManager>();
 
 			m_PlayerGroup = GetComponentGroup
 			(
@@ -40,7 +42,7 @@ namespace StormiumTeam.GameBase
 
 			m_GameTimeSingletonGroup = GetComponentGroup
 			(
-				typeof(GameTimeComponent)
+				typeof(SingletonGameTime)
 			);
 		}
 

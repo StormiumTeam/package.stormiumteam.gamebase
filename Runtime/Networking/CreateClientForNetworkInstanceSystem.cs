@@ -1,4 +1,5 @@
 using package.stormiumteam.networking.runtime.highlevel;
+using package.stormiumteam.shared.ecs;
 using StormiumShared.Core.Networking;
 using Unity.Collections;
 using Unity.Entities;
@@ -7,8 +8,8 @@ using UnityEngine;
 namespace StormiumTeam.GameBase.Networking
 {
     [AlwaysUpdateSystem]
-    [UpdateInGroup(typeof(LateSimulationSystemGroup))]
-    public class CreateClientForNetworkInstanceSystem : BaseComponentSystem
+    [UpdateInGroup(typeof(UpdateLoop.IntEnd))]
+    public class CreateClientForNetworkInstanceSystem : NetworkComponentSystem
     {
         private EntityArchetype m_ClientArchetype;
         private ComponentGroup  m_Group, m_DestroyClientGroup;
@@ -23,54 +24,51 @@ namespace StormiumTeam.GameBase.Networking
             m_GamePlayerModel = World.GetOrCreateManager<GamePlayerProvider>().GetModelIdent();
         }
 
-        protected override void OnUpdate()
+        public override void OnNetworkInstanceAdded(int instanceId, Entity instanceEntity)
         {
-            var gameMgr = World.GetExistingManager<GameManager>();
+            base.OnNetworkInstanceAdded(instanceId, instanceEntity);
+
+            var gameMgr     = World.GetExistingManager<GameManager>();
+            var localClient = gameMgr.Client;
+
+            var instanceData = EntityManager.GetComponentData<NetworkInstanceData>(instanceEntity);
+            var clientEntity = instanceData.IsLocal() ? localClient : EntityManager.CreateEntity(m_ClientArchetype);
+
+            EntityManager.SetOrAddComponentData(clientEntity, new ClientToNetworkInstance(instanceEntity));
+            EntityManager.SetOrAddComponentData(instanceEntity, new NetworkInstanceToClient(clientEntity));
+
+            if (instanceData.InstanceType == InstanceType.Client
+                || instanceData.InstanceType == InstanceType.LocalServer)
+            {
+                Entity gamePlayer;
+                if (!EntityManager.HasComponent<NetworkClientToGamePlayer>(clientEntity))
+                {
+                    EntityManager.AddComponent(clientEntity, typeof(NetworkClientToGamePlayer));
+
+                    gamePlayer = gameMgr.SpawnLocal(m_GamePlayerModel);
+
+                    if (instanceData.IsLocal())
+                        EntityManager.SetComponentData(gamePlayer, new GamePlayer(0, true));
+
+                    EntityManager.AddComponent(gamePlayer, typeof(GamePlayerToNetworkClient));
+                }
+                else
+                {
+                    // it shouldn't happen?
+                    Debug.LogWarning($"Shouldn't happen (except if we created a server after another local instance (curr instancetype={instanceData.InstanceType})).");
+                    gamePlayer = EntityManager.GetComponentData<NetworkClientToGamePlayer>(clientEntity).Target;
+                }
+
+                EntityManager.SetComponentData(clientEntity, new NetworkClientToGamePlayer(gamePlayer));
+                EntityManager.SetComponentData(gamePlayer, new GamePlayerToNetworkClient(clientEntity));
+            }
+        }
+
+        protected override void OnUpdate()
+        {          
+            var gameMgr     = World.GetExistingManager<GameManager>();
             var localClient = gameMgr.Client;
             
-            using (var entityArray = m_Group.ToEntityArray(Allocator.TempJob))
-            using (var dataArray = m_Group.ToComponentDataArray<NetworkInstanceData>(Allocator.TempJob))
-            {
-                for (var i = 0; i != entityArray.Length; i++)
-                {
-                    var instanceEntity = entityArray[i];
-                    var instanceData   = dataArray[i];
-                    
-                    var clientEntity   = instanceData.IsLocal() ? localClient : EntityManager.CreateEntity(m_ClientArchetype);
-                    if (!EntityManager.HasComponent<ClientToNetworkInstance>(clientEntity))
-                        EntityManager.AddComponentData(clientEntity, new ClientToNetworkInstance(instanceEntity));
-                    else
-                        EntityManager.SetComponentData(clientEntity, new ClientToNetworkInstance(instanceEntity));
-                    EntityManager.AddComponentData(instanceEntity, new NetworkInstanceToClient(clientEntity));
-
-                    if (instanceData.InstanceType == InstanceType.Client
-                        || instanceData.InstanceType == InstanceType.LocalServer)
-                    {
-                        Entity gamePlayer = default;
-                        if (!EntityManager.HasComponent<NetworkClientToGamePlayer>(clientEntity))
-                        {
-                            EntityManager.AddComponent(clientEntity, typeof(NetworkClientToGamePlayer));
-
-                            gamePlayer = gameMgr.SpawnLocal(m_GamePlayerModel);
-
-                            if (instanceData.IsLocal())
-                                EntityManager.SetComponentData(gamePlayer, new GamePlayer(0, true));
-
-                            EntityManager.AddComponent(gamePlayer, typeof(GamePlayerToNetworkClient));
-                        }
-                        else
-                        {
-                            // it shouldn't happen?
-                            Debug.LogWarning("Shouldn't happen.");
-                            gamePlayer = EntityManager.GetComponentData<NetworkClientToGamePlayer>(clientEntity).Target;
-                        }
-
-                        EntityManager.SetComponentData(clientEntity, new NetworkClientToGamePlayer(gamePlayer));
-                        EntityManager.SetComponentData(gamePlayer, new GamePlayerToNetworkClient(clientEntity));
-                    }
-                }
-            }
-
             ForEach((Entity clientEntity, ref ClientToNetworkInstance clientToNetworkInstance) =>
             {
                 if (EntityManager.Exists(clientToNetworkInstance.Target) || clientEntity == localClient)
