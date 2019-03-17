@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using package.stormiumteam.shared;
 using Unity.Entities;
@@ -12,7 +13,26 @@ namespace StormiumTeam.GameBase
 		void EnableCollision();
 		void DisableCollision();
 	}
-	
+
+	public struct QueryCollisionFor : IDisposable
+	{
+		public Entity Entity;
+		public PhysicQueryManager QueryManager;
+		
+		public QueryCollisionFor(Entity entity, PhysicQueryManager queryManager)
+		{
+			Entity = entity;
+			QueryManager = queryManager;
+			
+			QueryManager.EnableCollisionFor(entity);
+		}
+		
+		public void Dispose()
+		{
+			QueryManager.ReenableCollisions();
+		}
+	}
+
 	public class PhysicQueryManager : ComponentSystem
 	{
 		private List<IOnQueryEnableCollisionFor> m_ReenableCollisions;
@@ -67,6 +87,14 @@ namespace StormiumTeam.GameBase
 			}
 			
 			m_RequestLength--;
+		}
+
+		public bool SphereCast(Entity entity, Ray ray, float radius, out RaycastHit hit, float maxDistance = float.PositiveInfinity)
+		{
+			using (new QueryCollisionFor(entity, this))
+			{
+				return Physics.SphereCast(ray, radius, out hit, maxDistance, GameBaseConstants.CollisionMask);
+			}
 		}
 	}
 }

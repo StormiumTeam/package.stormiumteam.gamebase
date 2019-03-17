@@ -1,3 +1,4 @@
+using package.stormiumteam.shared;
 using Unity.Entities;
 using UnityEngine;
 
@@ -8,6 +9,14 @@ namespace StormiumTeam.GameBase
 	{
 		public const int HitLayer = 21;
 		private bool m_IsEnabled;
+		
+		protected EntityManager EntityManager;
+		
+		private void Awake()
+		{
+			EntityManager = World.Active.GetExistingManager<EntityManager>();
+			World.Active.GetExistingManager<AppEventSystem>().SubscribeToAll(this);
+		}
 		
 		public void OnEnable()
 		{

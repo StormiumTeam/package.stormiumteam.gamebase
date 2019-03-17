@@ -64,7 +64,7 @@ namespace StormiumTeam.GameBase
 					var entityArray = chunk.GetNativeArray(entityType);
 					for (var i = 0; i < length; i++)
 					{
-						if (playerArray[i].IsSelf == 1) return entityArray[i];
+						if (playerArray[i].IsSelf) return entityArray[i];
 					}
 				}
 			}

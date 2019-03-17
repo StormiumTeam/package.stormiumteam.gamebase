@@ -17,11 +17,11 @@ namespace StormiumTeam.GameBase
                 if (ToNetworkClients.Exists(entity))
                 {
                     // Is the user owned from the same client? (1 = yes, 0 = no)
-                    data.WriteByte((byte) math.select(0, 1, ToNetworkClients[entity].Target == receiver.Client));
+                    data.WriteValue(ToNetworkClients[entity].Target == receiver.Client);
                 }
                 else
                 {
-                    data.WriteByte(0);
+                    data.WriteValue(0);
                 }
             }
         }
@@ -31,7 +31,7 @@ namespace StormiumTeam.GameBase
             public void Read(int index, Entity entity, ComponentDataFromEntity<GamePlayer> dataFromEntity, ref DataBufferReader data, SnapshotSender sender, SnapshotRuntime runtime)
             {
                 var player = data.ReadValue<GamePlayer>();
-                player.IsSelf = data.ReadValue<byte>();
+                player.IsSelf = data.ReadValue<bool>();
 
                 dataFromEntity[entity] = player;
             }
@@ -50,12 +50,12 @@ namespace StormiumTeam.GameBase
         }
 
         public ulong MasterServerId;
-        public byte  IsSelf;
+        public bool  IsSelf;
 
         public GamePlayer(ulong masterServerId, bool isSelf)
         {
             MasterServerId = masterServerId;
-            IsSelf        = isSelf ? (byte) 1 : (byte) 0;
+            IsSelf        = isSelf;
         }
     }
 

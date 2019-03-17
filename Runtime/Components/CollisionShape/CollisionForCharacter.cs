@@ -7,17 +7,9 @@ namespace StormiumTeam.GameBase.Components
 	{
 		public bool collide;
 
-		private EntityManager m_EntityManager;
-		
-		private void Awake()
-		{
-			m_EntityManager = World.Active.GetExistingManager<EntityManager>();
-			World.Active.GetExistingManager<AppEventSystem>().SubscribeToAll(this);
-		}
-
 		public bool EnableCollisionFor(Entity entity)
 		{
-			return collide || !m_EntityManager.HasComponent<CharacterDescription>(entity);
+			return collide || !EntityManager.HasComponent<CharacterDescription>(entity);
 		}
 
 		public void EnableCollision()
