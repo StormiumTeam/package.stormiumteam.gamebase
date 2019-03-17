@@ -12,7 +12,7 @@ namespace StormiumTeam.GameBase
 
     public struct LivableDescription : IOwnerDescription
     {
-        class OwnerSync : OwnerStateSync<LivableDescription>
+        public class OwnerSync : OwnerStateSync<LivableDescription>
         {}
     }
 
@@ -50,8 +50,10 @@ namespace StormiumTeam.GameBase
         
         public static void ReplaceOwnerData(this EntityManager entityManager, Entity source, Entity owner)
         {
+            Debug.Log("replacing owner data...");
             foreach (var obj in AppEvent<ISyncEvent>.GetObjEvents())
             {
+                Debug.Log(obj);
                 obj.SyncOwnerToEntity(source, owner);
             }
         }
@@ -73,7 +75,7 @@ namespace StormiumTeam.GameBase
         
         protected override void OnCreateManager()
         {
-            World.GetExistingManager<AppEventSystem>().SubscribeToAll(this);
+            World.GetOrCreateManager<AppEventSystem>().SubscribeToAll(this);
         }
 
         protected override void OnUpdate()
@@ -91,19 +93,19 @@ namespace StormiumTeam.GameBase
                 else
                     EntityManager.AddComponentData(origin, m_OwnerStates[owner]);
 
-                //Debug.Log($"({GetType().FullName}) Hierarchy parent {owner} added to {origin}");
+                // Debug.Log($"({GetType().FullName}) Hierarchy parent {owner} added to {origin}");
             }
 
             m_Descriptions = GetComponentDataFromEntity<T>();
             if (!m_Descriptions.Exists(owner))
                 return;
 
-            if (m_OwnerStates.Exists(owner))
-                m_OwnerStates[owner] = new OwnerState<T> {Target = owner};
+            if (m_OwnerStates.Exists(origin))
+                m_OwnerStates[origin] = new OwnerState<T> {Target = owner};
             else
                 EntityManager.AddComponentData(origin, new OwnerState<T> {Target = owner});
 
-            //Debug.Log($"({GetType().FullName}) Owner {owner} added to {origin}");
+            // Debug.Log($"({GetType().FullName}) Owner {owner} added to {origin}");
         }
 
         public void SyncOwnerToEntity(EntityCommandBuffer entityCommandBuffer, Entity origin, Entity owner)
