@@ -42,12 +42,14 @@ namespace StormiumTeam.GameBase
 
 					var r               = Rotations[cw.Target];
 					var t               = Translations[cw.Target];
-					var pm              = PhysicMasses[cw.Target];
 					var worldFromEntity = new RigidTransform(r.Value, t.Value);
-					var worldFromMotion = math.mul(worldFromEntity, pm.Transform);
+					if (PhysicMasses.Exists(cw.Target))
+					{
+						worldFromEntity = math.mul(worldFromEntity, PhysicMasses[cw.Target].Transform);
+					}
 
 					cw.Collider  = Colliders[cw.Target].ColliderPtr;
-					cw.WorldFromMotion = worldFromMotion;
+					cw.WorldFromMotion = worldFromEntity;
 				}
 			}
 		}

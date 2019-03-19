@@ -58,7 +58,7 @@ namespace StormiumTeam.GameBase
 
 		public static bool CastRay(this DynamicBuffer<CollideWith> buffer, in RaycastInput input, out RaycastHit closestHit)
 		{
-			var closestHitCollector = new ClosestHitCollector<RaycastHit>(1.000001f);
+			var closestHitCollector = new ClosestHitCollector<RaycastHit>(1f);
 			var hadHit              = CastRay(buffer, in input, ref closestHitCollector);
 
 			closestHit = closestHitCollector.ClosestHit;
