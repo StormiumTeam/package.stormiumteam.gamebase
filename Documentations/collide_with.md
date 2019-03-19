@@ -12,12 +12,13 @@ There are some solutions for that:
 
 The CollideWith component is one of the best solution (because there can be other good solutions, but I didn't found them yet).
 
-An element of the CollideWith component is structured like this:
-| Name | Type | Description |
-| --- | --- | --- |
-| Target | Entity | An entity where we can do some raycasting/collisions operations. |
-| ColliderPtr | Collider* | An automatically generated field about the current entity collider. |
-| WorldFromMotion | RigidTransform | An automatically generated field about the transformed collider. |
+An element of the CollideWith component is structured like this:  
+
+| Name | Type | Description |  
+| --- | --- | --- |  
+| Target | Entity | An entity where we can do some raycasting/collisions operations. |  
+| ColliderPtr | Collider* | An automatically generated field about the current entity collider. |  
+| WorldFromMotion | RigidTransform | An automatically generated field about the transformed collider. |  
 
 If you want your character to collide with a bullet:
 ```csharp
