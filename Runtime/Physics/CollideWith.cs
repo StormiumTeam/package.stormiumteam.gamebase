@@ -22,8 +22,6 @@ namespace StormiumTeam.GameBase
 
 	public static unsafe class CollideWithExtensions
 	{
-		#region Non-Optimized methods
-
 		public static bool CastRay<T>(this DynamicBuffer<CollideWith> buffer, in RaycastInput input, ref T collector) where T : struct, ICollector<RaycastHit>
 		{
 			var ptr    = buffer.GetUnsafePtr();
@@ -66,7 +64,5 @@ namespace StormiumTeam.GameBase
 			closestHit = closestHitCollector.ClosestHit;
 			return hadHit;
 		}
-
-		#endregion
 	}
 }
