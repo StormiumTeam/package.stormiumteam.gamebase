@@ -64,6 +64,9 @@ struct MyRaycastJob : JobProcessComponentDataForEntity<Translation>
 
 protected override void OnUpdate()
 {
+    // make sure that our colliders are at the right positions when do we the raycast.
+    World.GetExistingManager<TransformCollideWithBufferSystem>().Update();
+
     var job = new MyRaycastJob
     {
         CollideWithBufferArray = GetBufferFromEntity<CollideWith>(),
