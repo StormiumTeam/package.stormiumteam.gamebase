@@ -14,7 +14,7 @@ The CollideWith component is one of the best solution (because there can be othe
 
 An element of the CollideWith component is structured like this:
 | Name | Type | Description |
-| -- | -- | -- |
+| --- | --- | --- |
 | Target | Entity | An entity where we can do some raycasting/collisions operations. |
 | ColliderPtr | Collider* | An automatically generated field about the current entity collider. |
 | WorldFromMotion | RigidTransform | An automatically generated field about the transformed collider. |
