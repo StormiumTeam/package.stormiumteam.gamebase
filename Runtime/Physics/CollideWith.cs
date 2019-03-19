@@ -64,5 +64,50 @@ namespace StormiumTeam.GameBase
 			closestHit = closestHitCollector.ClosestHit;
 			return hadHit;
 		}
+
+		public static bool CastCollider<T>(this DynamicBuffer<CollideWith> buffer, in ColliderCastInput input, ref T collector) where T : struct, ICollector<ColliderCastHit>
+		{
+			var ptr    = buffer.GetUnsafePtr();
+			var length = buffer.Length;
+
+			var hadHit = false;
+			for (var i = 0; i != length; i++)
+			{
+				ref var cw = ref UnsafeUtilityEx.ArrayElementAsRef<CollideWith>(ptr, i);
+
+				// Transform the input into body space
+				var worldFromMotion = new Math.MTransform(cw.WorldFromMotion);
+				var bodyFromWorld   = Math.Inverse(worldFromMotion);
+				var inputLs = new ColliderCastInput
+				{
+					Collider    = input.Collider,
+					Position    = Math.Mul(bodyFromWorld, input.Position),
+					Orientation = math.mul(math.inverse(cw.WorldFromMotion.rot), input.Orientation),
+					Direction   = math.mul(bodyFromWorld.Rotation, input.Direction)
+				};
+
+				var numHits  = collector.NumHits;
+				var fraction = collector.MaxFraction;
+				if (cw.Collider->CastCollider(inputLs, ref collector))
+				{
+					collector.TransformNewHits(numHits, fraction, worldFromMotion, -1);
+					hadHit = true;
+
+					if (collector.EarlyOutOnFirstHit)
+						return true;
+				}
+			}
+
+			return hadHit;
+		}
+
+		public static bool CastCollider(this DynamicBuffer<CollideWith> buffer, in ColliderCastInput input, out ColliderCastHit closestHit)
+		{
+			var closestHitCollector = new ClosestHitCollector<ColliderCastHit>(1.000001f);
+			var hadHit              = CastCollider(buffer, in input, ref closestHitCollector);
+
+			closestHit = closestHitCollector.ClosestHit;
+			return hadHit;
+		}
 	}
 }
