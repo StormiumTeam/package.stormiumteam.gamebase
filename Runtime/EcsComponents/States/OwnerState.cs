@@ -1,7 +1,9 @@
 using package.stormiumteam.networking.runtime.lowlevel;
 using package.stormiumteam.shared;
 using StormiumShared.Core.Networking;
+using Unity.Collections;
 using Unity.Entities;
+using Unity.Jobs;
 using Unity.Transforms;
 using UnityEngine;
 
@@ -10,19 +12,46 @@ namespace StormiumTeam.GameBase
     public interface IOwnerDescription : IComponentData
     {
     }
+    
+    /// <summary>
+    /// All entities that can be collided/hit/damaged (eg: character movable entity (not the character itself!))
+    /// </summary>
+    public struct ColliderDescription : IOwnerDescription
+    {
+        public class OwnerSync : OwnerStateSync<ColliderDescription>
+        {}
+    }
 
+    /// <summary>
+    /// All entities that can move (eg: character movable entity (not the character itself!))
+    /// </summary>
+    public struct MovableDescription : IOwnerDescription
+    {
+        public class OwnerSync : OwnerStateSync<MovableDescription>
+        {}
+    }
+    
+    /// <summary>
+    /// All entities that are described as livables (eg: characters)
+    /// </summary>
     public struct LivableDescription : IOwnerDescription
     {
         public class OwnerSync : OwnerStateSync<LivableDescription>
         {}
     }
 
+    /// <summary>
+    /// All entities that are described as characters
+    /// </summary>
     public struct CharacterDescription : IOwnerDescription
     {
         public class OwnerSync : OwnerStateSync<CharacterDescription>
         {}
     }
 
+    /// <summary>
+    /// All entities that are described as players
+    /// </summary>
     public struct PlayerDescription : IOwnerDescription
     {
         public class OwnerSync : OwnerStateSync<PlayerDescription>
@@ -47,18 +76,37 @@ namespace StormiumTeam.GameBase
         {
             void SyncOwnerToEntity(Entity origin, Entity owner);
             void SyncOwnerToEntity(EntityCommandBuffer entityCommandBuffer, Entity origin, Entity owner);
+
+            //void DirectAddOrSet(Entity entity, Entity owner);
+            ComponentType ComponentType { get; }
         }
-        
+
         public static void ReplaceOwnerData(this EntityManager entityManager, Entity source, Entity owner)
         {
             Debug.Log("replacing owner data...");
+
+            NativeArray<OwnerChild> ownerChildren = default;
+
+            var hasBuffer = entityManager.HasComponent(owner, typeof(OwnerChild));
+            if (hasBuffer)
+                ownerChildren = new NativeArray<OwnerChild>(entityManager.GetBuffer<OwnerChild>(owner).AsNativeArray(), Allocator.Temp);
+
             foreach (var obj in AppEvent<ISyncEvent>.GetObjEvents())
             {
                 Debug.Log(obj);
+                for (var i = 0; hasBuffer && i != ownerChildren.Length; i++)
+                {
+                    if (obj.ComponentType.TypeIndex == ownerChildren[i].TypeId)
+                        obj.SyncOwnerToEntity(source, ownerChildren[i].Child);
+                }
+
                 obj.SyncOwnerToEntity(source, owner);
             }
+            
+            if (hasBuffer)
+                ownerChildren.Dispose();
         }
-        
+
         public static void ReplaceOwnerData(this EntityCommandBuffer entityCommandBuffer, Entity source, Entity owner)
         {
             foreach (var obj in AppEvent<ISyncEvent>.GetObjEvents())
@@ -68,19 +116,22 @@ namespace StormiumTeam.GameBase
         }
     }
 
-    public class OwnerStateSync<T> : ComponentSystem, OwnerState.ISyncEvent
+    public class OwnerStateSync<T> : JobComponentSystem, OwnerState.ISyncEvent
         where T : struct, IOwnerDescription
     {
         private ComponentDataFromEntity<OwnerState<T>> m_OwnerStates; 
         private ComponentDataFromEntity<T> m_Descriptions; 
+        
+        public ComponentType ComponentType => ComponentType.ReadWrite<T>();
         
         protected override void OnCreateManager()
         {
             World.GetOrCreateManager<AppEventSystem>().SubscribeToAll(this);
         }
 
-        protected override void OnUpdate()
+        protected override JobHandle OnUpdate(JobHandle _)
         {
+            return _;
         }
 
         public void SyncOwnerToEntity(Entity origin, Entity owner)
@@ -94,19 +145,21 @@ namespace StormiumTeam.GameBase
                 else
                     EntityManager.AddComponentData(origin, m_OwnerStates[owner]);
 
-                // Debug.Log($"({GetType().FullName}) Hierarchy parent {owner} added to {origin}");
+                Debug.Log($"({GetType().FullName}) Hierarchy parent {owner} added to {origin}");
             }
 
+            // resync...
+            m_OwnerStates = GetComponentDataFromEntity<OwnerState<T>>();
             m_Descriptions = GetComponentDataFromEntity<T>();
-            if (!m_Descriptions.Exists(owner))
-                return;
+            if (m_Descriptions.Exists(owner))
+            {
+                if (m_OwnerStates.Exists(origin))
+                    m_OwnerStates[origin] = new OwnerState<T> {Target = owner};
+                else
+                    EntityManager.AddComponentData(origin, new OwnerState<T> {Target = owner});
+            }
 
-            if (m_OwnerStates.Exists(origin))
-                m_OwnerStates[origin] = new OwnerState<T> {Target = owner};
-            else
-                EntityManager.AddComponentData(origin, new OwnerState<T> {Target = owner});
-
-            // Debug.Log($"({GetType().FullName}) Owner {owner} added to {origin}");
+            Debug.Log($"({GetType().FullName}) Owner {owner} added to {origin}");
         }
 
         public void SyncOwnerToEntity(EntityCommandBuffer entityCommandBuffer, Entity origin, Entity owner)
@@ -149,6 +202,35 @@ namespace StormiumTeam.GameBase
 
         public class Streamer : SnapshotEntityDataManualValueTypeStreamer<OwnerState<TOwnerDescription>>
         {
+        }
+    }
+
+    [InternalBufferCapacity(8)]
+    public struct OwnerChild : IBufferElementData
+    {
+        public Entity Child;
+        public int TypeId;
+        
+        public bool Is<T>(T t)
+        {
+            return TypeId == ComponentType.ReadWrite<T>().TypeIndex;
+        }
+
+        public bool Is(ComponentType componentType)
+        {
+            return TypeId == componentType.TypeIndex;
+        }
+
+        public OwnerChild(Entity entity, ComponentType componentType)
+        {
+            Child = entity;
+            TypeId = componentType.TypeIndex;
+        }
+
+        public static OwnerChild Create<T>(Entity entity)
+            where T : IOwnerDescription
+        {
+            return new OwnerChild(entity, ComponentType.ReadWrite<T>());
         }
     }
 }
