@@ -2,6 +2,7 @@ using package.stormiumteam.networking.runtime.lowlevel;
 using package.stormiumteam.shared;
 using StormiumShared.Core.Networking;
 using Unity.Entities;
+using Unity.Transforms;
 using UnityEngine;
 
 namespace StormiumTeam.GameBase
