@@ -1,3 +1,4 @@
+using System;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
@@ -5,6 +6,7 @@ using Unity.Mathematics;
 using Unity.Physics;
 using UnityEngine;
 using Collider = Unity.Physics.Collider;
+using Math = Unity.Physics.Math;
 using Ray = Unity.Physics.Ray;
 using RaycastHit = Unity.Physics.RaycastHit;
 
@@ -17,11 +19,28 @@ namespace StormiumTeam.GameBase
 		[NativeDisableUnsafePtrRestriction]
 		public Collider* Collider;
 
+		public int RigidBodyIndex;
+
 		public RigidTransform WorldFromMotion;
 	}
 
 	public static unsafe class CollideWithExtensions
 	{
+		public static ref CollideWith GetElementFromRigidBody(this DynamicBuffer<CollideWith> buffer, int rigidBodyIndex)
+		{
+			var ptr    = buffer.GetUnsafePtr();
+			var length = buffer.Length;
+
+			for (var i = 0; i != length; i++)
+			{
+				ref var cw = ref UnsafeUtilityEx.ArrayElementAsRef<CollideWith>(ptr, i);
+				if (cw.RigidBodyIndex == rigidBodyIndex)
+					return ref cw;
+			}
+
+			throw new Exception("No rigidBody found as " + rigidBodyIndex);
+		}
+
 		public static bool CastRay<T>(this DynamicBuffer<CollideWith> buffer, in RaycastInput input, ref T collector) where T : struct, ICollector<RaycastHit>
 		{
 			var ptr    = buffer.GetUnsafePtr();
@@ -45,7 +64,7 @@ namespace StormiumTeam.GameBase
 				var fraction = collector.MaxFraction;
 				if (cw.Collider->CastRay(inputLs, ref collector))
 				{
-					collector.TransformNewHits(numHits, fraction, worldFromMotion, -1);
+					collector.TransformNewHits(numHits, fraction, worldFromMotion, cw.RigidBodyIndex);
 					hadHit = true;
 
 					if (collector.EarlyOutOnFirstHit)
@@ -90,9 +109,9 @@ namespace StormiumTeam.GameBase
 				var fraction = collector.MaxFraction;
 				if (cw.Collider->CastCollider(inputLs, ref collector))
 				{
-					collector.TransformNewHits(numHits, fraction, worldFromMotion, -1);
+					collector.TransformNewHits(numHits, fraction, worldFromMotion, cw.RigidBodyIndex);
 					hadHit = true;
-
+					
 					if (collector.EarlyOutOnFirstHit)
 						return true;
 				}
@@ -107,6 +126,46 @@ namespace StormiumTeam.GameBase
 			var hadHit              = CastCollider(buffer, in input, ref closestHitCollector);
 
 			closestHit = closestHitCollector.ClosestHit;
+			return hadHit;
+		}
+
+		public static bool CalculateDistance<T>(this DynamicBuffer<CollideWith> buffer, ColliderDistanceInput input, ref T collector) where T : struct, ICollector<DistanceHit>
+		{
+			var ptr    = buffer.GetUnsafePtr();
+			var length = buffer.Length;
+
+			var hadHit = false;
+			for (var i = 0; i != length; i++)
+			{
+				ref var cw = ref UnsafeUtilityEx.ArrayElementAsRef<CollideWith>(ptr, i);
+
+				// Transform the input into body space
+				var worldFromMotion = new Math.MTransform(cw.WorldFromMotion);
+				var bodyFromWorld   = Math.Inverse(worldFromMotion);
+				var inputLs = new ColliderDistanceInput
+				{
+					Collider = input.Collider,
+					Transform = new RigidTransform(
+						math.mul(math.inverse(cw.WorldFromMotion.rot), input.Transform.rot),
+						Math.Mul(bodyFromWorld, input.Transform.pos)
+					),
+					MaxDistance = input.MaxDistance
+				};
+
+				var fraction = collector.MaxFraction;
+				var   numHits  = collector.NumHits;
+
+				if (cw.Collider->CalculateDistance(inputLs, ref collector))
+				{
+					// Transform results back into world space
+					collector.TransformNewHits(numHits, fraction, worldFromMotion, cw.RigidBodyIndex);
+					hadHit = true;
+
+					if (collector.EarlyOutOnFirstHit)
+						return true;
+				}
+			}
+
 			return hadHit;
 		}
 	}

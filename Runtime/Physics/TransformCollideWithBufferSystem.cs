@@ -5,6 +5,8 @@ using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Physics;
+using Unity.Physics.Extensions;
+using Unity.Physics.Systems;
 using Unity.Transforms;
 using UnityEngine;
 
@@ -30,6 +32,9 @@ namespace StormiumTeam.GameBase
 			[ReadOnly]
 			public ComponentDataFromEntity<PhysicsMass>     PhysicMasses;
 
+			[ReadOnly]
+			public PhysicsWorld PhysicsWorld; //< only used to get rigidbody index
+
 			public void Execute(int index)
 			{
 				var entity       = Entities[index];
@@ -49,6 +54,7 @@ namespace StormiumTeam.GameBase
 					}
 
 					cw.Collider  = Colliders[cw.Target].ColliderPtr;
+					cw.RigidBodyIndex = PhysicsWorld.GetRigidBodyIndex(cw.Target);
 					cw.WorldFromMotion = worldFromEntity;
 				}
 			}
@@ -67,6 +73,8 @@ namespace StormiumTeam.GameBase
 		{
 			noInterest.Complete();
 
+			var physicsWorld = World.GetExistingManager<BuildPhysicsWorld>().PhysicsWorld;
+
 			var job = new ProcessJob
 			{
 				Entities = m_Group.ToEntityArray(Allocator.TempJob, out var jobHandle),
@@ -75,7 +83,9 @@ namespace StormiumTeam.GameBase
 				Colliders             = GetComponentDataFromEntity<PhysicsCollider>(),
 				Translations          = GetComponentDataFromEntity<Translation>(),
 				Rotations             = GetComponentDataFromEntity<Rotation>(),
-				PhysicMasses          = GetComponentDataFromEntity<PhysicsMass>()
+				PhysicMasses          = GetComponentDataFromEntity<PhysicsMass>(),
+				
+				PhysicsWorld = physicsWorld
 			};
 
 			job.Schedule(m_Group.CalculateLength(), 8, jobHandle)
