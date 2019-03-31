@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -9,13 +10,13 @@ namespace StormiumTeam.GameBase
 	public abstract class ActionBaseSystem<TSpawnRequest> : GameBaseSystem
 		where TSpawnRequest : struct
 	{
-		protected List<TSpawnRequest> SpawnRequests;
+		protected NativeList<TSpawnRequest> SpawnRequests;
 		
 		protected override void OnCreateManager()
 		{
 			base.OnCreateManager();
 			
-			SpawnRequests = new List<TSpawnRequest>();
+			SpawnRequests = new NativeList<TSpawnRequest>(8, Allocator.Persistent);
 		}
 
 		protected abstract void OnActionUpdate();

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using package.stormiumteam.networking;
 using package.stormiumteam.networking.runtime.highlevel;
@@ -5,13 +6,18 @@ using package.stormiumteam.networking.runtime.lowlevel;
 using StormiumShared.Core;
 using StormiumShared.Core.Networking;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
+using Unity.Jobs;
 
 namespace StormiumTeam.GameBase
 {
 	[InstanceSystem]
 	public abstract class GameBaseSystem : BaseComponentSystem
-	{		
+	{
+		private JobHandle m_Dependency;
+		private bool m_SystemGroupCanHaveDependency;
+		
 		public GameManager       GameMgr        { get; private set; }
 		public GameServerManager ServerMgr      { get; private set; }
 		public EntityModelManager        EntityModelMgr { get; private set; }
@@ -70,6 +76,50 @@ namespace StormiumTeam.GameBase
 			}
 
 			return default;
+		}
+
+		public bool SystemGroup_CanHaveDependency()
+		{
+			return m_SystemGroupCanHaveDependency;
+		}
+		
+		public void SystemGroup_CanHaveDependency(bool set)
+		{
+			m_SystemGroupCanHaveDependency = set;
+		}
+
+		public unsafe bool HasDependency()
+		{
+			if (!m_SystemGroupCanHaveDependency)
+				return false;
+			
+			var jobGroup = *(IntPtr*) UnsafeUtility.AddressOf(ref m_Dependency);
+			return jobGroup != IntPtr.Zero;
+		}
+		
+		public JobHandle GetDependency()
+		{
+			if (!m_SystemGroupCanHaveDependency)
+				throw new Exception("The parent system group can't have any dependencies.");
+				
+			return m_Dependency;
+		}
+
+		public void SetDependency(JobHandle v)
+		{
+			if (!m_SystemGroupCanHaveDependency)
+				throw new Exception("The parent system group can't have any dependencies.");
+			
+			m_Dependency = v;
+		}
+
+		public void CompleteDependency()
+		{
+			if (!m_SystemGroupCanHaveDependency)
+				throw new Exception("The parent system group can't have any dependencies.");
+			
+			m_Dependency.Complete();
+			m_Dependency = default;
 		}
 	}
 

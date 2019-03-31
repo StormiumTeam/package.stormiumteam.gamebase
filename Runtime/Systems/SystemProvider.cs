@@ -15,7 +15,12 @@ namespace StormiumTeam.GameBase
     {
         void ExcludeComponentsFor(Type type, List<ComponentType> components);
     }
+
+    public class SystemProviderGroup : ComponentSystemGroup
+    {
+    }
     
+    [UpdateInGroup(typeof(SystemProviderGroup))]
     public abstract class SystemProvider : ComponentSystem, ISnapshotManageForClient, ISystemProviderExcludeComponents
     {
         private EntityModelManager m_ModelManager;

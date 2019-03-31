@@ -85,6 +85,8 @@ namespace StormiumTeam.GameBase
         {
             Debug.Log("replacing owner data...");
 
+            // the name OwnerChildren can be confusing, but let's you have a LivableDesc with a MovableDesc and ColliderDesc.
+            // if you want to get the collider from the movable, OwnerChild will be able to help with that.
             NativeArray<OwnerChild> ownerChildren = default;
 
             var hasBuffer = entityManager.HasComponent(owner, typeof(OwnerChild));
@@ -93,7 +95,6 @@ namespace StormiumTeam.GameBase
 
             foreach (var obj in AppEvent<ISyncEvent>.GetObjEvents())
             {
-                Debug.Log(obj);
                 for (var i = 0; hasBuffer && i != ownerChildren.Length; i++)
                 {
                     if (obj.ComponentType.TypeIndex == ownerChildren[i].TypeId)
@@ -119,9 +120,6 @@ namespace StormiumTeam.GameBase
     public class OwnerStateSync<T> : JobComponentSystem, OwnerState.ISyncEvent
         where T : struct, IOwnerDescription
     {
-        private ComponentDataFromEntity<OwnerState<T>> m_OwnerStates; 
-        private ComponentDataFromEntity<T> m_Descriptions; 
-        
         public ComponentType ComponentType => ComponentType.ReadWrite<T>();
         
         protected override void OnCreateManager()
@@ -136,55 +134,59 @@ namespace StormiumTeam.GameBase
 
         public void SyncOwnerToEntity(Entity origin, Entity owner)
         {
-            m_OwnerStates = GetComponentDataFromEntity<OwnerState<T>>();
+            var ownerStates = GetComponentDataFromEntity<OwnerState<T>>();
 
-            if (m_OwnerStates.Exists(owner))
+            if (ownerStates.Exists(owner))
             {
-                if (m_OwnerStates.Exists(origin))
-                    m_OwnerStates[origin] = m_OwnerStates[owner];
+                if (ownerStates.Exists(origin))
+                    ownerStates[origin] = ownerStates[owner];
                 else
-                    EntityManager.AddComponentData(origin, m_OwnerStates[owner]);
+                    EntityManager.AddComponentData(origin, ownerStates[owner]);
 
-                Debug.Log($"({GetType().FullName}) Hierarchy parent {owner} added to {origin}");
+                // Debug.Log($"({GetType().FullName}) Hierarchy parent {owner} added to {origin}");
             }
 
             // resync...
-            m_OwnerStates = GetComponentDataFromEntity<OwnerState<T>>();
-            m_Descriptions = GetComponentDataFromEntity<T>();
-            if (m_Descriptions.Exists(owner))
+            ownerStates = GetComponentDataFromEntity<OwnerState<T>>();
+            var descriptions = GetComponentDataFromEntity<T>();
+            if (descriptions.Exists(owner))
             {
-                if (m_OwnerStates.Exists(origin))
-                    m_OwnerStates[origin] = new OwnerState<T> {Target = owner};
+                if (ownerStates.Exists(origin))
+                    ownerStates[origin] = new OwnerState<T> {Target = owner};
                 else
                     EntityManager.AddComponentData(origin, new OwnerState<T> {Target = owner});
             }
 
-            Debug.Log($"({GetType().FullName}) Owner {owner} added to {origin}");
+            // Debug.Log($"({GetType().FullName}) Owner {owner} added to {origin}");
         }
 
         public void SyncOwnerToEntity(EntityCommandBuffer entityCommandBuffer, Entity origin, Entity owner)
         {
-            m_OwnerStates  = GetComponentDataFromEntity<OwnerState<T>>();
-            m_Descriptions = GetComponentDataFromEntity<T>();
+            var ownerStates  = GetComponentDataFromEntity<OwnerState<T>>();
+            var descriptions = GetComponentDataFromEntity<T>();
 
-            if (m_OwnerStates.Exists(owner))
+            if (ownerStates.Exists(owner))
             {
-                if (m_OwnerStates.Exists(origin))
-                    m_OwnerStates[origin] = m_OwnerStates[owner];
+                if (ownerStates.Exists(origin))
+                    ownerStates[origin] = ownerStates[owner];
                 else
-                    entityCommandBuffer.AddComponent(origin, m_OwnerStates[owner]);
+                    entityCommandBuffer.AddComponent(origin, ownerStates[owner]);
             }
 
-            if (!m_Descriptions.Exists(owner) || m_OwnerStates.Exists(origin))
+            if (!descriptions.Exists(owner) || ownerStates.Exists(origin))
                 return;
+
+            // resync...
+            ownerStates  = GetComponentDataFromEntity<OwnerState<T>>();
+            descriptions = GetComponentDataFromEntity<T>();
             
-            if (m_OwnerStates.Exists(owner))
-                m_OwnerStates[owner] = new OwnerState<T> {Target = owner};
+            if (ownerStates.Exists(owner))
+                ownerStates[owner] = new OwnerState<T> {Target = owner};
             else
                 entityCommandBuffer.AddComponent(origin, new OwnerState<T> {Target = owner});
         }
     }
-
+    
     public struct OwnerState<TOwnerDescription> : IStateData, IComponentData, ISerializableAsPayload
         where TOwnerDescription : struct, IOwnerDescription
     {
@@ -213,7 +215,7 @@ namespace StormiumTeam.GameBase
         
         public bool Is<T>(T t)
         {
-            return TypeId == ComponentType.ReadWrite<T>().TypeIndex;
+            return TypeId == ComponentType.ReadOnly<T>().TypeIndex;
         }
 
         public bool Is(ComponentType componentType)
@@ -230,7 +232,7 @@ namespace StormiumTeam.GameBase
         public static OwnerChild Create<T>(Entity entity)
             where T : IOwnerDescription
         {
-            return new OwnerChild(entity, ComponentType.ReadWrite<T>());
+            return new OwnerChild(entity, ComponentType.ReadOnly<T>());
         }
     }
 }
