@@ -19,9 +19,21 @@ namespace StormiumTeam.GameBase
     public class SystemProviderGroup : ComponentSystemGroup
     {
     }
+
+    public abstract class SystemProvider : SystemProvider<SystemProvider.NoData>
+    {
+        public struct NoData
+        {}
+
+        public override void SpawnLocalEntityWithArguments(NoData data)
+        {
+            throw new InvalidOperationException();
+        }
+    }
     
     [UpdateInGroup(typeof(SystemProviderGroup))]
-    public abstract class SystemProvider : ComponentSystem, ISnapshotManageForClient, ISystemProviderExcludeComponents
+    public abstract class SystemProvider<TCreateData> : ComponentSystem, ISnapshotManageForClient, ISystemProviderExcludeComponents
+    where TCreateData : struct
     {
         private EntityModelManager m_ModelManager;
         private GameManager m_GameManager;
@@ -39,13 +51,33 @@ namespace StormiumTeam.GameBase
 
         public ComponentType[] ComponentsToExcludeFromStreamers { get; private set; }
 
+        protected NativeList<TCreateData> CreateEntityDelayed;
+
         protected override void OnCreateManager()
         {
+            CreateEntityDelayed = new NativeList<TCreateData>(32, Allocator.Persistent);
+            
             GetManager();
         }
 
         protected override void OnUpdate()
         {
+            FlushDelayedEntities();
+        }
+
+        public NativeList<TCreateData> GetEntityDelayedList()
+        {
+            return CreateEntityDelayed;
+        }
+
+        public void FlushDelayedEntities()
+        {
+            for (var i = 0; i != CreateEntityDelayed.Length; i++)
+            {
+                SpawnLocalEntityWithArguments(CreateEntityDelayed[i]);
+            }
+            
+            CreateEntityDelayed.Clear();
         }
 
         public EntityModelManager GetManager()
@@ -145,6 +177,8 @@ namespace StormiumTeam.GameBase
         public virtual void DeserializeCollection(ref DataBufferReader data, SnapshotSender sender, SnapshotRuntime snapshotRuntime)
         {}
 
+        public abstract void SpawnLocalEntityWithArguments(TCreateData data);
+        
         public virtual Entity SpawnLocalEntityDelayed(EntityCommandBuffer entityCommandBuffer)
         {
             throw new NotImplementedException();

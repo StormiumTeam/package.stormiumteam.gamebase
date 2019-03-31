@@ -17,6 +17,8 @@ namespace StormiumTeam.GameBase
 	{
 		private JobHandle m_Dependency;
 		private bool m_SystemGroupCanHaveDependency;
+
+		private JobInternalSystem m_JobInternalSystem;
 		
 		public GameManager       GameMgr        { get; private set; }
 		public GameServerManager ServerMgr      { get; private set; }
@@ -32,7 +34,9 @@ namespace StormiumTeam.GameBase
 		public PatternBank LocalBank => PatternSystem.GetLocalBank();
 
 		protected override void OnCreateManager()
-		{			
+		{
+			m_JobInternalSystem = World.GetOrCreateManager<JobInternalSystem>();
+			
 			GameMgr        = World.GetOrCreateManager<GameManager>();
 			ServerMgr      = World.GetOrCreateManager<GameServerManager>();	
 			EntityModelMgr = World.GetOrCreateManager<EntityModelManager>();
@@ -120,6 +124,19 @@ namespace StormiumTeam.GameBase
 			
 			m_Dependency.Complete();
 			m_Dependency = default;
+		}
+
+		public BufferFromEntity<T> GetBufferFromEntity<T>() where T : struct, IBufferElementData
+		{
+			return m_JobInternalSystem.GetBufferFromEntity<T>();
+		}
+	}
+	
+	public class JobInternalSystem : JobComponentSystem
+	{
+		protected override JobHandle OnUpdate(JobHandle inputDeps)
+		{
+			return inputDeps;
 		}
 	}
 
