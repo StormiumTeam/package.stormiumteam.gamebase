@@ -29,8 +29,6 @@ namespace StormiumTeam.GameBase
 			public ComponentDataFromEntity<Translation>     Translations;
 			[ReadOnly]
 			public ComponentDataFromEntity<Rotation>        Rotations;
-			[ReadOnly]
-			public ComponentDataFromEntity<PhysicsMass>     PhysicMasses;
 
 			[ReadOnly]
 			public PhysicsWorld PhysicsWorld; //< only used to get rigidbody index
@@ -48,10 +46,6 @@ namespace StormiumTeam.GameBase
 					var r               = Rotations[cw.Target];
 					var t               = Translations[cw.Target];
 					var worldFromEntity = new RigidTransform(r.Value, t.Value);
-					if (PhysicMasses.Exists(cw.Target))
-					{
-						worldFromEntity = math.mul(worldFromEntity, PhysicMasses[cw.Target].Transform);
-					}
 
 					cw.Collider  = Colliders[cw.Target].ColliderPtr;
 					cw.RigidBodyIndex = PhysicsWorld.GetRigidBodyIndex(cw.Target);
@@ -69,29 +63,46 @@ namespace StormiumTeam.GameBase
 			m_Group = GetComponentGroup(typeof(CollideWith));
 		}
 
-		protected override JobHandle OnUpdate(JobHandle noInterest)
+		protected override JobHandle OnUpdate(JobHandle jobHandle)
 		{
-			noInterest.Complete();
+			m_Group.AddDependency(jobHandle);
 
 			var physicsWorld = World.GetExistingManager<BuildPhysicsWorld>().PhysicsWorld;
 
 			var job = new ProcessJob
 			{
-				Entities = m_Group.ToEntityArray(Allocator.TempJob, out var jobHandle),
+				Entities = m_Group.ToEntityArray(Allocator.TempJob, out jobHandle),
 
 				CollideWithFromEntity = GetBufferFromEntity<CollideWith>(),
 				Colliders             = GetComponentDataFromEntity<PhysicsCollider>(),
 				Translations          = GetComponentDataFromEntity<Translation>(),
 				Rotations             = GetComponentDataFromEntity<Rotation>(),
-				PhysicMasses          = GetComponentDataFromEntity<PhysicsMass>(),
 				
 				PhysicsWorld = physicsWorld
 			};
 
-			job.Schedule(m_Group.CalculateLength(), 8, jobHandle)
-			   .Complete();
+			jobHandle = job.Schedule(m_Group.CalculateLength(), 8, jobHandle);
 
-			return noInterest;
+			return jobHandle;
+		}
+		
+		public JobHandle ScheduleJob(JobHandle jobHandle)
+		{
+			m_Group.AddDependency(jobHandle);
+			
+			var physicsWorld = World.GetExistingManager<BuildPhysicsWorld>().PhysicsWorld;
+			
+			return new ProcessJob
+			{
+				Entities = m_Group.ToEntityArray(Allocator.TempJob, out jobHandle),
+
+				CollideWithFromEntity = GetBufferFromEntity<CollideWith>(),
+				Colliders             = GetComponentDataFromEntity<PhysicsCollider>(),
+				Translations          = GetComponentDataFromEntity<Translation>(),
+				Rotations             = GetComponentDataFromEntity<Rotation>(),
+				
+				PhysicsWorld = physicsWorld
+			}.Schedule(m_Group.CalculateLength(), 8, jobHandle);
 		}
 	}
 }

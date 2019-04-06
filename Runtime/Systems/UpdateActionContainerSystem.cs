@@ -1,4 +1,5 @@
 ﻿using package.StormiumTeam.GameBase;
+using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 

@@ -76,7 +76,7 @@ namespace StormiumTeam.GameBase
 	}
 
 	public unsafe struct CollideWith : IBufferElementData
-	{
+	{	
 		public Entity Target;
 
 		[NativeDisableUnsafePtrRestriction]

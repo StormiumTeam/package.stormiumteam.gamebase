@@ -27,7 +27,7 @@ namespace StormiumTeam.GameBase
 
         public override void SpawnLocalEntityWithArguments(NoData data)
         {
-            throw new InvalidOperationException();
+            throw new NotImplementedException();
         }
     }
     
@@ -53,20 +53,29 @@ namespace StormiumTeam.GameBase
 
         protected NativeList<TCreateData> CreateEntityDelayed;
 
+        private bool m_CanHaveDelayedEntities;
+        
         protected override void OnCreateManager()
         {
-            CreateEntityDelayed = new NativeList<TCreateData>(32, Allocator.Persistent);
-            
+            if ((m_CanHaveDelayedEntities = typeof(TCreateData) != typeof(SystemProvider.NoData)) == true)
+            {
+                CreateEntityDelayed = new NativeList<TCreateData>(32, Allocator.Persistent);
+            }
+
             GetManager();
         }
 
         protected override void OnUpdate()
         {
-            FlushDelayedEntities();
+            if (m_CanHaveDelayedEntities) 
+                FlushDelayedEntities();
         }
 
         public NativeList<TCreateData> GetEntityDelayedList()
         {
+            if (!m_CanHaveDelayedEntities)
+                throw new NotImplementedException();
+            
             return CreateEntityDelayed;
         }
 
