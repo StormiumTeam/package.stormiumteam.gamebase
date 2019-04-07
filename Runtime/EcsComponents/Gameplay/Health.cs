@@ -40,18 +40,26 @@ namespace StormiumTeam.GameBase.Components
 	{
 	}
 
+	public enum ModifyHealthType
+	{
+		SetFixed,
+		Add,
+		SetMax,
+		SetNone
+	}
+
 	public struct ModifyHealthEvent : IComponentData
 	{
-		public readonly bool SetFixedHealth;
+		public readonly ModifyHealthType Type;
 		public readonly int  Origin;
 
 		public int Consumed;
 
 		public Entity Target;
 
-		public ModifyHealthEvent(bool setFixedHealth, int origin, Entity target)
+		public ModifyHealthEvent(ModifyHealthType type, int origin, Entity target)
 		{
-			SetFixedHealth = setFixedHealth;
+			Type = type;
 
 			Origin   = origin;
 			Consumed = origin;
@@ -207,6 +215,8 @@ namespace StormiumTeam.GameBase.Components
 					Debug.LogError("Out of bounds for livable owner " + livableOwner.Target);
 				}
 			});
+			
+			EntityManager.DestroyEntity(m_GroupEvent);
 		}
 	}
 

@@ -19,12 +19,13 @@ namespace StormiumTeam.GameBase.Components
 		[Serializable]
 		public struct CreateInstance
 		{
-			public int value, max;
+			public int    value, max;
+			public Entity owner;
 		}
 
 		public int Value;
 		public int Max;
-		
+
 		public void Write(ref DataBufferWriter data, SnapshotReceiver receiver, SnapshotRuntime runtime)
 		{
 			data.WriteDynamicIntWithMask((ulong) Value, (ulong) Max);
@@ -39,7 +40,8 @@ namespace StormiumTeam.GameBase.Components
 		}
 
 		public class Streamer : SnapshotEntityDataAutomaticStreamer<DefaultHealthData>
-		{}
+		{
+		}
 
 		[UpdateInGroup(typeof(HealthProcessGroup))]
 		public class System : HealthProcessSystem
@@ -61,12 +63,23 @@ namespace StormiumTeam.GameBase.Components
 
 						var difference = healthData.Value;
 
-						healthData.Value = math.select
-						(
-							math.clamp(healthData.Value + ev.Consumed, 0, healthData.Max),
-							math.clamp(ev.Consumed, 0, healthData.Max),
-							ev.SetFixedHealth
-						);
+						switch (ev.Type)
+						{
+							case ModifyHealthType.Add:
+								healthData.Value = math.clamp(healthData.Value + ev.Consumed, 0, healthData.Max);
+								break;
+							case ModifyHealthType.SetFixed:
+								math.clamp(ev.Consumed, 0, healthData.Max);
+								break;
+							case ModifyHealthType.SetMax:
+								healthData.Value = healthData.Max;
+								break;
+							case ModifyHealthType.SetNone:
+								healthData.Value = 0;
+								break;
+							default:
+								throw new ArgumentOutOfRangeException();
+						}
 
 						ev.Consumed -= math.abs(healthData.Value - difference);
 					}
@@ -101,16 +114,19 @@ namespace StormiumTeam.GameBase.Components
 			{
 				var local = SpawnLocal();
 				EntityManager.SetComponentData(local, new DefaultHealthData {Value = data.value, Max = data.max});
+				if (data.owner != default)
+				{
+					EntityManager.ReplaceOwnerData(local, data.owner);
+					EntityManager.AddComponentData(local, new DestroyChainReaction(data.owner));
+
+				}
+
 				return local;
 			}
 
 			public Entity SpawnLocal(int value, int max, Entity owner)
 			{
-				var e = SpawnLocalEntityWithArguments(new CreateInstance {value = value, max = max});
-				EntityManager.ReplaceOwnerData(e, owner);
-				EntityManager.AddComponentData(e, new DestroyChainReaction(owner));
-
-				return e;
+				return SpawnLocalEntityWithArguments(new CreateInstance {value = value, max = max});
 			}
 		}
 	}
