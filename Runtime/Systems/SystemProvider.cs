@@ -25,7 +25,7 @@ namespace StormiumTeam.GameBase
         public struct NoData
         {}
 
-        public override void SpawnLocalEntityWithArguments(NoData data)
+        public override Entity SpawnLocalEntityWithArguments(NoData data)
         {
             throw new NotImplementedException();
         }
@@ -108,12 +108,14 @@ namespace StormiumTeam.GameBase
                 {
                     // todo: I was lazy when making this, this should be remade as it's slow
                     var l = new Dictionary<ComponentType, byte> {[ComponentType.ReadWrite<ModelIdent>()] = 0};
-
+                    
+                    // Remove duplicates and add ModelIdent component
                     if (m_EntityComponents != null)
                         foreach (var c in m_EntityComponents)
                             l[c] = 0;
-                    // Remove duplicates and add ModelIdent component
                     m_EntityComponents = l.Keys.ToArray();
+                    l.Clear();
+                    
                     if (m_ExcludedComponents != null)
                         foreach (var c in m_ExcludedComponents)
                             l[c] = 0;
@@ -127,7 +129,7 @@ namespace StormiumTeam.GameBase
                     ComponentsToExcludeFromStreamers = l.Keys.ToArray();
                     m_BlockedComponents              = new BlockComponentSerialization[ComponentsToExcludeFromStreamers.Length];
 
-                    for (var i = 0; i != m_BlockedComponents.Length; i++)
+                    for (var i = 0; i != ComponentsToExcludeFromStreamers.Length; i++)
                     {
                         m_BlockedComponents[i] = new BlockComponentSerialization {TypeIdx = ComponentsToExcludeFromStreamers[i].TypeIndex};
                     }
@@ -153,8 +155,15 @@ namespace StormiumTeam.GameBase
             return m_ModelIdent;
         }
 
-        protected abstract Entity SpawnEntity(Entity origin, SnapshotRuntime snapshotRuntime);
-        protected abstract void DestroyEntity(Entity worldEntity);
+        protected virtual Entity SpawnEntity(Entity origin, SnapshotRuntime snapshotRuntime)
+        {
+            return EntityManager.CreateEntity(EntityArchetype);
+        }
+
+        protected virtual void DestroyEntity(Entity worldEntity)
+        {
+            EntityManager.DestroyEntity(worldEntity);
+        }
 
         public Entity ProviderSpawnEntity(Entity origin, SnapshotRuntime snapshotRuntime)
         {
@@ -174,10 +183,10 @@ namespace StormiumTeam.GameBase
             DestroyEntity(worldEntity);
         }
         
-        public virtual void GetComponents(out ComponentType[] entityComponents, out ComponentType[] excludedComponents)
+        public virtual void GetComponents(out ComponentType[] entityComponents, out ComponentType[] excludedStreamerComponents)
         {
             entityComponents = null;
-            excludedComponents = null;
+            excludedStreamerComponents = null;
         }
         
         public virtual void SerializeCollection(ref DataBufferWriter data, SnapshotReceiver receiver, SnapshotRuntime snapshotRuntime)
@@ -186,7 +195,7 @@ namespace StormiumTeam.GameBase
         public virtual void DeserializeCollection(ref DataBufferReader data, SnapshotSender sender, SnapshotRuntime snapshotRuntime)
         {}
 
-        public abstract void SpawnLocalEntityWithArguments(TCreateData data);
+        public abstract Entity SpawnLocalEntityWithArguments(TCreateData data);
         
         public virtual Entity SpawnLocalEntityDelayed(EntityCommandBuffer entityCommandBuffer)
         {

@@ -82,6 +82,7 @@ namespace StormiumTeam.GameBase.Components
 		[BurstCompile]
 		private struct ClearLivableHealthData : IJobProcessComponentData<HealthConcreteValue, OwnerState<LivableDescription>>
 		{
+			[NativeDisableParallelForRestriction]
 			public ComponentDataFromEntity<LivableHealth> LivableHealthFromEntity;
 
 			public void Execute([ReadOnly] ref HealthConcreteValue concrete, [ReadOnly] ref OwnerState<LivableDescription> livableOwner)
@@ -96,6 +97,7 @@ namespace StormiumTeam.GameBase.Components
 			[NativeDisableParallelForRestriction] // the order of execution don't matter
 			public NativeList<ModifyHealthEvent> ModifyEventList;
 
+			[ReadOnly]
 			public ArchetypeChunkComponentType<ModifyHealthEvent> ModifyHealthEventType;
 
 			public void Execute(ArchetypeChunk chunk, int chunkIndex, int firstEntityIndex)
@@ -113,6 +115,7 @@ namespace StormiumTeam.GameBase.Components
 		[BurstCompile]
 		private struct AssignLivableHealthData : IJobProcessComponentData<HealthConcreteValue, OwnerState<LivableDescription>>
 		{
+			[NativeDisableParallelForRestriction]
 			public ComponentDataFromEntity<LivableHealth> LivableHealthFromEntity;
 
 			public void Execute([ReadOnly] ref HealthConcreteValue concrete, [ReadOnly] ref OwnerState<LivableDescription> livableOwner)
@@ -165,6 +168,9 @@ namespace StormiumTeam.GameBase.Components
 			{
 				HealthContainerType = GetArchetypeChunkBufferType<HealthContainer>()
 			}.Schedule(m_GroupLivableBuffer, job);
+			
+			//job.Complete();
+			
 			job = new ClearLivableHealthData
 			{
 				LivableHealthFromEntity = GetComponentDataFromEntity<LivableHealth>()
