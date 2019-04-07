@@ -198,7 +198,7 @@ namespace StormiumTeam.GameBase.Components
 			Entities.WithAll<HealthDescription>().ForEach((Entity e, ref OwnerState<LivableDescription> livableOwner) =>
 			{
 				var buffer = s_LastInstance.EntityManager.GetBuffer<HealthContainer>(livableOwner.Target);
-				if (buffer.Capacity > buffer.Length + 1)
+				if (buffer.Capacity > buffer.Length)
 				{
 					buffer.Add(new HealthContainer(e));
 				}

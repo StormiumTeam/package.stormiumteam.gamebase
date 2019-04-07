@@ -142,8 +142,8 @@ namespace StormiumTeam.GameBase
                         patternName + ".Model", ComponentsToExcludeFromStreamers, ProviderSpawnEntity, ProviderDestroyEntity, SerializeCollection, DeserializeCollection
                     );
 
-                    m_SnapshotPattern = World.GetExistingManager<NetPatternSystem>().GetLocalBank().Register(new PatternIdent(patternName + ".Snapshot"));
-                    World.GetExistingManager<AppEventSystem>().SubscribeToAll(this);
+                    m_SnapshotPattern = World.GetOrCreateManager<NetPatternSystem>().GetLocalBank().Register(new PatternIdent(patternName + ".Snapshot"));
+                    World.GetOrCreateManager<AppEventSystem>().SubscribeToAll(this);
                 }
             }
 

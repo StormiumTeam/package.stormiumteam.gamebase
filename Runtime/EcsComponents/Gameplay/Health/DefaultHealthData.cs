@@ -3,6 +3,7 @@ using package.stormiumteam.networking;
 using package.stormiumteam.networking.runtime.lowlevel;
 using package.stormiumteam.shared;
 using StormiumShared.Core.Networking;
+using StormiumTeam.GameBase.Data;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -101,6 +102,15 @@ namespace StormiumTeam.GameBase.Components
 				var local = SpawnLocal();
 				EntityManager.SetComponentData(local, new DefaultHealthData {Value = data.value, Max = data.max});
 				return local;
+			}
+
+			public Entity SpawnLocal(int value, int max, Entity owner)
+			{
+				var e = SpawnLocalEntityWithArguments(new CreateInstance {value = value, max = max});
+				EntityManager.ReplaceOwnerData(e, owner);
+				EntityManager.AddComponentData(e, new DestroyChainReaction(owner));
+
+				return e;
 			}
 		}
 	}
