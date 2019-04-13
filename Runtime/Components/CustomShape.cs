@@ -40,5 +40,10 @@ namespace StormiumTeam.GameBase
 			gameObject.layer = GameBaseConstants.NoCollision;
 			m_IsEnabled = false;
 		}
+
+		public void OnDestroy()
+		{
+			World.Active.GetExistingManager<AppEventSystem>().UnsubcribeFromAll(this);
+		}
 	}
 }

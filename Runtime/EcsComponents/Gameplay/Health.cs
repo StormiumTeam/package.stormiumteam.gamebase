@@ -220,7 +220,6 @@ namespace StormiumTeam.GameBase.Components
 		}
 	}
 
-	[DisableAutoCreation]
 	public abstract class HealthProcessSystem : ComponentSystem
 	{
 		protected override void OnUpdate()

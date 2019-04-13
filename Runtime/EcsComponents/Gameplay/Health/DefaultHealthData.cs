@@ -10,6 +10,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
+using UnityEngine;
 using NotImplementedException = System.NotImplementedException;
 
 namespace StormiumTeam.GameBase.Components
@@ -46,9 +47,10 @@ namespace StormiumTeam.GameBase.Components
 		[UpdateInGroup(typeof(HealthProcessGroup))]
 		public class System : HealthProcessSystem
 		{
-			[BurstCompile]
+			//[BurstCompile]
 			private unsafe struct Job : IJobProcessComponentData<DefaultHealthData, HealthConcreteValue, OwnerState<LivableDescription>>
 			{
+				[NativeDisableParallelForRestriction]
 				public NativeList<ModifyHealthEvent> ModifyHealthEventList;
 
 				public void Execute(ref            DefaultHealthData              healthData,
@@ -59,7 +61,7 @@ namespace StormiumTeam.GameBase.Components
 					{
 						ref var ev = ref UnsafeUtilityEx.ArrayElementAsRef<ModifyHealthEvent>(ModifyHealthEventList.GetUnsafePtr(), i);
 						if (ev.Target != livableOwner.Target)
-							return;
+							continue;
 
 						var difference = healthData.Value;
 
@@ -84,8 +86,8 @@ namespace StormiumTeam.GameBase.Components
 						ev.Consumed -= math.abs(healthData.Value - difference);
 					}
 
-					// fast copy/paste
-					concrete = *(HealthConcreteValue*) UnsafeUtility.AddressOf(ref healthData);
+					concrete.Value = healthData.Value;
+					concrete.Max = healthData.Max;
 				}
 			}
 
@@ -105,7 +107,8 @@ namespace StormiumTeam.GameBase.Components
 				entityComponents = new[]
 				{
 					ComponentType.ReadWrite<HealthDescription>(),
-					ComponentType.ReadWrite<DefaultHealthData>()
+					ComponentType.ReadWrite<DefaultHealthData>(),
+					ComponentType.ReadWrite<HealthConcreteValue>()
 				};
 				excludedStreamerComponents = null;
 			}
@@ -125,8 +128,8 @@ namespace StormiumTeam.GameBase.Components
 			}
 
 			public Entity SpawnLocal(int value, int max, Entity owner)
-			{
-				return SpawnLocalEntityWithArguments(new CreateInstance {value = value, max = max});
+			{ 
+				return SpawnLocalEntityWithArguments(new CreateInstance {value = value, max = max, owner = owner});
 			}
 		}
 	}

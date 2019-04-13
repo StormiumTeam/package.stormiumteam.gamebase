@@ -116,6 +116,8 @@ namespace StormiumTeam.GameBase
                     m_EntityComponents = l.Keys.ToArray();
                     l.Clear();
                     
+                    l = new Dictionary<ComponentType, byte> {[ComponentType.ReadWrite<ModelIdent>()] = 0};
+                    
                     if (m_ExcludedComponents != null)
                         foreach (var c in m_ExcludedComponents)
                             l[c] = 0;
