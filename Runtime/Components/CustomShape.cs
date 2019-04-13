@@ -14,8 +14,8 @@ namespace StormiumTeam.GameBase
 		
 		private void Awake()
 		{
-			EntityManager = World.Active.GetExistingManager<EntityManager>();
-			World.Active.GetExistingManager<AppEventSystem>().SubscribeToAll(this);
+			EntityManager = World.Active.EntityManager;
+			World.Active.GetExistingSystem<AppEventSystem>().SubscribeToAll(this);
 		}
 		
 		public void OnEnable()
@@ -43,7 +43,7 @@ namespace StormiumTeam.GameBase
 
 		public void OnDestroy()
 		{
-			World.Active.GetExistingManager<AppEventSystem>().UnsubcribeFromAll(this);
+			World.Active.GetExistingSystem<AppEventSystem>().UnsubcribeFromAll(this);
 		}
 	}
 }

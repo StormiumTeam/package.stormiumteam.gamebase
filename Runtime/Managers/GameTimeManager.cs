@@ -12,7 +12,7 @@ namespace StormiumTeam.GameBase
     {
         [BurstCompile]
         [RequireComponentTag(typeof(EntityAuthority))]
-        private struct JobUpdateGameTime : IJobProcessComponentData<GameTimeComponent>
+        private struct JobUpdateGameTime : IJobForEach<GameTimeComponent>
         {
             public int ActualTick;
             public int ActualFrame;
@@ -33,7 +33,7 @@ namespace StormiumTeam.GameBase
         }
         
         [BurstCompile]
-        private struct JobUpdateSingleton : IJobProcessComponentData<SingletonGameTime>
+        private struct JobUpdateSingleton : IJobForEach<SingletonGameTime>
         {
             public int ActualTick;
             public int ActualFrame;
@@ -53,7 +53,7 @@ namespace StormiumTeam.GameBase
             }
         }
 
-        protected override void OnCreateManager()
+        protected override void OnCreate()
         {
             EntityManager.CreateEntity(typeof(SingletonGameTime));
         }

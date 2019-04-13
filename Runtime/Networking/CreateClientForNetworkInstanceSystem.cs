@@ -12,23 +12,23 @@ namespace StormiumTeam.GameBase.Networking
     public class CreateClientForNetworkInstanceSystem : NetworkComponentSystem
     {
         private EntityArchetype m_ClientArchetype;
-        private ComponentGroup  m_Group, m_DestroyClientGroup;
+        private EntityQuery  m_Group, m_DestroyClientGroup;
         private ModelIdent m_GamePlayerModel;
 
-        protected override void OnCreateManager()
+        protected override void OnCreate()
         {
             m_ClientArchetype    = EntityManager.CreateArchetype(typeof(ClientTag), typeof(NetworkClient), typeof(ClientToNetworkInstance));
-            m_Group              = GetComponentGroup(typeof(NetworkInstanceData), ComponentType.Exclude<NetworkInstanceToClient>());
-            m_DestroyClientGroup = GetComponentGroup(typeof(ClientTag), typeof(ClientToNetworkInstance));
+            m_Group              = GetEntityQuery(typeof(NetworkInstanceData), ComponentType.Exclude<NetworkInstanceToClient>());
+            m_DestroyClientGroup = GetEntityQuery(typeof(ClientTag), typeof(ClientToNetworkInstance));
 
-            m_GamePlayerModel = World.GetOrCreateManager<GamePlayerProvider>().GetModelIdent();
+            m_GamePlayerModel = World.GetOrCreateSystem<GamePlayerProvider>().GetModelIdent();
         }
 
         public override void OnNetworkInstanceAdded(int instanceId, Entity instanceEntity)
         {
             base.OnNetworkInstanceAdded(instanceId, instanceEntity);
 
-            var gameMgr     = World.GetExistingManager<GameManager>();
+            var gameMgr     = World.GetExistingSystem<GameManager>();
             var localClient = gameMgr.Client;
 
             var instanceData = EntityManager.GetComponentData<NetworkInstanceData>(instanceEntity);
@@ -66,19 +66,19 @@ namespace StormiumTeam.GameBase.Networking
 
         protected override void OnUpdate()
         {          
-            var gameMgr     = World.GetExistingManager<GameManager>();
+            var gameMgr     = World.GetExistingSystem<GameManager>();
             var localClient = gameMgr.Client;
             
-            ForEach((Entity clientEntity, ref ClientToNetworkInstance clientToNetworkInstance) =>
+            Entities.With(m_DestroyClientGroup).ForEach((Entity clientEntity, ref ClientToNetworkInstance clientToNetworkInstance) =>
             {
                 if (EntityManager.Exists(clientToNetworkInstance.Target) || clientEntity == localClient)
                     return;
 
                 Debug.Log("Destroyed client.");
                 PostUpdateCommands.DestroyEntity(clientEntity);
-            }, m_DestroyClientGroup);
+            });
             
-            ForEach((Entity entity, ref GamePlayerToNetworkClient gamePlayerToNetworkClient) =>
+            Entities.ForEach((Entity entity, ref GamePlayerToNetworkClient gamePlayerToNetworkClient) =>
             {
                 if (!EntityManager.Exists(gamePlayerToNetworkClient.Target))
                     PostUpdateCommands.DestroyEntity(entity);

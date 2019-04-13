@@ -12,9 +12,9 @@ namespace StormiumTeam.GameBase
 	{
 		protected NativeList<TSpawnRequest> SpawnRequests;
 		
-		protected override void OnCreateManager()
+		protected override void OnCreate()
 		{
-			base.OnCreateManager();
+			base.OnCreate();
 			
 			SpawnRequests = new NativeList<TSpawnRequest>(8, Allocator.Persistent);
 		}

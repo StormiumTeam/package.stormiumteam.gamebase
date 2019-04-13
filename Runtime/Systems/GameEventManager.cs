@@ -17,7 +17,7 @@ namespace StormiumTeam.GameBase
 	{
 		protected override void OnUpdate()
 		{
-			ForEach((Entity entity, ref GameEvent gameEvent) =>
+			Entities.ForEach((Entity entity, ref GameEvent gameEvent) =>
 			{
 				if (EntityManager.HasComponent<ModelIdent>(entity))
 				{

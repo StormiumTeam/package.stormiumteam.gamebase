@@ -39,11 +39,11 @@ namespace StormiumTeam.GameBase
 
 	public class SolidShapeUpdateSystem : GameBaseSystem, IOnQueryEnableCollisionFor
 	{
-		protected override void OnCreateManager()
+		protected override void OnCreate()
 		{
-			base.OnCreateManager();
+			base.OnCreate();
 			
-			World.GetExistingManager<AppEventSystem>().SubscribeToAll(this);
+			World.GetExistingSystem<AppEventSystem>().SubscribeToAll(this);
 		}
 
 		protected override void OnUpdate()
@@ -57,7 +57,7 @@ namespace StormiumTeam.GameBase
 
 		public void EnableCollision()
 		{
-			ForEach((SolidShape solidShape) =>
+			Entities.ForEach((SolidShape solidShape) =>
 			{
 				solidShape.Enable();
 			});

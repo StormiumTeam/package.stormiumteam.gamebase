@@ -38,7 +38,7 @@ namespace StormiumTeam.GameBase
 		private List<IOnQueryEnableCollisionFor> m_ReenableCollisions;
 		private int m_RequestLength;
 
-		protected override void OnCreateManager()
+		protected override void OnCreate()
 		{
 			m_ReenableCollisions = new List<IOnQueryEnableCollisionFor>();
 		}

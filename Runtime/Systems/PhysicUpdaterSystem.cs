@@ -39,7 +39,7 @@ namespace package.StormiumTeam.GameBase
     public class PhysicUpdaterSystem : ComponentSystem
     {
         private float m_Timer;
-        [Inject] private AppEventSystem m_AppEventSystem;
+        private AppEventSystem m_AppEventSystem;
         
         public int LastIterationCount;
         public float LastFixedTimeStep;
@@ -49,8 +49,10 @@ namespace package.StormiumTeam.GameBase
 
         public PhysicUpdateMode UpdateMode;
 
-        protected override void OnCreateManager()
+        protected override void OnCreate()
         {
+            m_AppEventSystem = World.GetOrCreateSystem<AppEventSystem>();
+            
             UpdateMode = PhysicUpdateMode.FrameCustom;
         }
 

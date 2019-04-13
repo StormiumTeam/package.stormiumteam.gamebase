@@ -28,7 +28,7 @@ namespace StormiumTeam.GameBase.Components
 
 		public bool TargetValid()
 		{
-			return World.Active.GetExistingManager<EntityManager>().Exists(Target);
+			return World.Active.EntityManager.Exists(Target);
 		}
 	}
 
@@ -88,7 +88,7 @@ namespace StormiumTeam.GameBase.Components
 		}
 
 		[BurstCompile]
-		private struct ClearLivableHealthData : IJobProcessComponentData<HealthConcreteValue, OwnerState<LivableDescription>>
+		private struct ClearLivableHealthData : IJobForEach<HealthConcreteValue, OwnerState<LivableDescription>>
 		{
 			[NativeDisableParallelForRestriction]
 			public ComponentDataFromEntity<LivableHealth> LivableHealthFromEntity;
@@ -121,7 +121,7 @@ namespace StormiumTeam.GameBase.Components
 		}
 
 		[BurstCompile]
-		private struct AssignLivableHealthData : IJobProcessComponentData<HealthConcreteValue, OwnerState<LivableDescription>>
+		private struct AssignLivableHealthData : IJobForEach<HealthConcreteValue, OwnerState<LivableDescription>>
 		{
 			[NativeDisableParallelForRestriction]
 			public ComponentDataFromEntity<LivableHealth> LivableHealthFromEntity;
@@ -142,22 +142,22 @@ namespace StormiumTeam.GameBase.Components
 		}
 
 		private NativeList<ModifyHealthEvent> m_ModifyEventList;
-		private ComponentGroup                m_GroupEvent;
-		private ComponentGroup                m_GroupLivableBuffer;
+		private EntityQuery                m_GroupEvent;
+		private EntityQuery                m_GroupLivableBuffer;
 
-		protected override void OnCreateManager()
+		protected override void OnCreate()
 		{
-			base.OnCreateManager();
+			base.OnCreate();
 
 			m_ModifyEventList = new NativeList<ModifyHealthEvent>(64, Allocator.Persistent);
-			m_GroupEvent = GetComponentGroup(new EntityArchetypeQuery
+			m_GroupEvent = GetEntityQuery(new EntityQueryDesc
 			{
 				All = new[]
 				{
 					ComponentType.ReadOnly<ModifyHealthEvent>(),
 				}
 			});
-			m_GroupLivableBuffer = GetComponentGroup(typeof(HealthContainer));
+			m_GroupLivableBuffer = GetEntityQuery(typeof(HealthContainer));
 		}
 
 		private static HealthProcessGroup s_LastInstance;

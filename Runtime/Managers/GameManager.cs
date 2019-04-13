@@ -30,7 +30,7 @@ namespace StormiumTeam.GameBase
         public  GameServerManager ServerManager => m_ServerManager;
         private GameServerManager m_ServerManager;
 
-        protected override void OnCreateManager()
+        protected override void OnCreate()
         {
             m_Client = EntityManager.CreateEntity
             (
@@ -38,8 +38,8 @@ namespace StormiumTeam.GameBase
                 typeof(NetworkLocalTag)
             );
 
-            m_EntityModelManager = World.GetExistingManager<EntityModelManager>();
-            m_ServerManager      = World.GetExistingManager<GameServerManager>();
+            m_EntityModelManager = World.GetExistingSystem<EntityModelManager>();
+            m_ServerManager      = World.GetExistingSystem<GameServerManager>();
         }
 
         private Entity client;
@@ -51,7 +51,7 @@ namespace StormiumTeam.GameBase
                 if (client != default)
                     EntityManager.DestroyEntity(client);
                 
-                var model = World.GetExistingManager<GamePlayerProvider>().GetModelIdent();
+                var model = World.GetExistingSystem<GamePlayerProvider>().GetModelIdent();
                 client = EntityManager.CreateEntity(typeof(ClientTag), typeof(NetworkClient));
                 
                 EntityManager.AddComponent(client, typeof(NetworkClientToGamePlayer));
@@ -112,9 +112,9 @@ namespace StormiumTeam.GameBase
         /// </summary>
         public int HostId;
 
-        protected override void OnCreateManager()
+        protected override void OnCreate()
         {
-            m_NetworkManager = World.GetExistingManager<NetworkManager>();
+            m_NetworkManager = World.GetExistingSystem<NetworkManager>();
         }
 
         protected override void OnUpdate()

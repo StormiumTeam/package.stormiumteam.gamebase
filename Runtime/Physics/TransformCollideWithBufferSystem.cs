@@ -54,20 +54,20 @@ namespace StormiumTeam.GameBase
 			}
 		}
 
-		private ComponentGroup m_Group;
+		private EntityQuery m_Group;
 
-		protected override void OnCreateManager()
+		protected override void OnCreate()
 		{
-			base.OnCreateManager();
+			base.OnCreate();
 
-			m_Group = GetComponentGroup(typeof(CollideWith));
+			m_Group = GetEntityQuery(typeof(CollideWith));
 		}
 
 		protected override JobHandle OnUpdate(JobHandle jobHandle)
 		{
 			m_Group.AddDependency(jobHandle);
 
-			var physicsWorld = World.GetExistingManager<BuildPhysicsWorld>().PhysicsWorld;
+			var physicsWorld = World.GetExistingSystem<BuildPhysicsWorld>().PhysicsWorld;
 
 			var job = new ProcessJob
 			{
@@ -90,7 +90,7 @@ namespace StormiumTeam.GameBase
 		{
 			m_Group.AddDependency(jobHandle);
 			
-			var physicsWorld = World.GetExistingManager<BuildPhysicsWorld>().PhysicsWorld;
+			var physicsWorld = World.GetExistingSystem<BuildPhysicsWorld>().PhysicsWorld;
 			
 			return new ProcessJob
 			{

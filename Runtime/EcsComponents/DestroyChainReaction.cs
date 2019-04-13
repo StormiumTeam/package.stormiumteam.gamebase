@@ -18,7 +18,7 @@ namespace StormiumTeam.GameBase.Data
 	{
 		protected override void OnUpdate()
 		{
-			ForEach((Entity entity, ref DestroyChainReaction destroyChainReaction) =>
+			Entities.ForEach((Entity entity, ref DestroyChainReaction destroyChainReaction) =>
 			{
 				if (!EntityManager.Exists(destroyChainReaction.Target))
 					PostUpdateCommands.DestroyEntity(entity);

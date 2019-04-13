@@ -33,31 +33,31 @@ namespace StormiumTeam.GameBase
 
 		public PatternBank LocalBank => PatternSystem.GetLocalBank();
 
-		protected override void OnCreateManager()
+		protected override void OnCreate()
 		{
-			m_JobInternalSystem = World.GetOrCreateManager<JobInternalSystem>();
+			m_JobInternalSystem = World.GetOrCreateSystem<JobInternalSystem>();
 			
-			GameMgr        = World.GetOrCreateManager<GameManager>();
-			ServerMgr      = World.GetOrCreateManager<GameServerManager>();	
-			EntityModelMgr = World.GetOrCreateManager<EntityModelManager>();
-			TimeMgr        = World.GetOrCreateManager<GameTimeManager>();
-			PatternSystem  = World.GetOrCreateManager<NetPatternSystem>();
-			EventManager = World.GetOrCreateManager<GameEventManager>();
-			PhysicQueryManager = World.GetExistingManager<PhysicQueryManager>();
+			GameMgr        = World.GetOrCreateSystem<GameManager>();
+			ServerMgr      = World.GetOrCreateSystem<GameServerManager>();	
+			EntityModelMgr = World.GetOrCreateSystem<EntityModelManager>();
+			TimeMgr        = World.GetOrCreateSystem<GameTimeManager>();
+			PatternSystem  = World.GetOrCreateSystem<NetPatternSystem>();
+			EventManager = World.GetOrCreateSystem<GameEventManager>();
+			PhysicQueryManager = World.GetExistingSystem<PhysicQueryManager>();
 
-			m_PlayerGroup = GetComponentGroup
+			m_PlayerGroup = GetEntityQuery
 			(
 				typeof(GamePlayer)
 			);
 
-			m_GameTimeSingletonGroup = GetComponentGroup
+			m_GameTimeSingletonGroup = GetEntityQuery
 			(
 				typeof(SingletonGameTime)
 			);
 		}
 
-		private ComponentGroup m_GameTimeSingletonGroup;
-		private ComponentGroup m_PlayerGroup;
+		private EntityQuery m_GameTimeSingletonGroup;
+		private EntityQuery m_PlayerGroup;
 
 		public Entity GetFirstSelfGamePlayer()
 		{
@@ -146,13 +146,13 @@ namespace StormiumTeam.GameBase
 		protected delegate void OnReceiveMessage(NetworkInstanceData networkInstance, Entity client, DataBufferReader data);
 		
 		private Dictionary<int, OnReceiveMessage> m_ActionForPattern;
-		private ComponentGroup m_NetworkGroup;
+		private EntityQuery m_NetworkGroup;
 
-		protected override void OnCreateManager()
+		protected override void OnCreate()
 		{
-			base.OnCreateManager();
+			base.OnCreate();
 			m_ActionForPattern = new Dictionary<int, OnReceiveMessage>();
-			m_NetworkGroup = GetComponentGroup
+			m_NetworkGroup = GetEntityQuery
 			(
 				typeof(NetworkInstanceData),
 				typeof(NetworkInstanceToClient)
@@ -161,8 +161,8 @@ namespace StormiumTeam.GameBase
 
 		protected override void OnUpdate()
 		{
-			var networkMgr    = World.GetExistingManager<NetworkManager>();
-			var patternSystem = World.GetExistingManager<NetPatternSystem>();
+			var networkMgr    = World.GetExistingSystem<NetworkManager>();
+			var patternSystem = World.GetExistingSystem<NetPatternSystem>();
 			
 			using (var entityArray = m_NetworkGroup.ToEntityArray(Allocator.TempJob))
 			using (var dataArray = m_NetworkGroup.ToComponentDataArray<NetworkInstanceData>(Allocator.TempJob))

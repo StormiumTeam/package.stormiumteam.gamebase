@@ -25,7 +25,7 @@ namespace StormiumTeam.GameBase.Data
 	{
 		protected override void OnUpdate()
 		{
-			ForEach((Entity entity, ref CapsuleShapeData capsuleShapeData, ConvertUnityCapsule convert, CapsuleCollider original) =>
+			Entities.ForEach((Entity entity, ref CapsuleShapeData capsuleShapeData, ConvertUnityCapsule convert, CapsuleCollider original) =>
 			{
 				capsuleShapeData.height = original.height;
 				capsuleShapeData.radius = original.radius;

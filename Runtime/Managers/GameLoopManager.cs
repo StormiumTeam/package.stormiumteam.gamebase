@@ -28,8 +28,7 @@ namespace StormiumTeam.GameBase
 		internal static void Init()
 		{
 			ManagerWorld = new World("Manager World");
-			ManagerWorld.CreateManager<EntityManager>();
-
+			
 			var gameObject = new GameObject("GameLoopManager", typeof(GameLoopManager));
 			
 			DontDestroyOnLoad(gameObject);

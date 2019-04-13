@@ -23,7 +23,7 @@ namespace package.StormiumTeam.GameBase
 
         public bool TargetValid()
         {
-            return World.Active.GetExistingManager<EntityManager>().Exists(Target);
+            return World.Active.EntityManager.Exists(Target);
         }
     }
 

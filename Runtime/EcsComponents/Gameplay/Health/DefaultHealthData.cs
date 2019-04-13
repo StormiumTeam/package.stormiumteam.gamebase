@@ -48,7 +48,7 @@ namespace StormiumTeam.GameBase.Components
 		public class System : HealthProcessSystem
 		{
 			//[BurstCompile]
-			private unsafe struct Job : IJobProcessComponentData<DefaultHealthData, HealthConcreteValue, OwnerState<LivableDescription>>
+			private unsafe struct Job : IJobForEach<DefaultHealthData, HealthConcreteValue, OwnerState<LivableDescription>>
 			{
 				[NativeDisableParallelForRestriction]
 				public NativeList<ModifyHealthEvent> ModifyHealthEventList;

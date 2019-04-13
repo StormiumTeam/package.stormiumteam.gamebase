@@ -10,7 +10,7 @@ namespace StormiumTeam.GameBase
 		protected override void OnUpdate()
 		{
 			// First clear buffers...
-			ForEach((DynamicBuffer<ActionContainer> buffer) => { buffer.Clear(); });
+			Entities.ForEach((DynamicBuffer<ActionContainer> buffer) => { buffer.Clear(); });
 
 			Entities.WithAll<ActionDescription, OwnerState<LivableDescription>>().ForEach((Entity entity, ref OwnerState<LivableDescription> livable) =>
 			{

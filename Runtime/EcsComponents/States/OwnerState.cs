@@ -122,9 +122,9 @@ namespace StormiumTeam.GameBase
     {
         public ComponentType ComponentType => ComponentType.ReadWrite<T>();
         
-        protected override void OnCreateManager()
+        protected override void OnCreate()
         {
-            World.GetOrCreateManager<AppEventSystem>().SubscribeToAll(this);
+            World.GetOrCreateSystem<AppEventSystem>().SubscribeToAll(this);
         }
 
         protected override JobHandle OnUpdate(JobHandle _)

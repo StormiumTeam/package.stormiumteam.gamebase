@@ -55,7 +55,7 @@ namespace StormiumTeam.GameBase
 
         private bool m_CanHaveDelayedEntities;
         
-        protected override void OnCreateManager()
+        protected override void OnCreate()
         {
             if ((m_CanHaveDelayedEntities = typeof(TCreateData) != typeof(SystemProvider.NoData)) == true)
             {
@@ -93,8 +93,8 @@ namespace StormiumTeam.GameBase
         {
             if (m_ModelManager == null)
             {
-                m_ModelManager = World.GetExistingManager<EntityModelManager>();
-                m_GameManager  = World.GetExistingManager<GameManager>();
+                m_ModelManager = World.GetExistingSystem<EntityModelManager>();
+                m_GameManager  = World.GetExistingSystem<GameManager>();
 
                 GetComponents(out m_EntityComponents, out m_ExcludedComponents);
                 if (EntityComponents == null && ExcludedComponents == null)
@@ -144,8 +144,8 @@ namespace StormiumTeam.GameBase
                         patternName + ".Model", ComponentsToExcludeFromStreamers, ProviderSpawnEntity, ProviderDestroyEntity, SerializeCollection, DeserializeCollection
                     );
 
-                    m_SnapshotPattern = World.GetOrCreateManager<NetPatternSystem>().GetLocalBank().Register(new PatternIdent(patternName + ".Snapshot"));
-                    World.GetOrCreateManager<AppEventSystem>().SubscribeToAll(this);
+                    m_SnapshotPattern = World.GetOrCreateSystem<NetPatternSystem>().GetLocalBank().Register(new PatternIdent(patternName + ".Snapshot"));
+                    World.GetOrCreateSystem<AppEventSystem>().SubscribeToAll(this);
                 }
             }
 
