@@ -100,6 +100,13 @@ namespace StormiumTeam.GameBase
                 FlushDelayedEntities();
         }
 
+        protected override void OnDestroyManager()
+        {
+            base.OnDestroyManager();
+            
+            CreateEntityDelayed.Dispose();
+        }
+
         public NativeList<TCreateData> GetEntityDelayedList()
         {
             if (!m_CanHaveDelayedEntities)
