@@ -1,6 +1,8 @@
 using package.stormiumteam.networking.runtime.lowlevel;
 using package.stormiumteam.shared;
+using package.stormiumteam.shared.ecs;
 using StormiumShared.Core.Networking;
+using StormiumTeam.GameBase.Data;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
@@ -76,12 +78,21 @@ namespace StormiumTeam.GameBase
         {
             void SyncOwnerToEntity(Entity origin, Entity owner);
             void SyncOwnerToEntity(EntityCommandBuffer entityCommandBuffer, Entity origin, Entity owner);
+            void AddChildren(Entity origin, Entity owner);
 
             //void DirectAddOrSet(Entity entity, Entity owner);
             ComponentType ComponentType { get; }
         }
 
-        public static void ReplaceOwnerData(this EntityManager entityManager, Entity source, Entity owner)
+        public static void AddChildrenOwner(this EntityManager entityManager, Entity source, Entity owner)
+        {
+            foreach (var obj in AppEvent<ISyncEvent>.GetObjEvents())
+            {
+                obj.AddChildren(source, owner);
+            }
+        }
+
+        public static void ReplaceOwnerData(this EntityManager entityManager, Entity source, Entity owner, bool autoEntityLink = true)
         {
             Debug.Log("replacing owner data...");
 
@@ -103,9 +114,12 @@ namespace StormiumTeam.GameBase
 
                 obj.SyncOwnerToEntity(source, owner);
             }
-            
+
             if (hasBuffer)
                 ownerChildren.Dispose();
+            
+            if (autoEntityLink)
+                entityManager.SetOrAddComponentData(source, new DestroyChainReaction(owner));
         }
 
         public static void ReplaceOwnerData(this EntityCommandBuffer entityCommandBuffer, Entity source, Entity owner)
@@ -130,6 +144,22 @@ namespace StormiumTeam.GameBase
         protected override JobHandle OnUpdate(JobHandle _)
         {
             return _;
+        }
+
+        public void AddChildren(Entity origin, Entity owner)
+        {
+            var descriptions = GetComponentDataFromEntity<T>();
+            if (descriptions.Exists(origin))
+            {
+                var buffer = EntityManager.GetBuffer<OwnerChild>(owner);
+                for (var i = 0; i != buffer.Length; i++)
+                {
+                    if (buffer[i].Child == origin)
+                        return;
+                }
+                
+                buffer.Add(new OwnerChild(origin, ComponentType.ReadWrite<T>()));
+            }
         }
 
         public void SyncOwnerToEntity(Entity origin, Entity owner)

@@ -5,6 +5,7 @@ using Unity.Entities;
 using Unity.Jobs.LowLevel.Unsafe;
 using Unity.Mathematics;
 using Unity.Physics;
+using Unity.Transforms;
 using UnityEngine;
 using Collider = Unity.Physics.Collider;
 using Math = Unity.Physics.Math;
@@ -21,7 +22,10 @@ namespace StormiumTeam.GameBase
 
 		private NativeArray<BlobAssetReference<Collider>> m_Colliders;
 
-		public BlobAssetReference<Collider> Current => m_Colliders[m_ThreadIndex];
+		public     BlobAssetReference<Collider> Blob      => m_Colliders[m_ThreadIndex];
+		public ref Collider                     Reference => ref Blob.Value;
+
+		public Collider* Ptr => (Collider*) Blob.GetUnsafePtr();
 
 		public JobPhysicsQuery(Func<BlobAssetReference<Collider>> autoCreateFunc)
 		{
@@ -58,6 +62,12 @@ namespace StormiumTeam.GameBase
 			ConvertFrom(cw);
 		}
 
+		public CollideWithCollection(CollideWith* ptr, int length = 1)
+		{
+			DataPtr = (IntPtr) ptr;
+			Count = length;
+		}
+
 		public void ConvertFrom(DynamicBuffer<CollideWith> cwBuffer)
 		{
 			Count   = cwBuffer.Length;
@@ -85,6 +95,15 @@ namespace StormiumTeam.GameBase
 		public int RigidBodyIndex;
 
 		public RigidTransform WorldFromMotion;
+
+		public CollideWith(PhysicsCollider collider, LocalToWorld localToWorld)
+		{
+			Collider        = collider.ColliderPtr;
+			WorldFromMotion = new RigidTransform(localToWorld.Value);
+
+			RigidBodyIndex = -1;
+			Target = default;
+		}
 	}
 
 	public static unsafe class CollideWithExtensions
