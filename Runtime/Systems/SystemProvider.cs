@@ -25,7 +25,7 @@ namespace StormiumTeam.GameBase
         public struct NoData
         {}
 
-        public override Entity SpawnLocalEntityWithArguments(NoData data)
+        public override void SpawnLocalEntityWithArguments(NoData data, ref NativeList<Entity> outputEntities)
         {
             throw new NotImplementedException();
         }
@@ -48,6 +48,7 @@ namespace StormiumTeam.GameBase
         public ComponentType[] EntityComponents => m_EntityComponents;
         public ComponentType[] ExcludedComponents => m_ExcludedComponents;
         public EntityArchetype EntityArchetype { get; protected set; }
+        public EntityArchetype EntityArchetypeWithAuthority { get; protected set; }
 
         public ComponentType[] ComponentsToExcludeFromStreamers { get; private set; }
 
@@ -81,11 +82,12 @@ namespace StormiumTeam.GameBase
 
         public void FlushDelayedEntities()
         {
-            for (var i = 0; i != CreateEntityDelayed.Length; i++)
-            {
-                SpawnLocalEntityWithArguments(CreateEntityDelayed[i]);
-            }
+            var output = new NativeList<Entity>(CreateEntityDelayed.Length, Allocator.Temp);
+            var indices = new NativeList<int>(CreateEntityDelayed.Length, Allocator.Temp);
             
+            SpawnBatchEntitiesWithArguments(new UnsafeAllocationLength<TCreateData>(CreateEntityDelayed), output, indices);
+
+            output.Clear();
             CreateEntityDelayed.Clear();
         }
 
@@ -137,6 +139,7 @@ namespace StormiumTeam.GameBase
                     }
 
                     EntityArchetype = EntityManager.CreateArchetype(EntityComponents);
+                    EntityArchetypeWithAuthority = EntityManager.CreateArchetype(EntityComponents.Append(ComponentType.ReadWrite<EntityAuthority>()).ToArray());
 
                     var patternName = $"EntityProvider.Full.{GetType().Name}";
                     m_ModelIdent = m_ModelManager.RegisterFull
@@ -196,8 +199,23 @@ namespace StormiumTeam.GameBase
         
         public virtual void DeserializeCollection(ref DataBufferReader data, SnapshotSender sender, SnapshotRuntime snapshotRuntime)
         {}
+        
+        public virtual void SpawnBatchEntitiesWithArguments(UnsafeAllocationLength<TCreateData> array, NativeList<Entity> outputEntities, NativeList<int> indices)
+        {
+            var count = array.Length;
+            for (var i = 0; i != count; i++)
+            {
+                var item = array[i];
+                SpawnLocalEntityWithArguments(item, ref outputEntities);
 
-        public abstract Entity SpawnLocalEntityWithArguments(TCreateData data);
+                for (var j = 0; j != outputEntities.Length; j++)
+                {
+                    indices.Add(i);
+                }
+            }
+        }
+
+        public abstract void SpawnLocalEntityWithArguments(TCreateData data, ref NativeList<Entity> outputEntities);
         
         public virtual Entity SpawnLocalEntityDelayed(EntityCommandBuffer entityCommandBuffer)
         {
