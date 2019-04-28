@@ -92,7 +92,7 @@ namespace StormiumTeam.GameBase
             }
         }
 
-        public static void ReplaceOwnerData(this EntityManager entityManager, Entity source, Entity owner, bool autoEntityLink = true)
+        public static void ReplaceOwnerData(this EntityManager entityManager, Entity entity, Entity owner, bool autoEntityLink = true)
         {
             Debug.Log("replacing owner data...");
 
@@ -109,17 +109,17 @@ namespace StormiumTeam.GameBase
                 for (var i = 0; hasBuffer && i != ownerChildren.Length; i++)
                 {
                     if (obj.ComponentType.TypeIndex == ownerChildren[i].TypeId)
-                        obj.SyncOwnerToEntity(source, ownerChildren[i].Child);
+                        obj.SyncOwnerToEntity(entity, ownerChildren[i].Child);
                 }
 
-                obj.SyncOwnerToEntity(source, owner);
+                obj.SyncOwnerToEntity(entity, owner);
             }
 
             if (hasBuffer)
                 ownerChildren.Dispose();
             
             if (autoEntityLink)
-                entityManager.SetOrAddComponentData(source, new DestroyChainReaction(owner));
+                entityManager.SetOrAddComponentData(entity, new DestroyChainReaction(owner));
         }
 
         public static void ReplaceOwnerData(this EntityCommandBuffer entityCommandBuffer, Entity source, Entity owner)

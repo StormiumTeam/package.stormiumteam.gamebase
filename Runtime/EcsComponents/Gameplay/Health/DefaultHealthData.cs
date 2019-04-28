@@ -100,7 +100,7 @@ namespace StormiumTeam.GameBase.Components
 			}
 		}
 
-		public class InstanceProvider : SystemProvider<CreateInstance>
+		public class InstanceProvider : SystemProviderBatch<CreateInstance>
 		{
 			public override void GetComponents(out ComponentType[] entityComponents, out ComponentType[] excludedStreamerComponents)
 			{
@@ -113,23 +113,14 @@ namespace StormiumTeam.GameBase.Components
 				excludedStreamerComponents = null;
 			}
 
-			public override Entity SpawnLocalEntityWithArguments(CreateInstance data)
+			public override void SetEntityData(Entity entity, CreateInstance data)
 			{
-				var local = SpawnLocal();
-				EntityManager.SetComponentData(local, new DefaultHealthData {Value = data.value, Max = data.max});
+				EntityManager.SetComponentData(entity, new DefaultHealthData {Value = data.value, Max = data.max});
 				if (data.owner != default)
 				{
-					EntityManager.ReplaceOwnerData(local, data.owner);
-					EntityManager.AddComponentData(local, new DestroyChainReaction(data.owner));
-
+					EntityManager.ReplaceOwnerData(entity, data.owner);
+					EntityManager.AddComponentData(entity, new DestroyChainReaction(data.owner));
 				}
-
-				return local;
-			}
-
-			public Entity SpawnLocal(int value, int max, Entity owner)
-			{ 
-				return SpawnLocalEntityWithArguments(new CreateInstance {value = value, max = max, owner = owner});
 			}
 		}
 	}

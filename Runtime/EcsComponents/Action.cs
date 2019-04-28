@@ -90,9 +90,9 @@ namespace package.StormiumTeam.GameBase
             return max / usage;
         }
 
-        public void IncreaseFromDelta(int deltaTick)
+        public void IncreaseFromDelta(int delta)
         {
-            Value += deltaTick;
+            Value += delta;
             Value = math.clamp(Value, 0, Max);
         }
 

@@ -4,7 +4,8 @@ using Unity.Entities;
 
 namespace StormiumTeam.GameBase.Components
 {
-	[Serializable]
+	// not used anymore, todo: remove it
+	/*[Serializable]
 	public struct CreateHealthInstance
 	{
 		public Entity asset;
@@ -49,5 +50,5 @@ namespace StormiumTeam.GameBase.Components
 
 			return copy;
 		}
-	}
+	}*/
 }

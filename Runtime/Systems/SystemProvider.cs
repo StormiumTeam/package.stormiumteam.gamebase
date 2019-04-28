@@ -256,7 +256,10 @@ namespace StormiumTeam.GameBase
 
         public virtual Entity SpawnLocalEntityDelayed(EntityCommandBuffer entityCommandBuffer)
         {
-            throw new NotImplementedException();
+            var e = entityCommandBuffer.CreateEntity(EntityArchetype);
+            entityCommandBuffer.SetComponent(e, GetModelIdent());
+            
+            return e;
         }
 
         public Entity SpawnLocal()
