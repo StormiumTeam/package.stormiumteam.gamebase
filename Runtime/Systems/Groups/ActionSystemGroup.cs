@@ -4,4 +4,4 @@ namespace StormiumTeam.GameBase
 {
 	public class ActionSystemGroup : ComponentSystemGroup
 	{}
-}
+}	

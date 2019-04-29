@@ -12,7 +12,7 @@ using UnityEngine;
 
 namespace StormiumTeam.GameBase
 {
-	public unsafe class TransformCollideWithBufferSystem : JobComponentSystem
+	public unsafe class TransformCustomCollideBufferSystem : JobComponentSystem
 	{
 		//[BurstCompile]
 		private struct ProcessJob : IJobParallelFor
@@ -22,7 +22,7 @@ namespace StormiumTeam.GameBase
 			public NativeArray<Entity> Entities;
 
 			[NativeDisableParallelForRestriction]
-			public BufferFromEntity<CollideWith>            CollideWithFromEntity;
+			public BufferFromEntity<CustomCollide>            CollideWithFromEntity;
 			[ReadOnly]
 			public ComponentDataFromEntity<PhysicsCollider> Colliders;
 			[ReadOnly]
@@ -41,7 +41,7 @@ namespace StormiumTeam.GameBase
 				var bufferLength = buffer.Length;
 				for (var i = 0; i != bufferLength; i++)
 				{
-					ref var cw = ref UnsafeUtilityEx.ArrayElementAsRef<CollideWith>(bufferPtr, i);
+					ref var cw = ref UnsafeUtilityEx.ArrayElementAsRef<CustomCollide>(bufferPtr, i);
 
 					var r               = Rotations[cw.Target];
 					var t               = Translations[cw.Target];
@@ -60,7 +60,7 @@ namespace StormiumTeam.GameBase
 		{
 			base.OnCreate();
 
-			m_Group = GetEntityQuery(typeof(CollideWith));
+			m_Group = GetEntityQuery(typeof(CustomCollide));
 		}
 
 		protected override JobHandle OnUpdate(JobHandle jobHandle)
@@ -73,7 +73,7 @@ namespace StormiumTeam.GameBase
 			{
 				Entities = m_Group.ToEntityArray(Allocator.TempJob, out jobHandle),
 
-				CollideWithFromEntity = GetBufferFromEntity<CollideWith>(),
+				CollideWithFromEntity = GetBufferFromEntity<CustomCollide>(),
 				Colliders             = GetComponentDataFromEntity<PhysicsCollider>(),
 				Translations          = GetComponentDataFromEntity<Translation>(),
 				Rotations             = GetComponentDataFromEntity<Rotation>(),
@@ -96,7 +96,7 @@ namespace StormiumTeam.GameBase
 			{
 				Entities = m_Group.ToEntityArray(Allocator.TempJob, out jobHandle),
 
-				CollideWithFromEntity = GetBufferFromEntity<CollideWith>(),
+				CollideWithFromEntity = GetBufferFromEntity<CustomCollide>(),
 				Colliders             = GetComponentDataFromEntity<PhysicsCollider>(),
 				Translations          = GetComponentDataFromEntity<Translation>(),
 				Rotations             = GetComponentDataFromEntity<Rotation>(),

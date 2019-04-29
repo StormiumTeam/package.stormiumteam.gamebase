@@ -8,20 +8,33 @@ namespace Runtime.BaseSystems
 	{
 		protected override void OnUpdate()
 		{
-			// Rules are not automatically updated here.
-		}
-
-		public void Process()
-		{
-			foreach (var componentSystem in m_systemsToUpdate)
-			{
-				var ruleSystem = (RuleBaseSystem) componentSystem;
-			}
 		}
 	}
-	
+
 	[UpdateInGroup(typeof(RuleSystemGroup))]
+	public abstract class RuleSystemGroupBase : ComponentSystemGroup
+	{
+		protected override void OnUpdate()
+		{
+		}
+
+		public virtual void Process()
+		{
+			base.OnUpdate();
+		}
+	}
+
+	public class GameEventRuleSystemGroup : RuleSystemGroupBase
+	{
+	}
+
+	public class PhysicsFilterRuleSystemGroup : RuleSystemGroupBase
+	{
+	}
+
 	public abstract class RuleBaseSystem : GameBaseSystem
 	{
+		public virtual string Name        => "NoName";
+		public virtual string Description => "NoDescription";
 	}
 }

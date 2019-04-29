@@ -26,7 +26,7 @@ namespace StormiumTeam.GameBase
         {
         }
 
-        public override void SpawnLocalEntityWithArguments(NoData data, ref NativeList<Entity> outputEntities)
+        public override void SpawnLocalEntityWithArguments(NoData data, NativeList<Entity> outputEntities)
         {
             throw new NotImplementedException();
         }
@@ -37,7 +37,9 @@ namespace StormiumTeam.GameBase
     {
         public override void SpawnBatchEntitiesWithArguments(UnsafeAllocationLength<TCreateData> array, NativeList<Entity> outputEntities, NativeList<int> indices)
         {
-            EntityManager.CreateEntity(EntityArchetypeWithAuthority, outputEntities);
+            var naArray = new NativeArray<Entity>(array.Length, Allocator.Temp);
+            
+            EntityManager.CreateEntity(EntityArchetypeWithAuthority, naArray);
             for (var i = 0; i != outputEntities.Length; i++)
             {
                 var entity = outputEntities[i];
@@ -45,9 +47,11 @@ namespace StormiumTeam.GameBase
 
                 SetEntityData(entity, data);
             }
+            
+            outputEntities.AddRange(naArray);
         }
 
-        public override void SpawnLocalEntityWithArguments(TCreateData data, ref NativeList<Entity> outputEntities)
+        public override void SpawnLocalEntityWithArguments(TCreateData data, NativeList<Entity> outputEntities)
         {
             var entity = EntityManager.CreateEntity(EntityArchetypeWithAuthority);
 
@@ -120,6 +124,7 @@ namespace StormiumTeam.GameBase
             var output  = new NativeList<Entity>(CreateEntityDelayed.Length, Allocator.Temp);
             var indices = new NativeList<int>(CreateEntityDelayed.Length, Allocator.Temp);
 
+            Debug.Log(CreateEntityDelayed.Length);
             SpawnBatchEntitiesWithArguments(new UnsafeAllocationLength<TCreateData>(CreateEntityDelayed), output, indices);
 
             output.Clear();
@@ -243,7 +248,7 @@ namespace StormiumTeam.GameBase
             for (var i = 0; i != count; i++)
             {
                 var item = array[i];
-                SpawnLocalEntityWithArguments(item, ref outputEntities);
+                SpawnLocalEntityWithArguments(item, outputEntities);
 
                 for (var j = 0; j != outputEntities.Length; j++)
                 {
@@ -252,7 +257,7 @@ namespace StormiumTeam.GameBase
             }
         }
 
-        public abstract void SpawnLocalEntityWithArguments(TCreateData data, ref NativeList<Entity> outputEntities);
+        public abstract void SpawnLocalEntityWithArguments(TCreateData data, NativeList<Entity> outputEntities);
 
         public virtual Entity SpawnLocalEntityDelayed(EntityCommandBuffer entityCommandBuffer)
         {
