@@ -9,19 +9,16 @@ using UnityEngine;
 
 namespace Runtime.Systems.Filters
 {
-	public class FilterEnvironmentBodies : CollisionFilterSystemBase
+	public class FilterLivables : CollisionFilterSystemBase
 	{
-		public override string Name => "Environment Bodies Filter rule.";
-		public override string Description => "Automatically add Environmental bodies to collision physics filters";
+		public override string Name => "Livables filter rule.";
+		public override string Description => "Automatically add Livables colliders to collision physics filters";
 
-		[RequireComponentTag(typeof(EnvironmentTag))]
 		[BurstCompile]
-		private struct Job : IJobForEachWithEntity<PhysicsCollider>, IFilter
+		private struct Job : IJobForEachWithEntity<PhysicsCollider, OwnerState<LivableDescription>>, IFilter
 		{
-			public void Execute(Entity entity, int index, ref PhysicsCollider c0)
+			public void Execute(Entity entity, int index, ref PhysicsCollider c0, ref OwnerState<LivableDescription> owner)
 			{
-				Debug.Log(entity);
-				
 				var rigidBodyIndex = PhysicsWorld.GetRigidBodyIndex(entity);
 
 				for (var i = 0; i != Targets.Length; i++)

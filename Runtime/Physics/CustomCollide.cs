@@ -34,6 +34,12 @@ namespace StormiumTeam.GameBase
 			DataPtr = new IntPtr(cc.Data);
 		}
 
+		public CustomCollideCollection(CustomCollide cc)
+		{
+			DataPtr = (IntPtr) (&cc);
+			Count   = 1;
+		}
+
 		public CustomCollideCollection(CustomCollide* ptr, int length = 1)
 		{
 			DataPtr = (IntPtr) ptr;

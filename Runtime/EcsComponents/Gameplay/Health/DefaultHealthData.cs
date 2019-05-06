@@ -2,6 +2,7 @@ using System;
 using package.stormiumteam.networking;
 using package.stormiumteam.networking.runtime.lowlevel;
 using package.stormiumteam.shared;
+using package.stormiumteam.shared.ecs;
 using StormiumShared.Core.Networking;
 using StormiumTeam.GameBase.Data;
 using Unity.Burst;
@@ -119,7 +120,7 @@ namespace StormiumTeam.GameBase.Components
 				if (data.owner != default)
 				{
 					EntityManager.ReplaceOwnerData(entity, data.owner);
-					EntityManager.AddComponentData(entity, new DestroyChainReaction(data.owner));
+					EntityManager.SetOrAddComponentData(entity, new DestroyChainReaction(data.owner));
 				}
 			}
 		}

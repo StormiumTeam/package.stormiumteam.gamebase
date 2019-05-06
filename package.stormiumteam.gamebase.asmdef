@@ -9,6 +9,7 @@
         "Unity.Physics",
         "Unity.Entities",
         "Unity.Entities.Hybrid",
+        "Unity.Rendering.Hybrid",
         "Unity.Transforms",
         "Unity.Transforms.Hybrid",
         "Unity.Mathematics",

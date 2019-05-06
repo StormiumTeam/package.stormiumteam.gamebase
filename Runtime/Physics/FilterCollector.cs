@@ -2,8 +2,10 @@ using System;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Physics;
+using UnityEngine;
 using UnityEngine.Assertions;
 using Math = Unity.Physics.Math;
+using RaycastHit = Unity.Physics.RaycastHit;
 
 namespace StormiumTeam.GameBase
 {
@@ -38,6 +40,8 @@ namespace StormiumTeam.GameBase
 				var rigidBodyIndex = -1;
 				var sizeT = UnsafeUtility.SizeOf<T>();
 				
+				Debug.Log(sizeT + ", " + UnsafeUtility.SizeOf<ColliderCastHit>());
+				
 				if (sizeT == UnsafeUtility.SizeOf<RaycastHit>())
 				{
 					UnsafeUtility.CopyPtrToStructure(UnsafeUtility.AddressOf(ref hit), out RaycastHit output);
@@ -58,8 +62,10 @@ namespace StormiumTeam.GameBase
 					UnsafeUtility.CopyPtrToStructure(UnsafeUtility.AddressOf(ref hit), out OverlapAabbHit output);
 					rigidBodyIndex = output.RigidBodyIndex;
 				}
+				
+				Debug.Log(rigidBodyIndex);
 
-				if (rigidBodyIndex >= 0 && !m_Filters.Contains(rigidBodyIndex))
+				if (rigidBodyIndex == -1 || !m_Filters.Contains(rigidBodyIndex))
 					return false;
 			}
 

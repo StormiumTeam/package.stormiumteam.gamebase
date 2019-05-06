@@ -103,25 +103,16 @@ namespace StormiumTeam.GameBase
 		
 		public JobHandle GetDependency()
 		{
-			if (!m_SystemGroupCanHaveDependency)
-				throw new Exception("The parent system group can't have any dependencies.");
-				
 			return m_Dependency;
 		}
 
 		public void SetDependency(JobHandle v)
 		{
-			if (!m_SystemGroupCanHaveDependency)
-				throw new Exception("The parent system group can't have any dependencies.");
-			
 			m_Dependency = v;
 		}
 
 		public void CompleteDependency()
 		{
-			if (!m_SystemGroupCanHaveDependency)
-				throw new Exception("The parent system group can't have any dependencies.");
-			
 			m_Dependency.Complete();
 			m_Dependency = default;
 		}
