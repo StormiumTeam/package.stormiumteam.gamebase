@@ -49,22 +49,25 @@ namespace StormiumTeam.GameBase.Components
 		public class System : HealthProcessSystem
 		{
 			//[BurstCompile]
-			private unsafe struct Job : IJobForEach<DefaultHealthData, HealthConcreteValue, OwnerState<LivableDescription>>
+			private unsafe struct Job : IJobForEachWithEntity<DefaultHealthData, HealthConcreteValue>
 			{
 				[NativeDisableParallelForRestriction]
 				public NativeList<ModifyHealthEvent> ModifyHealthEventList;
 
-				public void Execute(ref            DefaultHealthData              healthData,
-				                    ref            HealthConcreteValue            concrete,
-				                    [ReadOnly] ref OwnerState<LivableDescription> livableOwner)
+				public void Execute(Entity                  entity,
+				                    int                     _,
+				                    ref DefaultHealthData   healthData,
+				                    ref HealthConcreteValue concrete)
 				{
 					for (var i = 0; i != ModifyHealthEventList.Length; i++)
 					{
 						ref var ev = ref UnsafeUtilityEx.ArrayElementAsRef<ModifyHealthEvent>(ModifyHealthEventList.GetUnsafePtr(), i);
-						if (ev.Target != livableOwner.Target)
+						if (ev.Target != entity)
 							continue;
 
 						var difference = healthData.Value;
+
+						Debug.Log($"{ev.Type} {ev.Origin} {ev.Consumed}");
 
 						switch (ev.Type)
 						{
@@ -88,7 +91,7 @@ namespace StormiumTeam.GameBase.Components
 					}
 
 					concrete.Value = healthData.Value;
-					concrete.Max = healthData.Max;
+					concrete.Max   = healthData.Max;
 				}
 			}
 

@@ -82,6 +82,14 @@ namespace StormiumTeam.GameBase
 			RigidBodyIndex = -1;
 			Target = default;
 		}
+
+		public CustomCollide(RigidBody rigidBody)
+		{
+			Collider        = rigidBody.Collider;
+			WorldFromMotion = rigidBody.WorldFromBody;
+			RigidBodyIndex  = -1;
+			Target          = default;
+		}
 	}
 
 	public static unsafe class CustomCollideExtensions
