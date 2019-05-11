@@ -49,20 +49,19 @@ namespace StormiumTeam.GameBase.Components
 		public class System : HealthProcessSystem
 		{
 			//[BurstCompile]
-			private unsafe struct Job : IJobForEachWithEntity<DefaultHealthData, HealthConcreteValue>
+			private unsafe struct Job : IJobForEach<HealthContainerParent, DefaultHealthData, HealthConcreteValue>
 			{
 				[NativeDisableParallelForRestriction]
 				public NativeList<ModifyHealthEvent> ModifyHealthEventList;
 
-				public void Execute(Entity                  entity,
-				                    int                     _,
-				                    ref DefaultHealthData   healthData,
-				                    ref HealthConcreteValue concrete)
+				public void Execute(ref HealthContainerParent container,
+				                    ref DefaultHealthData     healthData,
+				                    ref HealthConcreteValue   concrete)
 				{
 					for (var i = 0; i != ModifyHealthEventList.Length; i++)
 					{
 						ref var ev = ref UnsafeUtilityEx.ArrayElementAsRef<ModifyHealthEvent>(ModifyHealthEventList.GetUnsafePtr(), i);
-						if (ev.Target != entity)
+						if (ev.Target != container.Parent)
 							continue;
 
 						var difference = healthData.Value;
@@ -112,7 +111,9 @@ namespace StormiumTeam.GameBase.Components
 				{
 					ComponentType.ReadWrite<HealthDescription>(),
 					ComponentType.ReadWrite<DefaultHealthData>(),
-					ComponentType.ReadWrite<HealthConcreteValue>()
+					ComponentType.ReadWrite<HealthConcreteValue>(),
+					ComponentType.ReadWrite<HealthContainerParent>(),
+					ComponentType.ReadWrite<DestroyChainReaction>()
 				};
 				excludedStreamerComponents = null;
 			}
@@ -120,11 +121,8 @@ namespace StormiumTeam.GameBase.Components
 			public override void SetEntityData(Entity entity, CreateInstance data)
 			{
 				EntityManager.SetComponentData(entity, new DefaultHealthData {Value = data.value, Max = data.max});
-				if (data.owner != default)
-				{
-					EntityManager.ReplaceOwnerData(entity, data.owner);
-					EntityManager.SetOrAddComponentData(entity, new DestroyChainReaction(data.owner));
-				}
+				EntityManager.SetComponentData(entity, new HealthContainerParent(data.owner));
+				EntityManager.SetComponentData(entity, new DestroyChainReaction {Target = data.owner});
 			}
 		}
 	}

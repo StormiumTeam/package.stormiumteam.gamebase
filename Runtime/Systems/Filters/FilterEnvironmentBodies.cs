@@ -20,8 +20,6 @@ namespace Runtime.Systems.Filters
 		{
 			public void Execute(Entity entity, int index, ref PhysicsCollider c0)
 			{
-				Debug.Log(entity);
-				
 				var rigidBodyIndex = PhysicsWorld.GetRigidBodyIndex(entity);
 
 				for (var i = 0; i != Targets.Length; i++)

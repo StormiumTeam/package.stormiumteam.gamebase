@@ -32,6 +32,16 @@ namespace StormiumTeam.GameBase.Components
 		}
 	}
 
+	public struct HealthContainerParent : IComponentData
+	{
+		public Entity Parent;
+
+		public HealthContainerParent(Entity parent)
+		{
+			Parent = parent;
+		}
+	}
+
 	public struct HealthAssetDescription : IComponentData
 	{
 	}
@@ -50,8 +60,8 @@ namespace StormiumTeam.GameBase.Components
 
 	public struct ModifyHealthEvent : IComponentData
 	{
-		public readonly ModifyHealthType Type;
-		public readonly int  Origin;
+		public ModifyHealthType Type;
+		public int  Origin;
 
 		public int Consumed;
 
@@ -70,6 +80,18 @@ namespace StormiumTeam.GameBase.Components
 
 	public class HealthProcessGroup : ComponentSystemGroup
 	{
+		public class BeforeGathering : ComponentSystemGroup
+		{
+			protected override void OnUpdate()
+			{
+			}
+
+			internal void Process()
+			{
+				base.OnUpdate();
+			}
+		}
+		
 		[BurstCompile]
 		private struct ClearBuffer : IJobChunk
 		{
@@ -88,14 +110,15 @@ namespace StormiumTeam.GameBase.Components
 		}
 
 		[BurstCompile]
-		private struct ClearLivableHealthData : IJobForEach<HealthConcreteValue, OwnerState<LivableDescription>>
+		private struct ClearLivableHealthData : IJobForEach<HealthConcreteValue, HealthContainerParent>
 		{
 			[NativeDisableParallelForRestriction]
 			public ComponentDataFromEntity<LivableHealth> LivableHealthFromEntity;
 
-			public void Execute([ReadOnly] ref HealthConcreteValue concrete, [ReadOnly] ref OwnerState<LivableDescription> livableOwner)
+			public void Execute([ReadOnly] ref HealthConcreteValue concrete, [ReadOnly] ref HealthContainerParent container)
 			{
-				LivableHealthFromEntity[livableOwner.Target] = default;
+				if (LivableHealthFromEntity.Exists(container.Parent))
+					LivableHealthFromEntity[container.Parent] = default;
 			}
 		}
 
@@ -165,6 +188,8 @@ namespace StormiumTeam.GameBase.Components
 		protected override void OnUpdate()
 		{
 			base.OnUpdate();
+			
+			World.GetExistingSystem<BeforeGathering>().Process();
 
 			s_LastInstance = this;
 
@@ -203,16 +228,22 @@ namespace StormiumTeam.GameBase.Components
 
 			job.Complete();
 
-			Entities.WithAll<HealthDescription>().ForEach((Entity e, ref OwnerState<LivableDescription> livableOwner) =>
+			Entities.WithAll<HealthDescription>().ForEach((Entity e, ref HealthContainerParent container) =>
 			{
-				var buffer = s_LastInstance.EntityManager.GetBuffer<HealthContainer>(livableOwner.Target);
+				if (container.Parent == default || !EntityManager.Exists(container.Parent))
+				{
+					Debug.LogWarning($"No health container found for {e} (target: {container.Parent})");
+					return;
+				}
+					
+				var buffer = s_LastInstance.EntityManager.GetBuffer<HealthContainer>(container.Parent);
 				if (buffer.Capacity > buffer.Length)
 				{
 					buffer.Add(new HealthContainer(e));
 				}
 				else
 				{
-					Debug.LogError("Out of bounds for livable owner " + livableOwner.Target);
+					Debug.LogError("Out of bounds for health container parent: " + container.Parent);
 				}
 			});
 			
