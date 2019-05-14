@@ -144,19 +144,19 @@ namespace StormiumTeam.GameBase.Components
 		}
 
 		[BurstCompile]
-		private struct AssignLivableHealthData : IJobForEach<HealthConcreteValue, OwnerState<LivableDescription>>
+		private struct AssignLivableHealthData : IJobForEach<HealthConcreteValue, HealthContainerParent>
 		{
 			[NativeDisableParallelForRestriction]
 			public ComponentDataFromEntity<LivableHealth> LivableHealthFromEntity;
 
-			public void Execute([ReadOnly] ref HealthConcreteValue concrete, [ReadOnly] ref OwnerState<LivableDescription> livableOwner)
+			public void Execute([ReadOnly] ref HealthConcreteValue concrete, [ReadOnly] ref HealthContainerParent container)
 			{
-				var health             = LivableHealthFromEntity[livableOwner.Target];
+				var health             = LivableHealthFromEntity[container.Parent];
 				var livableVectorized  = new int2(health.Value, health.Max);
 				var concreteVectorized = new int2(concrete.Value, concrete.Max);
 				var result             = livableVectorized + concreteVectorized;
 
-				LivableHealthFromEntity[livableOwner.Target] = new LivableHealth
+				LivableHealthFromEntity[container.Parent] = new LivableHealth
 				{
 					Value = result.x,
 					Max   = result.y
