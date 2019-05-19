@@ -146,6 +146,14 @@ namespace StormiumTeam.GameBase
         }
     }
 
+    public class RelativeGroup : ComponentSystemGroup
+    {
+        protected override void OnUpdate()
+        {
+        }
+    }
+
+    [UpdateInGroup(typeof(RelativeGroup))]
     public class RelativeSync<T> : JobComponentSystem, Relative.ISyncEvent
         where T : struct, IEntityDescription
     {
