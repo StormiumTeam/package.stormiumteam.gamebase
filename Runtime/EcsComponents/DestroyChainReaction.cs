@@ -1,5 +1,4 @@
 using Unity.Entities;
-using UnityEngine.Experimental.PlayerLoop;
 
 namespace StormiumTeam.GameBase.Data
 {
@@ -13,7 +12,6 @@ namespace StormiumTeam.GameBase.Data
 		}
 	}
 	
-	[UpdateAfter(typeof(PreLateUpdate))]
 	public class DestroyChainReactionSystem : ComponentSystem
 	{
 		protected override void OnUpdate()

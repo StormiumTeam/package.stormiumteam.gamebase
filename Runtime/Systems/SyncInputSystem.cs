@@ -1,4 +1,4 @@
-using UnityEngine.Experimental.Input;
+using UnityEngine.InputSystem;
 
 namespace StormiumTeam.GameBase.Systems
 {

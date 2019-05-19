@@ -12,7 +12,7 @@ namespace StormiumTeam.GameBase
 			// First clear buffers...
 			Entities.ForEach((DynamicBuffer<ActionContainer> buffer) => { buffer.Clear(); });
 
-			Entities.WithAll<ActionDescription>().ForEach((Entity entity, ref OwnerState<LivableDescription> livable) =>
+			Entities.WithAll<ActionDescription>().ForEach((Entity entity, ref Relative<MovableDescription> livable) =>
 			{
 				if (!EntityManager.Exists(livable.Target))
 				{

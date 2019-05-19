@@ -11,74 +11,86 @@ using UnityEngine;
 
 namespace StormiumTeam.GameBase
 {
-    public interface IOwnerDescription : IComponentData
+    public interface IEntityDescription : IComponentData
     {
     }
-    
+
     /// <summary>
     /// All entities that can be collided/hit/damaged (eg: character movable entity (not the character itself!))
     /// </summary>
-    public struct ColliderDescription : IOwnerDescription
+    public struct ColliderDescription : IEntityDescription
     {
-        public class OwnerSync : OwnerStateSync<ColliderDescription>
-        {}
+        public class OwnerSync : RelativeSync<ColliderDescription>
+        {
+        }
     }
 
     /// <summary>
     /// All entities that can move (eg: character movable entity (not the character itself!))
     /// </summary>
-    public struct MovableDescription : IOwnerDescription
+    public struct MovableDescription : IEntityDescription
     {
-        public class OwnerSync : OwnerStateSync<MovableDescription>
-        {}
+        public class OwnerSync : RelativeSync<MovableDescription>
+        {
+        }
     }
-    
+
     /// <summary>
     /// All entities that are described as livables (eg: characters)
     /// </summary>
-    public struct LivableDescription : IOwnerDescription
+    public struct LivableDescription : IEntityDescription
     {
-        public class OwnerSync : OwnerStateSync<LivableDescription>
-        {}
+        public class OwnerSync : RelativeSync<LivableDescription>
+        {
+        }
     }
 
     /// <summary>
     /// All entities that are described as characters
     /// </summary>
-    public struct CharacterDescription : IOwnerDescription
+    public struct CharacterDescription : IEntityDescription
     {
-        public class OwnerSync : OwnerStateSync<CharacterDescription>
-        {}
+        public class OwnerSync : RelativeSync<CharacterDescription>
+        {
+        }
     }
 
     /// <summary>
     /// All entities that are described as players
     /// </summary>
-    public struct PlayerDescription : IOwnerDescription
+    public struct PlayerDescription : IEntityDescription
     {
-        public class OwnerSync : OwnerStateSync<PlayerDescription>
-        {}
+        public class OwnerSync : RelativeSync<PlayerDescription>
+        {
+        }
     }
 
-    public struct ActionDescription : IOwnerDescription
+    public struct ActionDescription : IEntityDescription
     {
-        public class OwnerSync : OwnerStateSync<ActionDescription>
-        {}
+        public class OwnerSync : RelativeSync<ActionDescription>
+        {
+        }
     }
 
-    public struct ProjectileDescription : IOwnerDescription
+    public struct ProjectileDescription : IEntityDescription
     {
-        public class OwnerSync : OwnerStateSync<ProjectileDescription>
-        {}
+        public class OwnerSync : RelativeSync<ProjectileDescription>
+        {
+        }
     }
 
-    public static class OwnerState
+    public struct Owner : IComponentData
+    {
+        public Entity Target;
+    }
+
+    public static class Relative
     {
         public interface ISyncEvent : IAppEvent
         {
-            void SyncOwnerToEntity(Entity origin, Entity owner);
-            void SyncOwnerToEntity(EntityCommandBuffer entityCommandBuffer, Entity origin, Entity owner);
-            void AddChildren(Entity origin, Entity owner);
+            void SyncRelativeToEntity(Entity              origin,              Entity owner);
+            void SyncRelativeToEntity(EntityCommandBuffer entityCommandBuffer, Entity origin, Entity owner);
+            void AddChildren(Entity                       origin,              Entity owner);
 
             //void DirectAddOrSet(Entity entity, Entity owner);
             ComponentType ComponentType { get; }
@@ -92,9 +104,12 @@ namespace StormiumTeam.GameBase
             }
         }
 
-        public static void ReplaceOwnerData(this EntityManager entityManager, Entity entity, Entity owner, bool autoEntityLink = true)
+        public static void ReplaceOwnerData(this EntityManager entityManager, Entity entity, Entity owner, bool setRelative = true, bool autoEntityLink = true)
         {
-            Debug.Log("replacing owner data...");
+            entityManager.SetOrAddComponentData(entity, new Owner {Target = owner});
+
+            if (!setRelative)
+                return;
 
             // the name OwnerChildren can be confusing, but let's you have a LivableDesc with a MovableDesc and ColliderDesc.
             // if you want to get the collider from the movable, OwnerChild will be able to help with that.
@@ -109,15 +124,15 @@ namespace StormiumTeam.GameBase
                 for (var i = 0; hasBuffer && i != ownerChildren.Length; i++)
                 {
                     if (obj.ComponentType.TypeIndex == ownerChildren[i].TypeId)
-                        obj.SyncOwnerToEntity(entity, ownerChildren[i].Child);
+                        obj.SyncRelativeToEntity(entity, ownerChildren[i].Child);
                 }
 
-                obj.SyncOwnerToEntity(entity, owner);
+                obj.SyncRelativeToEntity(entity, owner);
             }
 
             if (hasBuffer)
                 ownerChildren.Dispose();
-            
+
             if (autoEntityLink)
                 entityManager.SetOrAddComponentData(entity, new DestroyChainReaction(owner));
         }
@@ -126,16 +141,16 @@ namespace StormiumTeam.GameBase
         {
             foreach (var obj in AppEvent<ISyncEvent>.GetObjEvents())
             {
-                obj.SyncOwnerToEntity(entityCommandBuffer, source, owner);
+                obj.SyncRelativeToEntity(entityCommandBuffer, source, owner);
             }
         }
     }
 
-    public class OwnerStateSync<T> : JobComponentSystem, OwnerState.ISyncEvent
-        where T : struct, IOwnerDescription
+    public class RelativeSync<T> : JobComponentSystem, Relative.ISyncEvent
+        where T : struct, IEntityDescription
     {
         public ComponentType ComponentType => ComponentType.ReadWrite<T>();
-        
+
         protected override void OnCreate()
         {
             World.GetOrCreateSystem<AppEventSystem>().SubscribeToAll(this);
@@ -157,68 +172,68 @@ namespace StormiumTeam.GameBase
                     if (buffer[i].Child == origin)
                         return;
                 }
-                
+
                 buffer.Add(new OwnerChild(origin, ComponentType.ReadWrite<T>()));
             }
         }
 
-        public void SyncOwnerToEntity(Entity origin, Entity owner)
+        public void SyncRelativeToEntity(Entity origin, Entity owner)
         {
-            var ownerStates = GetComponentDataFromEntity<OwnerState<T>>();
+            var relative = GetComponentDataFromEntity<Relative<T>>();
 
-            if (ownerStates.Exists(owner))
+            if (relative.Exists(owner))
             {
-                if (ownerStates.Exists(origin))
-                    ownerStates[origin] = ownerStates[owner];
+                if (relative.Exists(origin))
+                    relative[origin] = relative[owner];
                 else
-                    EntityManager.AddComponentData(origin, ownerStates[owner]);
+                    EntityManager.AddComponentData(origin, relative[owner]);
 
                 // Debug.Log($"({GetType().FullName}) Hierarchy parent {owner} added to {origin}");
             }
 
             // resync...
-            ownerStates = GetComponentDataFromEntity<OwnerState<T>>();
+            relative = GetComponentDataFromEntity<Relative<T>>();
             var descriptions = GetComponentDataFromEntity<T>();
             if (descriptions.Exists(owner))
             {
-                if (ownerStates.Exists(origin))
-                    ownerStates[origin] = new OwnerState<T> {Target = owner};
+                if (relative.Exists(origin))
+                    relative[origin] = new Relative<T> {Target = owner};
                 else
-                    EntityManager.AddComponentData(origin, new OwnerState<T> {Target = owner});
+                    EntityManager.AddComponentData(origin, new Relative<T> {Target = owner});
             }
 
             // Debug.Log($"({GetType().FullName}) Owner {owner} added to {origin}");
         }
 
-        public void SyncOwnerToEntity(EntityCommandBuffer entityCommandBuffer, Entity origin, Entity owner)
+        public void SyncRelativeToEntity(EntityCommandBuffer entityCommandBuffer, Entity origin, Entity owner)
         {
-            var ownerStates  = GetComponentDataFromEntity<OwnerState<T>>();
+            var relative     = GetComponentDataFromEntity<Relative<T>>();
             var descriptions = GetComponentDataFromEntity<T>();
 
-            if (ownerStates.Exists(owner))
+            if (relative.Exists(owner))
             {
-                if (ownerStates.Exists(origin))
-                    ownerStates[origin] = ownerStates[owner];
+                if (relative.Exists(origin))
+                    relative[origin] = relative[owner];
                 else
-                    entityCommandBuffer.AddComponent(origin, ownerStates[owner]);
+                    entityCommandBuffer.AddComponent(origin, relative[owner]);
             }
 
-            if (!descriptions.Exists(owner) || ownerStates.Exists(origin))
+            if (!descriptions.Exists(owner) || relative.Exists(origin))
                 return;
 
             // resync...
-            ownerStates  = GetComponentDataFromEntity<OwnerState<T>>();
+            relative     = GetComponentDataFromEntity<Relative<T>>();
             descriptions = GetComponentDataFromEntity<T>();
-            
-            if (ownerStates.Exists(owner))
-                ownerStates[owner] = new OwnerState<T> {Target = owner};
+
+            if (relative.Exists(owner))
+                relative[owner] = new Relative<T> {Target = owner};
             else
-                entityCommandBuffer.AddComponent(origin, new OwnerState<T> {Target = owner});
+                entityCommandBuffer.AddComponent(origin, new Relative<T> {Target = owner});
         }
     }
-    
-    public struct OwnerState<TOwnerDescription> : IStateData, IComponentData, ISerializableAsPayload
-        where TOwnerDescription : struct, IOwnerDescription
+
+    public struct Relative<TDescription> : IStateData, IComponentData, ISerializableAsPayload
+        where TDescription : struct, IEntityDescription
     {
         public Entity Target;
 
@@ -232,7 +247,7 @@ namespace StormiumTeam.GameBase
             Target = runtime.EntityToWorld(data.ReadValue<Entity>());
         }
 
-        public class Streamer : SnapshotEntityDataManualValueTypeStreamer<OwnerState<TOwnerDescription>>
+        public class Streamer : SnapshotEntityDataManualValueTypeStreamer<Relative<TDescription>>
         {
         }
     }
@@ -241,8 +256,8 @@ namespace StormiumTeam.GameBase
     public struct OwnerChild : IBufferElementData
     {
         public Entity Child;
-        public int TypeId;
-        
+        public int    TypeId;
+
         public bool Is<T>(T t)
         {
             return TypeId == ComponentType.ReadOnly<T>().TypeIndex;
@@ -255,12 +270,12 @@ namespace StormiumTeam.GameBase
 
         public OwnerChild(Entity entity, ComponentType componentType)
         {
-            Child = entity;
+            Child  = entity;
             TypeId = componentType.TypeIndex;
         }
 
         public static OwnerChild Create<T>(Entity entity)
-            where T : IOwnerDescription
+            where T : IEntityDescription
         {
             return new OwnerChild(entity, ComponentType.ReadOnly<T>());
         }

@@ -2,7 +2,6 @@
 using package.stormiumteam.shared;
 using Unity.Entities;
 using UnityEngine;
-using UnityEngine.Experimental.PlayerLoop;
 
 namespace package.StormiumTeam.GameBase
 {
@@ -34,7 +33,6 @@ namespace package.StormiumTeam.GameBase
         void PostSimulate();
     }
     
-    [UpdateAfter(typeof(Update))]
     [AlwaysUpdateSystem]
     public class PhysicUpdaterSystem : ComponentSystem
     {

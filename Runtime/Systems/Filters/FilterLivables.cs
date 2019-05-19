@@ -15,9 +15,9 @@ namespace Runtime.Systems.Filters
 		public override string Description => "Automatically add Livables colliders to collision physics filters";
 
 		[BurstCompile]
-		private struct Job : IJobForEachWithEntity<PhysicsCollider, OwnerState<LivableDescription>>, IFilter
+		private struct Job : IJobForEachWithEntity<PhysicsCollider, Relative<LivableDescription>>, IFilter
 		{
-			public void Execute(Entity entity, int index, ref PhysicsCollider c0, ref OwnerState<LivableDescription> owner)
+			public void Execute(Entity entity, int index, ref PhysicsCollider c0, ref Relative<LivableDescription> owner)
 			{
 				var rigidBodyIndex = PhysicsWorld.GetRigidBodyIndex(entity);
 

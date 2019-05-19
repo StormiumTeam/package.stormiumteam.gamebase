@@ -77,7 +77,7 @@ namespace package.StormiumTeam.GameBase
             Max   = max;
         }
 
-        public int GetRealAmmo()
+        public int GetMaxShoot()
         {
             if (Max <= 0)
                 return 0;
@@ -88,6 +88,19 @@ namespace package.StormiumTeam.GameBase
             var max = math.max(Max, 1);
 
             return max / usage;
+        }
+        
+        public int GetShootLeft()
+        {
+            if (Max <= 0 || Value <= 0)
+                return 0;
+            if (Usage <= 0)
+                return 1;
+            
+            var usage = math.max(Usage, 1);
+            var value   = math.max(Value, 1);
+
+            return value / usage;
         }
 
         public void IncreaseFromDelta(int delta)
