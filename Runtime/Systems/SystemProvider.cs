@@ -1,5 +1,8 @@
 using System;
+using System.CodeDom;
+using System.CodeDom.Compiler;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using package.stormiumteam.networking;
 using package.stormiumteam.networking.runtime.lowlevel;
@@ -89,6 +92,17 @@ namespace StormiumTeam.GameBase
         protected NativeList<TCreateData> CreateEntityDelayed;
 
         private bool m_CanHaveDelayedEntities;
+        
+        private static string GetTypeName(Type type)
+        {
+            var codeDomProvider         = CodeDomProvider.CreateProvider("C#");
+            var typeReferenceExpression = new CodeTypeReferenceExpression(new CodeTypeReference(type));
+            using (var writer = new StringWriter())
+            {
+                codeDomProvider.GenerateCodeFromExpression(typeReferenceExpression, writer, new CodeGeneratorOptions());
+                return writer.GetStringBuilder().ToString();
+            } 
+        }
 
         protected override void OnCreate()
         {
@@ -146,7 +160,7 @@ namespace StormiumTeam.GameBase
                 {
                     m_ModelIdent = m_ModelManager.Register
                     (
-                        $"EntityProvider.{GetType().Name}", SpawnEntity, DestroyEntity
+                        $"EntityProvider.{GetTypeName(GetType())}", SpawnEntity, DestroyEntity
                     );
                 }
                 else
@@ -184,7 +198,7 @@ namespace StormiumTeam.GameBase
                     EntityArchetype              = EntityManager.CreateArchetype(EntityComponents);
                     EntityArchetypeWithAuthority = EntityManager.CreateArchetype(EntityComponents.Append(ComponentType.ReadWrite<EntityAuthority>()).ToArray());
 
-                    var patternName = $"EntityProvider.Full.{GetType().Name}";
+                    var patternName = $"EntityProvider.Full.{GetTypeName(GetType())}";
                     m_ModelIdent = m_ModelManager.RegisterFull
                     (
                         patternName + ".Model", ComponentsToExcludeFromStreamers, ProviderSpawnEntity, ProviderDestroyEntity, SerializeCollection, DeserializeCollection
