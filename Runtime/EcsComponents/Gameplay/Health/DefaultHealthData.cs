@@ -130,9 +130,9 @@ namespace StormiumTeam.GameBase.Components
 			}
 		}
 
-		public class InstanceProvider : SystemProviderBatch<CreateInstance>
+		public class InstanceProvider : BaseProviderBatch<CreateInstance>
 		{
-			public override void GetComponents(out ComponentType[] entityComponents, out ComponentType[] excludedStreamerComponents)
+			public override void GetComponents(out ComponentType[] entityComponents)
 			{
 				entityComponents = new[]
 				{
@@ -142,7 +142,6 @@ namespace StormiumTeam.GameBase.Components
 					ComponentType.ReadWrite<HealthContainerParent>(),
 					ComponentType.ReadWrite<DestroyChainReaction>()
 				};
-				excludedStreamerComponents = null;
 			}
 
 			public override void SetEntityData(Entity entity, CreateInstance data)

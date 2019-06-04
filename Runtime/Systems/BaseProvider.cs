@@ -1,4 +1,6 @@
 using System;
+using System.CodeDom;
+using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,16 +12,11 @@ using UnityEngine;
 
 namespace StormiumTeam.GameBase
 {
-    public interface ISystemProviderExcludeComponents : IAppEvent
-    {
-        void ExcludeComponentsFor(Type type, List<ComponentType> components);
-    }
-
-    public class SystemProviderGroup : ComponentSystemGroup
+    public class ProviderGroup : ComponentSystemGroup
     {
     }
 
-    public abstract class SystemProvider : SystemProvider<SystemProvider.NoData>
+    public abstract class BaseProvider : BaseProvider<BaseProvider.NoData>
     {
         public struct NoData
         {
@@ -31,7 +28,7 @@ namespace StormiumTeam.GameBase
         }
     }
 
-    public abstract class SystemProviderBatch<TCreateData> : SystemProvider<TCreateData>
+    public abstract class BaseProviderBatch<TCreateData> : BaseProvider<TCreateData>
         where TCreateData : struct
     {
         public override void SpawnBatchEntitiesWithArguments(UnsafeAllocationLength<TCreateData> array, NativeList<Entity> outputEntities, NativeList<int> indices)
@@ -45,7 +42,7 @@ namespace StormiumTeam.GameBase
                 var data   = array[i];
 
                 SetEntityData(entity, data);
-                
+
                 indices.Add(i);
             }
 
@@ -64,31 +61,24 @@ namespace StormiumTeam.GameBase
         public abstract void SetEntityData(Entity entity, TCreateData data);
     }
 
-    [UpdateInGroup(typeof(SystemProviderGroup))]
-    public abstract class SystemProvider<TCreateData> : ComponentSystem, ISnapshotManageForClient, ISystemProviderExcludeComponents
+    [UpdateInGroup(typeof(ProviderGroup))]
+    public abstract class BaseProvider<TCreateData> : ComponentSystem
         where TCreateData : struct
     {
         private EntityModelManager m_ModelManager;
         private GameManager        m_GameManager;
         private ModelIdent         m_ModelIdent;
-        private PatternResult      m_SnapshotPattern;
 
         private ComponentType[] m_EntityComponents;
-        private ComponentType[] m_ExcludedComponents;
-
-        private BlockComponentSerialization[] m_BlockedComponents;
 
         public ComponentType[] EntityComponents             => m_EntityComponents;
-        public ComponentType[] ExcludedComponents           => m_ExcludedComponents;
         public EntityArchetype EntityArchetype              { get; protected set; }
         public EntityArchetype EntityArchetypeWithAuthority { get; protected set; }
-
-        public ComponentType[] ComponentsToExcludeFromStreamers { get; private set; }
 
         protected NativeList<TCreateData> CreateEntityDelayed;
 
         private bool m_CanHaveDelayedEntities;
-        
+
         private static string GetTypeName(Type type)
         {
             var codeDomProvider         = CodeDomProvider.CreateProvider("C#");
@@ -97,12 +87,12 @@ namespace StormiumTeam.GameBase
             {
                 codeDomProvider.GenerateCodeFromExpression(typeReferenceExpression, writer, new CodeGeneratorOptions());
                 return writer.GetStringBuilder().ToString();
-            } 
+            }
         }
 
         protected override void OnCreate()
         {
-            if ((m_CanHaveDelayedEntities = typeof(TCreateData) != typeof(SystemProvider.NoData)) == true)
+            if ((m_CanHaveDelayedEntities = typeof(TCreateData) != typeof(BaseProvider.NoData)) == true)
             {
                 CreateEntityDelayed = new NativeList<TCreateData>(32, Allocator.Persistent);
             }
@@ -119,7 +109,7 @@ namespace StormiumTeam.GameBase
         protected override void OnDestroyManager()
         {
             base.OnDestroyManager();
-            
+
             CreateEntityDelayed.Dispose();
         }
 
@@ -140,7 +130,7 @@ namespace StormiumTeam.GameBase
 
             output.Dispose();
             indices.Dispose();
-            
+
             CreateEntityDelayed.Clear();
         }
 
@@ -151,8 +141,8 @@ namespace StormiumTeam.GameBase
                 m_ModelManager = World.GetExistingSystem<EntityModelManager>();
                 m_GameManager  = World.GetExistingSystem<GameManager>();
 
-                GetComponents(out m_EntityComponents, out m_ExcludedComponents);
-                if (EntityComponents == null && ExcludedComponents == null)
+                GetComponents(out m_EntityComponents);
+                if (EntityComponents == null)
                 {
                     m_ModelIdent = m_ModelManager.Register
                     (
@@ -173,23 +163,9 @@ namespace StormiumTeam.GameBase
 
                     l = new Dictionary<ComponentType, byte> {[ComponentType.ReadWrite<ModelIdent>()] = 0};
 
-                    if (m_ExcludedComponents != null)
-                        foreach (var c in m_ExcludedComponents)
-                            l[c] = 0;
                     var foreignList = new List<ComponentType>();
-                    foreach (var obj in AppEvent<ISystemProviderExcludeComponents>.GetObjEvents())
-                        if (obj != this)
-                            obj.ExcludeComponentsFor(GetType(), foreignList);
                     foreach (var c in foreignList)
                         l[c] = 0;
-
-                    ComponentsToExcludeFromStreamers = l.Keys.ToArray();
-                    m_BlockedComponents              = new BlockComponentSerialization[ComponentsToExcludeFromStreamers.Length];
-
-                    for (var i = 0; i != ComponentsToExcludeFromStreamers.Length; i++)
-                    {
-                        m_BlockedComponents[i] = new BlockComponentSerialization {TypeIdx = ComponentsToExcludeFromStreamers[i].TypeIndex};
-                    }
 
                     EntityArchetype              = EntityManager.CreateArchetype(EntityComponents);
                     EntityArchetypeWithAuthority = EntityManager.CreateArchetype(EntityComponents.Append(ComponentType.ReadWrite<EntityAuthority>()).ToArray());
@@ -197,10 +173,9 @@ namespace StormiumTeam.GameBase
                     var patternName = $"EntityProvider.Full.{GetTypeName(GetType())}";
                     m_ModelIdent = m_ModelManager.RegisterFull
                     (
-                        patternName + ".Model", ComponentsToExcludeFromStreamers, ProviderSpawnEntity, ProviderDestroyEntity, SerializeCollection, DeserializeCollection
+                        patternName + ".Model", EntityComponents, ProviderSpawnEntity, ProviderDestroyEntity
                     );
 
-                    m_SnapshotPattern = World.GetOrCreateSystem<NetPatternSystem>().GetLocalBank().Register(new PatternIdent(patternName + ".Snapshot"));
                     World.GetOrCreateSystem<AppEventSystem>().SubscribeToAll(this);
                 }
             }
@@ -213,7 +188,7 @@ namespace StormiumTeam.GameBase
             return m_ModelIdent;
         }
 
-        protected virtual Entity SpawnEntity(Entity origin, SnapshotRuntime snapshotRuntime)
+        protected virtual Entity SpawnEntity(Entity origin)
         {
             return EntityManager.CreateEntity(EntityArchetype);
         }
@@ -223,17 +198,9 @@ namespace StormiumTeam.GameBase
             EntityManager.DestroyEntity(worldEntity);
         }
 
-        public Entity ProviderSpawnEntity(Entity origin, SnapshotRuntime snapshotRuntime)
+        public Entity ProviderSpawnEntity(Entity origin)
         {
-            var e = SpawnEntity(origin, snapshotRuntime);
-
-            if (ComponentsToExcludeFromStreamers != null)
-            {
-                var blockedComponents = EntityManager.AddBuffer<BlockComponentSerialization>(e);
-                blockedComponents.CopyFrom(m_BlockedComponents);
-            }
-
-            return e;
+            return SpawnEntity(origin);
         }
 
         public void ProviderDestroyEntity(Entity worldEntity)
@@ -241,18 +208,9 @@ namespace StormiumTeam.GameBase
             DestroyEntity(worldEntity);
         }
 
-        public virtual void GetComponents(out ComponentType[] entityComponents, out ComponentType[] excludedStreamerComponents)
+        public virtual void GetComponents(out ComponentType[] entityComponents)
         {
-            entityComponents           = null;
-            excludedStreamerComponents = null;
-        }
-
-        public virtual void SerializeCollection(ref DataBufferWriter data, SnapshotReceiver receiver, SnapshotRuntime snapshotRuntime)
-        {
-        }
-
-        public virtual void DeserializeCollection(ref DataBufferReader data, SnapshotSender sender, SnapshotRuntime snapshotRuntime)
-        {
+            entityComponents = null;
         }
 
         public virtual void SpawnBatchEntitiesWithArguments(UnsafeAllocationLength<TCreateData> array, NativeList<Entity> outputEntities, NativeList<int> indices)
@@ -276,43 +234,13 @@ namespace StormiumTeam.GameBase
         {
             var e = entityCommandBuffer.CreateEntity(EntityArchetype);
             entityCommandBuffer.SetComponent(e, GetModelIdent());
-            
+
             return e;
         }
 
         public Entity SpawnLocal()
         {
             return m_GameManager.SpawnLocal(GetModelIdent());
-        }
-
-        // Snapshot Implementation
-        public PatternResult GetSystemPattern()
-        {
-            return m_SnapshotPattern;
-        }
-
-        public DataBufferWriter WriteData(SnapshotReceiver receiver, SnapshotRuntime runtime)
-        {
-            var buffer       = new DataBufferWriter(4096, Allocator.TempJob);
-            var lengthMarker = buffer.WriteInt(0);
-            SerializeCollection(ref buffer, receiver, runtime);
-            buffer.WriteInt(buffer.Length, lengthMarker);
-            return buffer;
-        }
-
-        public void ReadData(SnapshotSender sender, SnapshotRuntime runtime, DataBufferReader sysData)
-        {
-            var length = sysData.ReadValue<int>();
-            DeserializeCollection(ref sysData, sender, runtime);
-            if (length != sysData.CurrReadIndex)
-            {
-                Debug.LogError($"{GetType()}.ReadData() -> Error! -> length({length}) != sysData.CurrReadIndex({sysData.CurrReadIndex})");
-            }
-        }
-
-        public virtual void ExcludeComponentsFor(Type type, List<ComponentType> components)
-        {
-
         }
     }
 }

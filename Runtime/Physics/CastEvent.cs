@@ -24,7 +24,7 @@ namespace StormiumTeam.GameBase
 		public float3 RigidBodyIndex => Value.RigidBodyIndex;
 	}
 
-	public class ColliderCastEventProvider : SystemProviderBatch<ColliderCastEventProvider.Create>
+	public class ColliderCastEventProvider : BaseProviderBatch<ColliderCastEventProvider.Create>
 	{
 		public struct Create
 		{
@@ -32,14 +32,13 @@ namespace StormiumTeam.GameBase
 			public Entity Source;
 		}
 
-		public override void GetComponents(out ComponentType[] entityComponents, out ComponentType[] excludedStreamerComponents)
+		public override void GetComponents(out ComponentType[] entityComponents)
 		{
 			entityComponents = new ComponentType[]
 			{
 				typeof(ColliderCastEventInput),
 				typeof(ColliderCastEventHit)
 			};
-			excludedStreamerComponents = null;
 		}
 
 		public override void SetEntityData(Entity entity, Create data)

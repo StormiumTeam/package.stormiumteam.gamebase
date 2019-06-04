@@ -2,7 +2,7 @@ using UnityEngine.InputSystem;
 
 namespace StormiumTeam.GameBase.Systems
 {
-	public abstract class SyncInputSystem : GameBaseSyncMessageSystem
+	public abstract class BaseSyncInputSystem : GameBaseSystem
 	{
 		public InputActionAsset Asset { get; private set; }
 

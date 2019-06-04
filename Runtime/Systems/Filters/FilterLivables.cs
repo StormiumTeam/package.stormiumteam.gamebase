@@ -3,11 +3,13 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
+using Unity.NetCode;
 using Unity.Physics;
 using Unity.Physics.Extensions;
 
 namespace Runtime.Systems.Filters
 {
+	[UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
 	public class FilterLivables : CollisionFilterSystemBase
 	{
 		public override string Name => "Livables filter rule.";
@@ -39,6 +41,11 @@ namespace Runtime.Systems.Filters
 		public override JobHandle Filter(PhysicsWorld physicsWorld, NativeArray<Entity> targets, JobHandle jobHandle)
 		{
 			return FillVariables(new Job()).Schedule(this, jobHandle);
+		}
+
+		protected override JobHandle OnUpdate(JobHandle inputDeps)
+		{
+			return inputDeps;
 		}
 	}
 }

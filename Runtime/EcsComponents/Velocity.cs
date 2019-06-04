@@ -1,10 +1,46 @@
+using DefaultNamespace;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Networking.Transport;
 
 namespace StormiumTeam.GameBase
 {
-    public struct Velocity : IComponentData
+    public struct Velocity : IComponentFromSnapshot<Velocity.SnapshotData>
     {
+        public struct SnapshotData : ISnapshotFromComponent<SnapshotData, Velocity>
+        {
+            public uint Tick { get; private set; }
+
+            public int3 Velocity; // float * 1000
+
+            public void PredictDelta(uint tick, ref SnapshotData baseline1, ref SnapshotData baseline2)
+            {
+            }
+
+            public void Serialize(ref SnapshotData baseline, DataStreamWriter writer, NetworkCompressionModel compressionModel)
+            {
+                for (var i = 0; i != 2; i++)
+                    writer.WritePackedIntDelta(Velocity[i], baseline.Velocity[i], compressionModel);
+            }
+
+            public void Deserialize(uint tick, ref SnapshotData baseline, DataStreamReader reader, ref DataStreamReader.Context ctx, NetworkCompressionModel compressionModel)
+            {
+                Tick = tick;
+                for (var i = 0; i != 2; i++)
+                    Velocity[i] = reader.ReadPackedIntDelta(ref ctx, baseline.Velocity[i], compressionModel);
+            }
+
+            public void Interpolate(ref SnapshotData target, float factor)
+            {
+                Velocity = new int3(math.lerp(Velocity, target.Velocity, factor));
+            }
+
+            public void Set(Velocity component)
+            {
+                Velocity = new int3(component.Value * 1000);
+            }
+        }
+
         public float3 Value;
 
         public float3 normalized => math.normalizesafe(Value);
@@ -16,7 +52,16 @@ namespace StormiumTeam.GameBase
             Value = value;
         }
 
-        public class Streamer : SnapshotEntityDataAutomaticStreamer<Velocity>
+        public void Set(SnapshotData snapshot)
+        {
+            Value = new float3(snapshot.Velocity) * 0.001f;
+        }
+
+        public class RegisterSerializer : AddComponentSerializer<Velocity, Velocity.SnapshotData>
+        {
+        }
+
+        public class UpdateFromSnapshot : BaseUpdateFromSnapshotSystem<Velocity.SnapshotData, Velocity>
         {
         }
     }

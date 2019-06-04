@@ -135,7 +135,7 @@ namespace Runtime.BaseSystems
 	{
 	}
 
-	public abstract class RuleBaseSystem : GameBaseSystem
+	public abstract class RuleBaseSystem : JobGameBaseSystem
 	{
 		public List<RulePropertiesBase> PropertiesCollection;
 

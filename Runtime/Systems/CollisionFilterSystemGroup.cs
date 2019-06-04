@@ -6,11 +6,13 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
+using Unity.NetCode;
 using Unity.Physics;
 using Unity.Physics.Systems;
 
 namespace Runtime.Systems
 {
+	[UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
 	public class CollisionFilterSystemGroup : RuleSystemGroupBase
 	{
 		public override void Process()
@@ -86,10 +88,6 @@ namespace Runtime.Systems
 	{
 		private NativeArray<Entity> m_Targets;
 		private PhysicsWorld        m_PhysicsWorld;
-
-		protected override void OnUpdate()
-		{
-		}
 
 		public abstract JobHandle Filter(PhysicsWorld physicsWorld, NativeArray<Entity> targets, JobHandle jobHandle);
 

@@ -41,5 +41,10 @@ namespace Runtime.Systems.Filters
 		{
 			return FillVariables(new Job()).Schedule(this, jobHandle);
 		}
+
+		protected override JobHandle OnUpdate(JobHandle inputDeps)
+		{
+			return inputDeps;
+		}
 	}
 }

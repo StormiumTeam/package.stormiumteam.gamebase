@@ -6,12 +6,13 @@ namespace StormiumTeam.GameBase
 	public struct GameEvent : IComponentData
 	{
 		public long Tick;
-		public int Snapshot;
+		public int  Snapshot;
 	}
-	
+
 	public interface IEventData : IComponentData
-	{}
-	
+	{
+	}
+
 	public class GameEventManager : GameBaseSystem
 	{
 		protected override void OnUpdate()
@@ -20,7 +21,7 @@ namespace StormiumTeam.GameBase
 			{
 				if (EntityManager.HasComponent<ModelIdent>(entity))
 				{
-					Debug.Log("Destroyed event. " + EntityManager.GetComponentData<ModelIdent>(entity).Id);
+					Debug.Log("Destroyed event. " + EntityManager.GetComponentData<ModelIdent>(entity).Value);
 				}
 
 				PostUpdateCommands.DestroyEntity(entity);
@@ -29,8 +30,8 @@ namespace StormiumTeam.GameBase
 
 		public void Create(EntityCommandBuffer commandBuffer)
 		{
-			commandBuffer.CreateEntity();
-			commandBuffer.AddComponent(new GameEvent {Tick = this.Tick, Snapshot = 0});
+			var ent = commandBuffer.CreateEntity();
+			commandBuffer.AddComponent(ent, new GameEvent {Tick = GameTime.Tick, Snapshot = 0});
 		}
 	}
 }

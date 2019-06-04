@@ -10,7 +10,7 @@ namespace StormiumTeam.GameBase
 {
 	public abstract class GameBaseSystem : BaseComponentSystem
 	{
-		public int GameTime      => m_GameTimeSingletonGroup.GetSingleton<GameTimeComponent>().Value;
+		public GameTime GameTime      => m_GameTimeSingletonGroup.GetSingleton<GameTimeComponent>().Value;
 
 		protected override void OnCreate()
 		{
@@ -54,7 +54,7 @@ namespace StormiumTeam.GameBase
 
 	public abstract class JobGameBaseSystem : JobComponentSystem
 	{
-		public int GameTime      => m_GameTimeSingletonGroup.GetSingleton<GameTimeComponent>().Value;
+		public GameTime GameTime      => m_GameTimeSingletonGroup.GetSingleton<GameTimeComponent>().Value;
 
 		protected override void OnCreate()
 		{

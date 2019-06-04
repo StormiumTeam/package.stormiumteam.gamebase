@@ -15,47 +15,14 @@ namespace StormiumTeam.GameBase
         }
     }
 
-    public struct GamePlayerToNetworkClient : IComponentData
+    public class GamePlayerProvider : BaseProvider
     {
-        /// <summary>
-        /// This variable should not be synced between connections and need to be assigned locally.
-        /// This hold a target to the server client entity.
-        /// </summary>
-        public Entity Target;
-
-        public GamePlayerToNetworkClient(Entity target)
+        public override void GetComponents(out ComponentType[] entityComponents)
         {
-            Target = target;
-        }
-    }
-
-    public struct NetworkClientToGamePlayer : IComponentData
-    {
-        public Entity Target;
-
-        public NetworkClientToGamePlayer(Entity target)
-        {
-            Target = target;
-        }
-    }
-
-    public class GamePlayerProvider : SystemProvider
-    {
-        protected override Entity SpawnEntity(Entity origin, SnapshotRuntime snapshotRuntime)
-        {
-            return EntityManager.CreateEntity
-            (
-                ComponentType.ReadWrite<PlayerDescription>(),
-                ComponentType.ReadWrite<GamePlayer>(),
-                ComponentType.ReadWrite<ModelIdent>(),
-                ComponentType.ReadWrite<GenerateEntitySnapshot>()
-            );
-        }
-
-        protected override void DestroyEntity(Entity worldEntity)
-        {
-            // should we also destroy attached modules?
-            EntityManager.DestroyEntity(worldEntity);
+            entityComponents = new[]
+            {
+                ComponentType.ReadWrite<GamePlayer>()
+            };
         }
     }
 }

@@ -44,7 +44,7 @@ namespace StormiumTeam.GameBase
 		protected void GetPosition(in Entity livable, out float3 position)
 		{
 			Debug.Assert(EntityManager.HasComponent<EyePosition>(livable));
-			Debug.Assert(EntityManager.HasComponent<TransformState>(livable));
+			Debug.Assert(EntityManager.HasComponent<LocalToWorld>(livable));
 
 			position = new ShootHelper
 			(
@@ -70,7 +70,7 @@ namespace StormiumTeam.GameBase
 		{
 			Debug.Assert(EntityManager.HasComponent<EyePosition>(livable));
 			Debug.Assert(EntityManager.HasComponent<AimLookState>(livable));
-			Debug.Assert(EntityManager.HasComponent<TransformState>(livable));
+			Debug.Assert(EntityManager.HasComponent<LocalToWorld>(livable));
 
 			new ShootHelper
 			(
