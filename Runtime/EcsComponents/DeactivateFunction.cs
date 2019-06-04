@@ -1,19 +1,14 @@
-using StormiumShared.Core.Networking;
 using Unity.Entities;
 
 namespace StormiumTeam.GameBase.Data
 {
+	// TODO: find a way to synchronize this nicely
 	public struct DeactivateMovement : IComponentData
 	{
-		public class Streamer : SnapshotEntityComponentStatusStreamer<DeactivateMovement>
-		{
-		}
 	}
 
+	// TODO: find a way to synchronize this nicely
 	public struct DeactivateInput : IComponentData
 	{
-		public class Streamer : SnapshotEntityComponentStatusStreamer<DeactivateMovement>
-		{
-		}
 	}
 }

@@ -5,7 +5,6 @@ using Unity.Entities;
 using Unity.Jobs;
 using Unity.Physics;
 using Unity.Physics.Extensions;
-using UnityEngine;
 
 namespace Runtime.Systems.Filters
 {

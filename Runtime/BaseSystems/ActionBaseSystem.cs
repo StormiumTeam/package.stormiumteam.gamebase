@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
@@ -9,7 +8,7 @@ using UnityEngine;
 namespace StormiumTeam.GameBase
 {
 	[UpdateInGroup(typeof(ActionSystemGroup))]
-	public abstract class ActionBaseSystem : GameBaseSystem
+	public abstract class ActionBaseSystem : JobGameBaseSystem
 	{
 		public struct ShootHelper
 		{
@@ -98,25 +97,16 @@ namespace StormiumTeam.GameBase
 		protected abstract void OnActionUpdate();
 		protected abstract void FinalizeSpawnRequests();
 
-		protected override void OnUpdate()
+		protected override JobHandle OnUpdate(JobHandle inputDeps)
 		{
+			inputDeps.Complete();
+
 			SpawnRequests.Clear();
 
 			OnActionUpdate();
 			FinalizeSpawnRequests();
-		}
-	}
 
-	public abstract class ActionBaseJobSystem : ActionBaseSystem
-	{
-		protected override void OnUpdate()
-		{
-			SetDependency(OnActionUpdate(GetDependency()));
-			
-			if (!SystemGroup_CanHaveDependency())
-				GetDependency().Complete();
+			return inputDeps;
 		}
-
-		protected abstract JobHandle OnActionUpdate(JobHandle jobHandle);
 	}
 }

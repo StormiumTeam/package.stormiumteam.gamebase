@@ -1,7 +1,5 @@
 using System;
 using System.Net;
-using package.stormiumteam.networking.runtime.highlevel;
-using StormiumShared.Core.Networking;
 using StormiumTeam.GameBase.Networking;
 using Unity.Entities;
 using UnityEngine;
@@ -11,8 +9,9 @@ namespace StormiumTeam.GameBase
     [Flags]
     public enum GameType
     {
+        None = 0,
         Client = 1,
-        Server = 2,
+        Server = 2
         Global = 3
     }
 
@@ -46,20 +45,6 @@ namespace StormiumTeam.GameBase
 
         protected override void OnUpdate()
         {
-            if (Input.GetKeyDown(KeyCode.C))
-            {
-                if (client != default)
-                    EntityManager.DestroyEntity(client);
-                
-                var model = World.GetExistingSystem<GamePlayerProvider>().GetModelIdent();
-                client = EntityManager.CreateEntity(typeof(ClientTag), typeof(NetworkClient));
-                
-                EntityManager.AddComponent(client, typeof(NetworkClientToGamePlayer));
-
-                var player = SpawnLocal(model);
-
-                EntityManager.AddComponent(player, typeof(GamePlayerToNetworkClient));
-            }
         }
 
         public Entity SpawnLocal(ModelIdent ident, bool assignAuthority = true)

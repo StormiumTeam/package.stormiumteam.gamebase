@@ -1,13 +1,10 @@
 using package.stormiumteam.networking.runtime.lowlevel;
 using package.stormiumteam.shared;
 using package.stormiumteam.shared.ecs;
-using StormiumShared.Core.Networking;
 using StormiumTeam.GameBase.Data;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
-using Unity.Transforms;
-using UnityEngine;
 
 namespace StormiumTeam.GameBase
 {
@@ -240,24 +237,11 @@ namespace StormiumTeam.GameBase
         }
     }
 
-    public struct Relative<TDescription> : IStateData, IComponentData, ISerializableAsPayload
+    // Todo: find a way to synchronize it nicely.
+    public struct Relative<TDescription> : IComponentData
         where TDescription : struct, IEntityDescription
     {
         public Entity Target;
-
-        public void Write(ref DataBufferWriter data, SnapshotReceiver receiver, SnapshotRuntime runtime)
-        {
-            data.WriteValue(Target);
-        }
-
-        public void Read(ref DataBufferReader data, SnapshotSender sender, SnapshotRuntime runtime)
-        {
-            Target = runtime.EntityToWorld(data.ReadValue<Entity>());
-        }
-
-        public class Streamer : SnapshotEntityDataManualValueTypeStreamer<Relative<TDescription>>
-        {
-        }
     }
 
     [InternalBufferCapacity(8)]

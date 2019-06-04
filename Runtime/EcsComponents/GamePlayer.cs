@@ -1,54 +1,10 @@
 using package.stormiumteam.networking.runtime.lowlevel;
-using StormiumShared.Core.Networking;
 using Unity.Entities;
-using Unity.Mathematics;
 
 namespace StormiumTeam.GameBase
 {
     public struct GamePlayer : IComponentData
     {
-        public struct WritePayload : IWriteEntityDataPayload<GamePlayer>
-        {
-            public ComponentDataFromEntity<GamePlayerToNetworkClient> ToNetworkClients;
-
-            public void Write(int index, Entity entity, ComponentDataFromEntity<GamePlayer> stateFromEntity, ComponentDataFromEntity<DataChanged<GamePlayer>> changeFromEntity, DataBufferWriter data, SnapshotReceiver receiver, SnapshotRuntime runtime)
-            {
-                data.WriteUnmanaged(stateFromEntity[entity]);
-                if (ToNetworkClients.Exists(entity))
-                {
-                    // Is the user owned from the same client? (1 = yes, 0 = no)
-                    data.WriteValue(ToNetworkClients[entity].Target == receiver.Client);
-                }
-                else
-                {
-                    data.WriteValue(0);
-                }
-            }
-        }
-
-        public struct ReadPayload : IReadEntityDataPayload<GamePlayer>
-        {
-            public void Read(int index, Entity entity, ComponentDataFromEntity<GamePlayer> dataFromEntity, ref DataBufferReader data, SnapshotSender sender, SnapshotRuntime runtime)
-            {
-                var player = data.ReadValue<GamePlayer>();
-                player.IsSelf = data.ReadValue<bool>();
-
-                dataFromEntity[entity] = player;
-            }
-        } 
-        
-        public class Streamer : SnapshotEntityDataManualStreamer<GamePlayer, WritePayload, ReadPayload>
-        {
-            protected override void UpdatePayloadW(ref WritePayload current)
-            {
-                current.ToNetworkClients = GetComponentDataFromEntity<GamePlayerToNetworkClient>();
-            }
-
-            protected override void UpdatePayloadR(ref ReadPayload current)
-            {
-            }
-        }
-
         public ulong MasterServerId;
         public bool  IsSelf;
 

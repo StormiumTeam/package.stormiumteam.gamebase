@@ -1,31 +1,90 @@
 using System;
-using package.stormiumteam.networking;
-using package.stormiumteam.networking.runtime.lowlevel;
-using package.stormiumteam.shared;
-using package.stormiumteam.shared.ecs;
-using StormiumShared.Core;
-using StormiumShared.Core.Networking;
+using DefaultNamespace;
 using StormiumTeam.GameBase.Data;
-using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
-using UnityEngine;
-using NotImplementedException = System.NotImplementedException;
+using Unity.Networking.Transport;
 
 namespace StormiumTeam.GameBase.Components
 {
-	public struct RegenerativeHealthData : IComponentData, ISerializableAsPayload
+	public struct RegenerativeHealthData : IComponentFromSnapshot<RegenerativeHealthData.SnapshotData>
 	{
 		[Serializable]
 		public struct CreateInstance
 		{
 			public int    value, max;
-			public float    rate;
-			public int cooldown;
+			public float  rate;
+			public int    cooldown;
 			public Entity owner;
+		}
+
+		public struct SnapshotData : ISnapshotFromComponent<SnapshotData, RegenerativeHealthData>
+		{
+			public uint Tick { get; private set; }
+
+			public int Value;
+			public int Max;
+
+			public int Rate;                // float * 1000
+			public int CurrentRegeneration; // float * 1000
+
+			public int Cooldown;
+			public int StartTick;
+
+			public void PredictDelta(uint tick, ref SnapshotData baseline1, ref SnapshotData baseline2)
+			{
+			}
+
+			public void Serialize(ref SnapshotData baseline, DataStreamWriter writer, NetworkCompressionModel compressionModel)
+			{
+				writer.WritePackedInt(Value, compressionModel);
+				writer.WritePackedInt(Max, compressionModel);
+
+				writer.WritePackedInt(Rate, compressionModel);
+				writer.WritePackedInt(CurrentRegeneration, compressionModel);
+
+				writer.WritePackedInt(Cooldown, compressionModel);
+				writer.WritePackedInt(StartTick, compressionModel);
+			}
+
+			public void Deserialize(uint tick, ref SnapshotData baseline, DataStreamReader reader, ref DataStreamReader.Context ctx, NetworkCompressionModel compressionModel)
+			{
+				Tick = tick;
+
+				Value = reader.ReadPackedInt(ref ctx, compressionModel);
+				Max   = reader.ReadPackedInt(ref ctx, compressionModel);
+
+				Rate                = reader.ReadPackedInt(ref ctx, compressionModel);
+				CurrentRegeneration = reader.ReadPackedInt(ref ctx, compressionModel);
+
+				Cooldown  = reader.ReadPackedInt(ref ctx, compressionModel);
+				StartTick = reader.ReadPackedInt(ref ctx, compressionModel);
+			}
+
+			public void Interpolate(ref SnapshotData target, float factor)
+			{
+				Value               = (int) math.lerp(Value, target.Value, factor);
+				Max                 = (int) math.lerp(Max, target.Max, factor);
+				Rate                = (int) math.lerp(Rate, target.Rate, factor);
+				CurrentRegeneration = (int) math.lerp(CurrentRegeneration, target.CurrentRegeneration, factor);
+				Cooldown            = (int) math.lerp(Cooldown, target.Cooldown, factor);
+				StartTick           = (int) math.lerp(StartTick, target.StartTick, factor);
+			}
+
+			public void Set(RegenerativeHealthData component)
+			{
+				Value = component.Value;
+				Max   = component.Max;
+
+				Rate                = (int) (component.Rate * 1000);
+				CurrentRegeneration = (int) (component.CurrentRegeneration * 1000);
+
+				Cooldown  = component.Cooldown;
+				StartTick = component.StartTick;
+			}
 		}
 
 		public int Value;
@@ -33,42 +92,44 @@ namespace StormiumTeam.GameBase.Components
 
 		public float Rate;
 		public float CurrentRegeneration;
-		
+
 		public int Cooldown;
 		public int StartTick;
 
-		public void Write(ref DataBufferWriter data, SnapshotReceiver receiver, SnapshotRuntime runtime)
+
+		public void Set(SnapshotData snapshotData)
 		{
-			data.WriteDynamicIntWithMask((ulong) Value, (ulong) Max);
+			Value = snapshotData.Value;
+			Max   = snapshotData.Max;
+
+			Rate                = snapshotData.Rate * 0.001f;
+			CurrentRegeneration = snapshotData.CurrentRegeneration * 0.001f;
+
+			Cooldown  = snapshotData.Cooldown;
+			StartTick = snapshotData.StartTick;
 		}
 
-		public void Read(ref DataBufferReader data, SnapshotSender sender, SnapshotRuntime runtime)
-		{
-			data.ReadDynIntegerFromMask(out var unsignedValue, out var unsignedMax);
-
-			Value = (int) unsignedValue;
-			Max   = (int) unsignedMax;
-		}
-
-		public class Streamer : SnapshotEntityDataAutomaticStreamer<RegenerativeHealthData>
-		{
-		}
-
+		public class RegisterSerializer : AddComponentSerializer<RegenerativeHealthData, SnapshotData>
+		{}
+		
+		public class UpdateFromSnapshot : BaseUpdateFromSnapshotSystem<SnapshotData, RegenerativeHealthData>
+		{}
+		
 		[UpdateInGroup(typeof(HealthProcessGroup))]
 		public class System : HealthProcessSystem
 		{
 			//[BurstCompile]
 			private unsafe struct Job : IJobForEach<HealthContainerParent, RegenerativeHealthData, HealthConcreteValue>
 			{
-				public int Tick;
+				public int   Tick;
 				public float Dt;
-				
+
 				[NativeDisableParallelForRestriction]
 				public NativeList<ModifyHealthEvent> ModifyHealthEventList;
 
-				public void Execute(ref HealthContainerParent container,
+				public void Execute(ref HealthContainerParent  container,
 				                    ref RegenerativeHealthData healthData,
-				                    ref HealthConcreteValue   concrete)
+				                    ref HealthConcreteValue    concrete)
 				{
 					for (var i = 0; i != ModifyHealthEventList.Length; i++)
 					{
@@ -101,7 +162,7 @@ namespace StormiumTeam.GameBase.Components
 						if (healthData.Value < difference)
 						{
 							healthData.CurrentRegeneration = default;
-							healthData.StartTick = Tick + healthData.Cooldown;
+							healthData.StartTick           = Tick + healthData.Cooldown;
 						}
 					}
 
@@ -112,7 +173,7 @@ namespace StormiumTeam.GameBase.Components
 					{
 						var asInt = (int) healthData.CurrentRegeneration;
 
-						healthData.Value += asInt;
+						healthData.Value               += asInt;
 						healthData.CurrentRegeneration -= asInt;
 					}
 
@@ -128,8 +189,8 @@ namespace StormiumTeam.GameBase.Components
 				return new Job
 				{
 					ModifyHealthEventList = ModifyHealthEventList,
-					Tick = GetSingleton<SingletonGameTime>().Tick,
-					Dt = GetSingleton<SingletonGameTime>().DeltaTime
+					Tick                  = GetSingleton<GameTimeComponent>().Tick,
+					Dt                    = GetSingleton<GameTimeComponent>().DeltaTime
 				}.Schedule(this, jobHandle);
 			}
 		}

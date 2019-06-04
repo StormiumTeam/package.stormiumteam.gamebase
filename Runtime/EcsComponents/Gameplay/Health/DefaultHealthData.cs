@@ -1,22 +1,16 @@
 using System;
-using package.stormiumteam.networking;
-using package.stormiumteam.networking.runtime.lowlevel;
-using package.stormiumteam.shared;
-using package.stormiumteam.shared.ecs;
-using StormiumShared.Core.Networking;
+using DefaultNamespace;
 using StormiumTeam.GameBase.Data;
-using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
-using UnityEngine;
-using NotImplementedException = System.NotImplementedException;
+using Unity.Networking.Transport;
 
 namespace StormiumTeam.GameBase.Components
 {
-	public struct DefaultHealthData : IComponentData, ISerializableAsPayload
+	public struct DefaultHealthData : IComponentFromSnapshot<DefaultHealthData.SnapshotData>
 	{
 		[Serializable]
 		public struct CreateInstance
@@ -25,23 +19,59 @@ namespace StormiumTeam.GameBase.Components
 			public Entity owner;
 		}
 
+		public struct SnapshotData : ISnapshotFromComponent<SnapshotData, DefaultHealthData>
+		{
+			public uint Tick { get; private set; }
+
+			public int Value;
+			public int Max;
+
+			public void PredictDelta(uint tick, ref SnapshotData baseline1, ref SnapshotData baseline2)
+			{
+			}
+
+			public void Interpolate(ref SnapshotData target, float factor)
+			{
+				Value = (int) math.lerp(Value, target.Value, factor);
+				Max   = (int) math.lerp(Max, target.Max, factor);
+			}
+
+			public void Deserialize(uint tick, ref SnapshotData baseline, DataStreamReader reader, ref DataStreamReader.Context ctx, NetworkCompressionModel compressionModel)
+			{
+				Tick = tick;
+				
+				Value = reader.ReadPackedInt(ref ctx, compressionModel);
+				Max   = reader.ReadPackedInt(ref ctx, compressionModel);
+			}
+
+			public void Serialize(ref SnapshotData baseline, DataStreamWriter writer, NetworkCompressionModel compressionModel)
+			{
+				writer.WritePackedInt(Value, compressionModel);
+				writer.WritePackedInt(Max, compressionModel);
+			}
+
+			public void Set(DefaultHealthData component)
+			{
+				Value = component.Value;
+				Max   = component.Max;
+			}
+		}
+
 		public int Value;
 		public int Max;
 
-		public void Write(ref DataBufferWriter data, SnapshotReceiver receiver, SnapshotRuntime runtime)
+		public void Set(SnapshotData snapshot)
 		{
-			data.WriteDynamicIntWithMask((ulong) Value, (ulong) Max);
+			Value = snapshot.Value;
+			Max   = snapshot.Max;
 		}
 
-		public void Read(ref DataBufferReader data, SnapshotSender sender, SnapshotRuntime runtime)
+		public class RegisterSerializer : AddComponentSerializer<DefaultHealthData, SnapshotData>
 		{
-			data.ReadDynIntegerFromMask(out var unsignedValue, out var unsignedMax);
-
-			Value = (int) unsignedValue;
-			Max   = (int) unsignedMax;
+			public override int Importance => 100;
 		}
 
-		public class Streamer : SnapshotEntityDataAutomaticStreamer<DefaultHealthData>
+		public class SynchronizeFromSnapshot : BaseUpdateFromSnapshotSystem<SnapshotData, DefaultHealthData>
 		{
 		}
 
@@ -65,9 +95,6 @@ namespace StormiumTeam.GameBase.Components
 							continue;
 
 						var difference = healthData.Value;
-
-						Debug.Log($"{ev.Type} {ev.Origin} {ev.Consumed}");
-
 						switch (ev.Type)
 						{
 							case ModifyHealthType.Add:

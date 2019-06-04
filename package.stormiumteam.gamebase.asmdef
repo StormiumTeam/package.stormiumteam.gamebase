@@ -3,6 +3,7 @@
     "references": [
         "package.guerro.shared",
         "package.stormiumteam.networking",
+        "Unity.Networking.Transport",
         "Unity.InputSystem",
         "Unity.Addressables",
         "Unity.ResourceManager",
