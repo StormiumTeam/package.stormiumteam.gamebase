@@ -4,6 +4,7 @@
         "package.guerro.shared",
         "package.stormiumteam.networking",
         "Unity.Networking.Transport",
+        "Unity.NetCode",
         "Unity.InputSystem",
         "Unity.Addressables",
         "Unity.ResourceManager",
