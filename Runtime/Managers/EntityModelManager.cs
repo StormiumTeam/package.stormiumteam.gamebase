@@ -27,7 +27,7 @@ namespace StormiumTeam.GameBase
 
         private readonly Dictionary<int, DValue> m_ModelsData = new Dictionary<int, DValue>();
 
-        private void Init()
+        protected override void OnCreate()
         {
             m_PatternManager = World.GetOrCreateSystem<PatternManager>();
         }
@@ -38,7 +38,7 @@ namespace StormiumTeam.GameBase
         }
 
         public ModelIdent Register(string name, SpawnEntityDelegate spawn, DestroyEntityDelegate destroy)
-        {
+        {            
             var pattern = m_PatternManager.LocalBank.Register(new PatternIdent(name));
             
             m_ModelsData[pattern.Id] = new DValue

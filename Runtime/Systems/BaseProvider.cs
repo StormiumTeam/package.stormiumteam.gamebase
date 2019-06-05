@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using package.stormiumteam.networking.runtime.lowlevel;
 using package.stormiumteam.shared;
+using StormiumTeam.Shared;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
@@ -80,14 +81,8 @@ namespace StormiumTeam.GameBase
         private bool m_CanHaveDelayedEntities;
 
         private static string GetTypeName(Type type)
-        {
-            var codeDomProvider         = CodeDomProvider.CreateProvider("C#");
-            var typeReferenceExpression = new CodeTypeReferenceExpression(new CodeTypeReference(type));
-            using (var writer = new StringWriter())
-            {
-                codeDomProvider.GenerateCodeFromExpression(typeReferenceExpression, writer, new CodeGeneratorOptions());
-                return writer.GetStringBuilder().ToString();
-            }
+        {        
+            return TypeUtility.SpecifiedTypeName(type);
         }
 
         protected override void OnCreate()
@@ -106,11 +101,12 @@ namespace StormiumTeam.GameBase
                 FlushDelayedEntities();
         }
 
-        protected override void OnDestroyManager()
+        protected override void OnDestroy()
         {
-            base.OnDestroyManager();
+            base.OnDestroy();
 
-            CreateEntityDelayed.Dispose();
+            if (m_CanHaveDelayedEntities)
+                CreateEntityDelayed.Dispose();
         }
 
         public NativeList<TCreateData> GetEntityDelayedList()
@@ -138,8 +134,10 @@ namespace StormiumTeam.GameBase
         {
             if (m_ModelManager == null)
             {
-                m_ModelManager = World.GetExistingSystem<EntityModelManager>();
-                m_GameManager  = World.GetExistingSystem<GameManager>();
+                m_ModelManager = World.GetOrCreateSystem<EntityModelManager>();
+                m_GameManager  = World.GetOrCreateSystem<GameManager>();
+                
+                Debug.Log(GetTypeName(GetType()));
 
                 GetComponents(out m_EntityComponents);
                 if (EntityComponents == null)

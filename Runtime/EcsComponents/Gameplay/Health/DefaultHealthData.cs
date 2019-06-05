@@ -23,6 +23,8 @@ namespace StormiumTeam.GameBase.Components
 		{
 			public uint Tick { get; private set; }
 
+			public int OwnerGhostId;
+			
 			public int Value;
 			public int Max;
 
@@ -35,21 +37,23 @@ namespace StormiumTeam.GameBase.Components
 				Value = (int) math.lerp(Value, target.Value, factor);
 				Max   = (int) math.lerp(Max, target.Max, factor);
 			}
-
-			public void Deserialize(uint tick, ref SnapshotData baseline, DataStreamReader reader, ref DataStreamReader.Context ctx, NetworkCompressionModel compressionModel)
-			{
-				Tick = tick;
-				
-				Value = reader.ReadPackedInt(ref ctx, compressionModel);
-				Max   = reader.ReadPackedInt(ref ctx, compressionModel);
-			}
-
+			
 			public void Serialize(ref SnapshotData baseline, DataStreamWriter writer, NetworkCompressionModel compressionModel)
 			{
+				writer.WritePackedInt(OwnerGhostId, compressionModel);
 				writer.WritePackedInt(Value, compressionModel);
 				writer.WritePackedInt(Max, compressionModel);
 			}
 
+			public void Deserialize(uint tick, ref SnapshotData baseline, DataStreamReader reader, ref DataStreamReader.Context ctx, NetworkCompressionModel compressionModel)
+			{
+				Tick = tick;
+
+				OwnerGhostId = reader.ReadPackedInt(ref ctx, compressionModel);
+				Value = reader.ReadPackedInt(ref ctx, compressionModel);
+				Max   = reader.ReadPackedInt(ref ctx, compressionModel);
+			}
+			
 			public void Set(DefaultHealthData component)
 			{
 				Value = component.Value;

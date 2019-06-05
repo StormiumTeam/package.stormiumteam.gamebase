@@ -11,7 +11,7 @@ namespace StormiumTeam.GameBase
 	{
 		protected override void OnUpdate()
 		{
-			World.GetExistingSystem<BuildPhysicsWorld>().Update();
+			World.GetOrCreateSystem<BuildPhysicsWorld>().Update();
 
 			base.OnUpdate();
 		}

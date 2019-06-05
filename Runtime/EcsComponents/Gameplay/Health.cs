@@ -188,7 +188,7 @@ namespace StormiumTeam.GameBase.Components
 		protected override void OnUpdate()
 		{
 			base.OnUpdate();
-			
+
 			World.GetExistingSystem<BeforeGathering>().Process();
 
 			s_LastInstance = this;

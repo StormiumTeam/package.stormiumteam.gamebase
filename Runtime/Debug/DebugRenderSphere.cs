@@ -39,9 +39,9 @@ namespace StormiumTeam.GameBase
 
 		private static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
 
-		protected override void OnCreateManager()
+		protected override void OnCreate()
 		{
-			base.OnCreateManager();
+			base.OnCreate();
 
 			m_FindQuery = GetEntityQuery(typeof(DebugRenderSphere), typeof(LocalToWorld), ComponentType.Exclude<DebugRenderSphereShared>());
 
