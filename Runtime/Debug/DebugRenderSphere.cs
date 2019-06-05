@@ -17,7 +17,7 @@ namespace StormiumTeam.GameBase
 	}
 
 	[Serializable]
-	public struct DebugRenderSphereShared : ISharedComponentData
+	public struct DebugRenderSphereShared : ISharedComponentData, IEquatable<DebugRenderSphereShared>
 	{
 		public Color color;
 		
@@ -28,6 +28,38 @@ namespace StormiumTeam.GameBase
 		public int layer;
 		public ShadowCastingMode castShadows;
 		public bool              receiveShadows;
+
+		public bool Equals(DebugRenderSphereShared other)
+		{
+			return color.Equals(other.color) 
+			       && Equals(mesh, other.mesh) 
+			       && Equals(material, other.material) 
+			       && subMesh == other.subMesh 
+			       && layer == other.layer
+			       && castShadows == other.castShadows 
+			       && receiveShadows == other.receiveShadows;
+		}
+
+		public override bool Equals(object obj)
+		{
+			if (ReferenceEquals(null, obj)) return false;
+			return obj is DebugRenderSphereShared other && Equals(other);
+		}
+
+		public override int GetHashCode()
+		{
+			unchecked
+			{
+				var hashCode = color.GetHashCode();
+				hashCode = (hashCode * 397) ^ (mesh != null ? mesh.GetHashCode() : 0);
+				hashCode = (hashCode * 397) ^ (material != null ? material.GetHashCode() : 0);
+				hashCode = (hashCode * 397) ^ subMesh;
+				hashCode = (hashCode * 397) ^ layer;
+				hashCode = (hashCode * 397) ^ (int) castShadows;
+				hashCode = (hashCode * 397) ^ receiveShadows.GetHashCode();
+				return hashCode;
+			}
+		}
 	}
 
 	[UpdateBefore(typeof(RenderMeshSystemV2))]
