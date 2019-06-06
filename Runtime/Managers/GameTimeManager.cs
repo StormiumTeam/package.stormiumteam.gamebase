@@ -62,7 +62,9 @@ namespace StormiumTeam.GameBase
                 clientGroup?.AddSystemToUpdateList(World.GetOrCreateSystem<GameTimeManager>());
                 
                 // now destroy this system
-                //World.DestroySystem(this);
+                World.DestroySystem(this);
+                systemGroup?.RemoveSystemFromUpdateList(this);
+                clientGroup?.RemoveSystemFromUpdateList(this);
             }
 
             protected override void OnUpdate()

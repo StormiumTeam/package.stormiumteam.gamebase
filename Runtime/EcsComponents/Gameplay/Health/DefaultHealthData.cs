@@ -70,11 +70,6 @@ namespace StormiumTeam.GameBase.Components
 			Max   = snapshot.Max;
 		}
 
-		public class RegisterSerializer : AddComponentSerializer<DefaultHealthData, SnapshotData>
-		{
-			public override int Importance => 100;
-		}
-
 		public class SynchronizeFromSnapshot : BaseUpdateFromSnapshotSystem<SnapshotData, DefaultHealthData>
 		{
 		}

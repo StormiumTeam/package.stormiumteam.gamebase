@@ -109,9 +109,6 @@ namespace StormiumTeam.GameBase.Components
 			StartTick = snapshotData.StartTick;
 		}
 
-		public class RegisterSerializer : AddComponentSerializer<RegenerativeHealthData, SnapshotData>
-		{}
-		
 		public class UpdateFromSnapshot : BaseUpdateFromSnapshotSystem<SnapshotData, RegenerativeHealthData>
 		{}
 		

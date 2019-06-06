@@ -57,10 +57,6 @@ namespace StormiumTeam.GameBase
             Value = new float3(snapshot.Velocity) * 0.001f;
         }
 
-        public class RegisterSerializer : AddComponentSerializer<Velocity, Velocity.SnapshotData>
-        {
-        }
-
         public class UpdateFromSnapshot : BaseUpdateFromSnapshotSystem<Velocity.SnapshotData, Velocity>
         {
         }
