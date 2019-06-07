@@ -8,7 +8,7 @@ using static Unity.Mathematics.math;
 
 namespace StormiumTeam.GameBase
 {
-    [UpdateInGroup(typeof(InitializationSystemGroup))]
+    [UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
     public class GameTimeManager : JobComponentSystem
     {
         [BurstCompile]
@@ -49,27 +49,33 @@ namespace StormiumTeam.GameBase
         }
 
         // Also create it in clients and servers
-        [UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
+        /*[UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
         public class ClientServerCreateSystem : ComponentSystem
         {
             protected override void OnCreate()
             {
                 base.OnCreate();
-                var systemGroup = World.GetExistingSystem<ServerSimulationSystemGroup>();
+                var serverGroup = World.GetExistingSystem<ServerSimulationSystemGroup>();
                 var clientGroup = World.GetExistingSystem<ClientSimulationSystemGroup>();
 
-                systemGroup?.AddSystemToUpdateList(World.GetOrCreateSystem<GameTimeManager>());
+                serverGroup?.AddSystemToUpdateList(World.GetOrCreateSystem<GameTimeManager>());
                 clientGroup?.AddSystemToUpdateList(World.GetOrCreateSystem<GameTimeManager>());
                 
+                Debug.Log(World.Name);
+                
                 // now destroy this system
-                World.DestroySystem(this);
-                systemGroup?.RemoveSystemFromUpdateList(this);
+                if (serverGroup != null || clientGroup != null) 
+                    World.DestroySystem(this);
+                serverGroup?.RemoveSystemFromUpdateList(this);
                 clientGroup?.RemoveSystemFromUpdateList(this);
+                
+                serverGroup?.SortSystemUpdateList();
+                clientGroup?.SortSystemUpdateList();
             }
 
             protected override void OnUpdate()
             {
             }
-        }
+        }*/
     }
 }

@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using package.stormiumteam.networking.runtime.lowlevel;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
+using Unity.NetCode;
 
 namespace StormiumTeam.GameBase
 {
@@ -54,7 +56,9 @@ namespace StormiumTeam.GameBase
 
 	public abstract class JobGameBaseSystem : JobComponentSystem
 	{
-		public GameTime GameTime      => m_GameTimeSingletonGroup.GetSingleton<GameTimeComponent>().Value;
+		public GameTime GameTime => m_GameTimeSingletonGroup.GetSingleton<GameTimeComponent>().Value;
+
+		private ComponentSystemGroup m_ServerComponentGroup;
 
 		protected override void OnCreate()
 		{
@@ -67,6 +71,10 @@ namespace StormiumTeam.GameBase
 			(
 				typeof(GameTimeComponent)
 			);
+
+#if !UNITY_CLIENT
+			m_ServerComponentGroup = World.GetExistingSystem<ServerSimulationSystemGroup>();
+#endif
 		}
 
 		private EntityQuery m_GameTimeSingletonGroup;
@@ -93,6 +101,16 @@ namespace StormiumTeam.GameBase
 			}
 
 			return default;
+		}
+
+		protected bool RemoveFromServerWorld()
+		{
+			if (m_ServerComponentGroup == null)
+				return false;
+
+			if (m_ServerComponentGroup.Systems.Contains(this))
+				m_ServerComponentGroup.RemoveSystemFromUpdateList(this);
+			return true;
 		}
 	}
 }
