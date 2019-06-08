@@ -183,6 +183,13 @@ namespace StormiumTeam.GameBase.Components
 			m_GroupLivableBuffer = GetEntityQuery(typeof(HealthContainer));
 		}
 
+		protected override void OnDestroy()
+		{
+			base.OnDestroy();
+
+			m_ModifyEventList.Dispose();
+		}
+
 		private static HealthProcessGroup s_LastInstance;
 
 		protected override void OnUpdate()

@@ -81,6 +81,14 @@ namespace StormiumTeam.GameBase
         public Entity Target;
     }
 
+    /// <summary>
+    /// Represent the ghostId, you shouldn't use this component directly as it will be converted to Owner later
+    /// </summary>
+    public struct GhostOwner : IComponentData
+    {
+        public int GhostId;
+    }
+
     public static class Relative
     {
         public interface ISyncEvent : IAppEvent

@@ -32,17 +32,42 @@ namespace StormiumTeam.GameBase
             }
         }
 
+        internal bool IsClient, IsServer;
+
         protected override void OnCreate()
         {
             EntityManager.CreateEntity(typeof(GameTimeComponent));
+            
+            var serverGroup = World.GetExistingSystem<ServerSimulationSystemGroup>();
+            var clientGroup = World.GetExistingSystem<ClientSimulationSystemGroup>();
+
+            IsServer = serverGroup != null;
+            IsClient = clientGroup != null;
         }
 
         protected override JobHandle OnUpdate(JobHandle inputDeps)
         {
+            var dt = Time.deltaTime;
+            var fr = Time.frameCount;
+
+            if (IsServer)
+            {
+                var topGroup = World.GetExistingSystem<ServerSimulationSystemGroup>();
+                dt = topGroup.UpdateDeltaTime;
+                fr = (int) topGroup.ServerTick;
+            }
+
+            if (IsClient)
+            {
+                var topGroup = World.GetExistingSystem<ClientSimulationSystemGroup>();
+                dt = topGroup.UpdateDeltaTime;
+                fr = (int) NetworkTimeSystem.TimestampMS;
+            }
+
             inputDeps = new JobUpdateGameTime
             {
-                DeltaTime   = Time.deltaTime,
-                ActualFrame = Time.frameCount
+                DeltaTime   = dt,
+                ActualFrame = fr
             }.Schedule(this, inputDeps);
 
             return inputDeps;
@@ -55,17 +80,22 @@ namespace StormiumTeam.GameBase
             protected override void OnCreate()
             {
                 base.OnCreate();
+                var gameTimeMgr = World.GetOrCreateSystem<GameTimeManager>();
                 var serverGroup = World.GetExistingSystem<ServerSimulationSystemGroup>();
                 var clientGroup = World.GetExistingSystem<ClientSimulationSystemGroup>();
 
-                serverGroup?.AddSystemToUpdateList(World.GetOrCreateSystem<GameTimeManager>());
-                clientGroup?.AddSystemToUpdateList(World.GetOrCreateSystem<GameTimeManager>());
+                serverGroup?.AddSystemToUpdateList(gameTimeMgr);
+                clientGroup?.AddSystemToUpdateList(gameTimeMgr);
+
+                gameTimeMgr.IsClient = clientGroup != null;
+                gameTimeMgr.IsServer = serverGroup != null;
+            }
+
+            protected override void OnStartRunning()
+            {
+                var serverGroup = World.GetExistingSystem<ServerSimulationSystemGroup>();
+                var clientGroup = World.GetExistingSystem<ClientSimulationSystemGroup>();
                 
-                Debug.Log(World.Name);
-                
-                // now destroy this system
-                if (serverGroup != null || clientGroup != null) 
-                    World.DestroySystem(this);
                 serverGroup?.RemoveSystemFromUpdateList(this);
                 clientGroup?.RemoveSystemFromUpdateList(this);
                 
@@ -75,6 +105,18 @@ namespace StormiumTeam.GameBase
 
             protected override void OnUpdate()
             {
+            }
+
+            protected override void OnStopRunning()
+            {
+                base.OnStopRunning();
+                
+                var serverGroup = World.GetExistingSystem<ServerSimulationSystemGroup>();
+                var clientGroup = World.GetExistingSystem<ClientSimulationSystemGroup>();
+                
+                // now destroy this system
+                if (serverGroup != null || clientGroup != null) 
+                    World.DestroySystem(this);
             }
         }*/
     }
