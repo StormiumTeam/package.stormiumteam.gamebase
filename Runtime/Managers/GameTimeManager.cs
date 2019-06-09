@@ -1,5 +1,6 @@
 using System;
 using Unity.Burst;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.NetCode;
@@ -17,6 +18,8 @@ namespace StormiumTeam.GameBase
             public float DeltaTime;
             public int   ActualFrame;
 
+            public NativeArray<GameTimeComponent> LastGameTimeComponent;
+
             public void Execute(ref GameTimeComponent data)
             {
                 data.Value.Time += DeltaTime;
@@ -29,6 +32,30 @@ namespace StormiumTeam.GameBase
 
                 // For now we estimate it.
                 data.Value.FixedTickPerSecond = data.Value.DeltaTick;
+
+                LastGameTimeComponent[0] = data;
+            }
+        }
+
+        [BurstCompile]
+        private struct UpdateSynchronizedTimeJob : IJobForEach<SynchronizedSimulationTime>
+        {
+            public NativeArray<GameTimeComponent> LastGameTimeComponent;
+
+            public void Execute(ref SynchronizedSimulationTime synchronizedSimulationTime)
+            {
+                synchronizedSimulationTime.Interpolated = (uint) LastGameTimeComponent[0].Tick;
+                synchronizedSimulationTime.Predicted    = (uint) LastGameTimeComponent[0].Tick;
+            }
+        }
+
+        private struct DisposeJob : IJob
+        {
+            [DeallocateOnJobCompletion]
+            public NativeArray<GameTimeComponent> LastGameTimeComponent;
+
+            public void Execute()
+            {
             }
         }
 
@@ -37,12 +64,17 @@ namespace StormiumTeam.GameBase
         protected override void OnCreate()
         {
             EntityManager.CreateEntity(typeof(GameTimeComponent));
-            
+
             var serverGroup = World.GetExistingSystem<ServerSimulationSystemGroup>();
             var clientGroup = World.GetExistingSystem<ClientSimulationSystemGroup>();
 
             IsServer = serverGroup != null;
             IsClient = clientGroup != null;
+
+            if (IsServer)
+            {
+                EntityManager.CreateEntity(typeof(SynchronizedSimulationTime), typeof(GhostComponent));
+            }
         }
 
         protected override JobHandle OnUpdate(JobHandle inputDeps)
@@ -64,60 +96,31 @@ namespace StormiumTeam.GameBase
                 fr = (int) NetworkTimeSystem.TimestampMS;
             }
 
+            var lastGameTimeComponent = new NativeArray<GameTimeComponent>(1, Allocator.TempJob);
+
             inputDeps = new JobUpdateGameTime
             {
+                LastGameTimeComponent = lastGameTimeComponent,
+
                 DeltaTime   = dt,
                 ActualFrame = fr
             }.Schedule(this, inputDeps);
 
+            if (IsServer)
+            {
+                inputDeps = new UpdateSynchronizedTimeJob
+                {
+                    LastGameTimeComponent = lastGameTimeComponent
+                }.Schedule(this, inputDeps);
+                inputDeps = World.GetExistingSystem<SynchronizedSimulationTimeSystem>().CustomUpdate(inputDeps);
+            }
+
+            inputDeps = new DisposeJob
+            {
+                LastGameTimeComponent = lastGameTimeComponent
+            }.Schedule(inputDeps);
+
             return inputDeps;
         }
-
-        // Also create it in clients and servers
-        /*[UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
-        public class ClientServerCreateSystem : ComponentSystem
-        {
-            protected override void OnCreate()
-            {
-                base.OnCreate();
-                var gameTimeMgr = World.GetOrCreateSystem<GameTimeManager>();
-                var serverGroup = World.GetExistingSystem<ServerSimulationSystemGroup>();
-                var clientGroup = World.GetExistingSystem<ClientSimulationSystemGroup>();
-
-                serverGroup?.AddSystemToUpdateList(gameTimeMgr);
-                clientGroup?.AddSystemToUpdateList(gameTimeMgr);
-
-                gameTimeMgr.IsClient = clientGroup != null;
-                gameTimeMgr.IsServer = serverGroup != null;
-            }
-
-            protected override void OnStartRunning()
-            {
-                var serverGroup = World.GetExistingSystem<ServerSimulationSystemGroup>();
-                var clientGroup = World.GetExistingSystem<ClientSimulationSystemGroup>();
-                
-                serverGroup?.RemoveSystemFromUpdateList(this);
-                clientGroup?.RemoveSystemFromUpdateList(this);
-                
-                serverGroup?.SortSystemUpdateList();
-                clientGroup?.SortSystemUpdateList();
-            }
-
-            protected override void OnUpdate()
-            {
-            }
-
-            protected override void OnStopRunning()
-            {
-                base.OnStopRunning();
-                
-                var serverGroup = World.GetExistingSystem<ServerSimulationSystemGroup>();
-                var clientGroup = World.GetExistingSystem<ClientSimulationSystemGroup>();
-                
-                // now destroy this system
-                if (serverGroup != null || clientGroup != null) 
-                    World.DestroySystem(this);
-            }
-        }*/
     }
 }
