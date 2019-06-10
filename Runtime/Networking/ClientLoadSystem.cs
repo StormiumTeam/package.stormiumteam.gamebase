@@ -1,10 +1,9 @@
-using Patapon4TLB.Core;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.NetCode;
 
-namespace P4.Core.Code.Networking
+namespace StormiumTeam.GameBase
 {
 	[UpdateInGroup(typeof(ClientSimulationSystemGroup))]
 	public class ClientLoadSystem : JobComponentSystem

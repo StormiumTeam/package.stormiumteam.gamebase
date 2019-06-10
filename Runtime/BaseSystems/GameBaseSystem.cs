@@ -60,6 +60,8 @@ namespace StormiumTeam.GameBase
 
 		private ComponentSystemGroup m_ServerComponentGroup;
 
+		public bool IsServer => m_ServerComponentGroup != null;
+
 		protected override void OnCreate()
 		{
 			m_PlayerGroup = GetEntityQuery
