@@ -96,8 +96,8 @@ namespace StormiumTeam.GameBase
 
 			public EntityCommandBuffer.Concurrent CommandBuffer;
 
-			[DeallocateOnJobCompletion] public NativeArray<Entity>                  DelayedEntities;
-			[DeallocateOnJobCompletion] public NativeArray<DelayedPlayerConnection> DelayedData;
+			[DeallocateOnJobCompletion, ReadOnly] public NativeArray<Entity>                  DelayedEntities;
+			[DeallocateOnJobCompletion, ReadOnly] public NativeArray<DelayedPlayerConnection> DelayedData;
 
 			public void Execute(Entity entity, int jobIndex, ref GamePlayer gamePlayer)
 			{

@@ -9,6 +9,7 @@ using package.stormiumteam.shared;
 using StormiumTeam.Shared;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Jobs;
 using UnityEngine;
 
 namespace StormiumTeam.GameBase
@@ -80,6 +81,8 @@ namespace StormiumTeam.GameBase
 
         private bool m_CanHaveDelayedEntities;
 
+        private JobHandle m_ProducerHandle;
+        
         private static string GetTypeName(Type type)
         {        
             return TypeUtility.SpecifiedTypeName(type);
@@ -117,8 +120,15 @@ namespace StormiumTeam.GameBase
             return CreateEntityDelayed;
         }
 
+        public void AddJobHandleForProducer(JobHandle inputDeps)
+        {
+            m_ProducerHandle = JobHandle.CombineDependencies(m_ProducerHandle, inputDeps);
+        }
+
         public void FlushDelayedEntities()
         {
+            m_ProducerHandle.Complete();
+            
             var output  = new NativeList<Entity>(CreateEntityDelayed.Length, Allocator.Temp);
             var indices = new NativeList<int>(CreateEntityDelayed.Length, Allocator.Temp);
 

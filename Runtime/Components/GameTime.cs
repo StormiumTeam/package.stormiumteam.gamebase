@@ -150,14 +150,26 @@ namespace StormiumTeam.GameBase
 	}
 
 	[UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
-	public class SynchronizedSimulationTimeSystem : JobComponentSystem
+	public unsafe class SynchronizedSimulationTimeSystem : JobComponentSystem
 	{
 		private NativeArray<SynchronizedSimulationTime> m_TimeArray;
+		private SynchronizedSimulationTime* m_ArrayPtr;
+		
+		private JobHandle m_Handle;
 
-		public SynchronizedSimulationTime Value => m_TimeArray[0];
+		public SynchronizedSimulationTime Value
+		{
+			get
+			{
+				if (!m_Handle.IsCompleted)
+					m_Handle.Complete();
+				return m_ArrayPtr[0];
+			}
+		}
 
 		private struct GetTimeJob : IJobForEachWithEntity<SynchronizedSimulationTime>
 		{
+			[WriteOnly]
 			public NativeArray<SynchronizedSimulationTime> TimeArray;
 
 			public void Execute(Entity entity, int index, ref SynchronizedSimulationTime time)
@@ -171,6 +183,7 @@ namespace StormiumTeam.GameBase
 			base.OnCreate();
 
 			m_TimeArray = new NativeArray<SynchronizedSimulationTime>(1, Allocator.Persistent);
+			m_ArrayPtr = (SynchronizedSimulationTime*) m_TimeArray.GetUnsafeReadOnlyPtr();
 		}
 
 		protected override void OnDestroy()
@@ -187,7 +200,9 @@ namespace StormiumTeam.GameBase
 
 		internal JobHandle CustomUpdate(JobHandle inputDeps)
 		{
-			return new GetTimeJob
+			m_Handle.Complete();
+			
+			return m_Handle = new GetTimeJob
 			{
 				TimeArray = m_TimeArray
 			}.Schedule(this, inputDeps);
