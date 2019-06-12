@@ -12,7 +12,11 @@ namespace StormiumTeam.GameBase
 {
 	public abstract class GameBaseSystem : BaseComponentSystem
 	{
-		public GameTime GameTime      => m_GameTimeSingletonGroup.GetSingleton<GameTimeComponent>().Value;
+		public GameTime GameTime => m_GameTimeSingletonGroup.GetSingleton<GameTimeComponent>().Value;
+		
+		private ComponentSystemGroup m_ServerComponentGroup;
+
+		public bool IsServer => m_ServerComponentGroup != null;
 
 		protected override void OnCreate()
 		{
@@ -25,6 +29,10 @@ namespace StormiumTeam.GameBase
 			(
 				typeof(GameTimeComponent)
 			);
+			
+#if !UNITY_CLIENT
+			m_ServerComponentGroup = World.GetExistingSystem<ServerSimulationSystemGroup>();
+#endif
 		}
 
 		private EntityQuery m_GameTimeSingletonGroup;
@@ -51,6 +59,24 @@ namespace StormiumTeam.GameBase
 			}
 
 			return default;
+		}
+
+		public World GetActiveClientWorld()
+		{
+#if !UNITY_SERVER
+#if !UNITY_EDITOR
+			// There is only one client world outside of editor
+			return ClientServerBootstrap.clientWorld[0];
+#endif
+			// There can be multiple client worlds inside the editor
+			for (var i = 0; i != ClientServerBootstrap.clientWorld.Length; i++)
+			{
+				if (ClientServerBootstrap.clientWorld[i].GetExistingSystem<ClientPresentationSystemGroup>().Enabled)
+					return ClientServerBootstrap.clientWorld[i];
+			}
+#endif
+
+			return null;
 		}
 	}
 

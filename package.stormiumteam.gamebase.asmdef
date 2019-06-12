@@ -3,6 +3,8 @@
     "references": [
         "package.guerro.shared",
         "package.stormiumteam.networking",
+        "Unity.TextMeshPro",
+        "Unity.ugui",
         "Unity.Networking.Transport",
         "Unity.NetCode",
         "Unity.InputSystem",
