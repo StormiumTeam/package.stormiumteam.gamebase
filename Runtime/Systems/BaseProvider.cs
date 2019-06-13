@@ -147,8 +147,6 @@ namespace StormiumTeam.GameBase
                 m_ModelManager = World.GetOrCreateSystem<EntityModelManager>();
                 m_GameManager  = World.GetOrCreateSystem<GameManager>();
                 
-                Debug.Log(GetTypeName(GetType()));
-
                 GetComponents(out m_EntityComponents);
                 if (EntityComponents == null)
                 {
