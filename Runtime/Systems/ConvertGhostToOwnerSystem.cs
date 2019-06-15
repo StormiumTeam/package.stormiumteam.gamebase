@@ -17,13 +17,16 @@ namespace Runtime.Systems
 		{
 			[ReadOnly, NativeDisableContainerSafetyRestriction]
 			public NativeHashMap<int, GhostEntity> GhostEntityMap;
-			
+
 			public void Execute(ref GhostOwner ghostOwner, ref Owner owner)
 			{
 				if (ghostOwner.GhostId == 0)
 					return;
-				
-				owner.Target = GhostEntityMap[ghostOwner.GhostId].entity;
+
+				if (GhostEntityMap.TryGetValue(ghostOwner.GhostId, out var ghostEntity))
+				{
+					owner.Target = ghostEntity.entity;
+				}
 			}
 		}
 

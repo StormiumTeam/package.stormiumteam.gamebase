@@ -5,6 +5,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.NetCode;
 using Unity.Networking.Transport;
+using UnityEngine;
 
 namespace StormiumTeam.GameBase
 {
@@ -45,21 +46,24 @@ namespace StormiumTeam.GameBase
 
         public void Serialize(ref GamePlayerSnapshot baseline, DataStreamWriter writer, NetworkCompressionModel compressionModel)
         {
-            writer.WritePackedInt(ServerId, compressionModel);
+            writer.WritePackedIntDelta(ServerId, baseline.ServerId, compressionModel);
 
             var (u1, u2) = StMath.ULongToDoubleUInt(MasterServerId);
-            writer.WritePackedUInt(u1, compressionModel);
-            writer.WritePackedUInt(u2, compressionModel);
+            var (b1, b2) = StMath.ULongToDoubleUInt(baseline.MasterServerId);
+            
+            writer.WritePackedUIntDelta(u1, b1, compressionModel);
+            writer.WritePackedUIntDelta(u2, b2, compressionModel);
         }
 
         public void Deserialize(uint tick, ref GamePlayerSnapshot baseline, DataStreamReader reader, ref DataStreamReader.Context ctx, NetworkCompressionModel compressionModel)
         {
             Tick = tick;
             
-            ServerId = reader.ReadPackedInt(ref ctx, compressionModel);
+            ServerId = reader.ReadPackedIntDelta(ref ctx, baseline.ServerId, compressionModel);
 
-            var u1 = reader.ReadPackedUInt(ref ctx, compressionModel);
-            var u2 = reader.ReadPackedUInt(ref ctx, compressionModel);
+            var (b1, b2) = StMath.ULongToDoubleUInt(baseline.MasterServerId);
+            var u1 = reader.ReadPackedUIntDelta(ref ctx, b1, compressionModel);
+            var u2 = reader.ReadPackedUIntDelta(ref ctx, b2, compressionModel);
 
             MasterServerId = StMath.DoubleUIntToULong(u1, u2);
         }

@@ -13,7 +13,7 @@ namespace StormiumTeam.GameBase
 	public abstract class GameBaseSystem : BaseComponentSystem
 	{
 		public GameTime GameTime => m_GameTimeSingletonGroup.GetSingleton<GameTimeComponent>().Value;
-		
+
 		private ComponentSystemGroup m_ServerComponentGroup;
 
 		public bool IsServer => m_ServerComponentGroup != null;
@@ -29,7 +29,7 @@ namespace StormiumTeam.GameBase
 			(
 				typeof(GameTimeComponent)
 			);
-			
+
 #if !UNITY_CLIENT
 			m_ServerComponentGroup = World.GetExistingSystem<ServerSimulationSystemGroup>();
 #endif
@@ -66,9 +66,12 @@ namespace StormiumTeam.GameBase
 #if !UNITY_SERVER
 #if !UNITY_EDITOR
 			// There is only one client world outside of editor
-			return ClientServerBootstrap.clientWorld[0];
+			return ClientServerBootstrap.clientWorld == null ? null : ClientServerBootstrap.clientWorld[0];
 #endif
 			// There can be multiple client worlds inside the editor
+			if (ClientServerBootstrap.clientWorld == null)
+				return null;
+
 			for (var i = 0; i != ClientServerBootstrap.clientWorld.Length; i++)
 			{
 				if (ClientServerBootstrap.clientWorld[i].GetExistingSystem<ClientPresentationSystemGroup>().Enabled)
@@ -139,6 +142,27 @@ namespace StormiumTeam.GameBase
 			if (m_ServerComponentGroup.Systems.Contains(this))
 				m_ServerComponentGroup.RemoveSystemFromUpdateList(this);
 			return true;
+		}
+
+		public World GetActiveClientWorld()
+		{
+#if !UNITY_SERVER
+#if !UNITY_EDITOR
+			// There is only one client world outside of editor
+			return ClientServerBootstrap.clientWorld == null ? null : ClientServerBootstrap.clientWorld[0];
+#endif
+			// There can be multiple client worlds inside the editor
+			if (ClientServerBootstrap.clientWorld == null)
+				return null;
+
+			for (var i = 0; i != ClientServerBootstrap.clientWorld.Length; i++)
+			{
+				if (ClientServerBootstrap.clientWorld[i].GetExistingSystem<ClientPresentationSystemGroup>().Enabled)
+					return ClientServerBootstrap.clientWorld[i];
+			}
+#endif
+
+			return null;
 		}
 	}
 }
