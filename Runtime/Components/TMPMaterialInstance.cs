@@ -1,4 +1,3 @@
-using JetBrains.Platform.Unity.EditorPluginModel;
 using TMPro;
 using UnityEngine;
 
