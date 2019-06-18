@@ -1,4 +1,7 @@
+using Unity.Collections;
 using Unity.Entities;
+using Unity.NetCode;
+using UnityEngine;
 
 namespace StormiumTeam.GameBase.Data
 {
@@ -11,16 +14,55 @@ namespace StormiumTeam.GameBase.Data
 			Target = target;
 		}
 	}
-	
-	public class DestroyChainReactionSystem : ComponentSystem
+
+	public abstract class DestroyChainReactionSystemBase : ComponentSystem
 	{
+		private NativeList<Entity> m_ToDestroy;
+
+		private void ForEach(Entity e, ref DestroyChainReaction destroyChainReaction)
+		{
+			if (destroyChainReaction.Target == default)
+				return;
+			
+			if (!EntityManager.Exists(destroyChainReaction.Target))
+				m_ToDestroy.Add(e);
+		}
+
+		private EntityQueryBuilder.F_ED<DestroyChainReaction> m_ForEachDelegate;
+
+		protected override void OnCreate()
+		{
+			base.OnCreate();
+
+			m_ToDestroy       = new NativeList<Entity>(Allocator.TempJob);
+			m_ForEachDelegate = ForEach;
+		}
+
 		protected override void OnUpdate()
 		{
-			Entities.ForEach((Entity entity, ref DestroyChainReaction destroyChainReaction) =>
+			m_ToDestroy.Clear();
+			Entities.ForEach(m_ForEachDelegate);
+			if (m_ToDestroy.Length > 0)
 			{
-				if (!EntityManager.Exists(destroyChainReaction.Target))
-					PostUpdateCommands.DestroyEntity(entity);
-			});
+				EntityManager.DestroyEntity(m_ToDestroy);
+			}
 		}
+
+		protected override void OnDestroy()
+		{
+			base.OnDestroy();
+
+			m_ToDestroy.Dispose();
+		}
+	}
+
+	[UpdateInGroup(typeof(SimulationSystemGroup))]
+	public class DestroyChainReactionSystemMainWorld : DestroyChainReactionSystemBase
+	{
+	}
+
+	[UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
+	public class DestroyChainReactionSystemClientServerWorld : DestroyChainReactionSystemBase
+	{
 	}
 }
