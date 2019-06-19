@@ -7,6 +7,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.NetCode;
+using UnityEngine;
 
 namespace StormiumTeam.GameBase
 {
@@ -20,6 +21,11 @@ namespace StormiumTeam.GameBase
 
 		protected override void OnCreate()
 		{
+			m_LocalPlayerGroup = GetEntityQuery
+			(
+				typeof(GamePlayer), typeof(GamePlayerLocalTag)
+			);
+			
 			m_PlayerGroup = GetEntityQuery
 			(
 				typeof(GamePlayer)
@@ -37,26 +43,12 @@ namespace StormiumTeam.GameBase
 
 		private EntityQuery m_GameTimeSingletonGroup;
 		private EntityQuery m_PlayerGroup;
+		private EntityQuery m_LocalPlayerGroup;
 
 		public Entity GetFirstSelfGamePlayer()
 		{
-			var entityType = GetArchetypeChunkEntityType();
-			var playerType = GetArchetypeChunkComponentType<GamePlayer>();
-
-			using (var chunks = m_PlayerGroup.CreateArchetypeChunkArray(Allocator.TempJob))
-			{
-				foreach (var chunk in chunks)
-				{
-					var length = chunk.Count;
-
-					var playerArray = chunk.GetNativeArray(playerType);
-					var entityArray = chunk.GetNativeArray(entityType);
-					for (var i = 0; i < length; i++)
-					{
-						if (playerArray[i].IsSelf) return entityArray[i];
-					}
-				}
-			}
+			if (m_LocalPlayerGroup.CalculateLength() > 0)
+				return m_LocalPlayerGroup.GetSingletonEntity();
 
 			return default;
 		}
@@ -70,7 +62,7 @@ namespace StormiumTeam.GameBase
 			if (serverCamera.Mode == CameraMode.Forced)
 				return serverCamera.Data;
 
-			var localCamera = EntityManager.GetComponentData<ServerCameraState>(gamePlayer);
+			var localCamera = EntityManager.GetComponentData<LocalCameraState>(gamePlayer);
 			if (localCamera.Mode == CameraMode.Forced)
 				return localCamera.Data;
 

@@ -30,9 +30,9 @@ namespace StormiumTeam.GameBase
     {
         public CameraState Data;
 
-        public CameraMode     CameraMode => Data.Mode;
-        public Entity         Target     => Data.Target;
-        public RigidTransform Offset     => Data.Offset;
+        public CameraMode     Mode   => Data.Mode;
+        public Entity         Target => Data.Target;
+        public RigidTransform Offset => Data.Offset;
     }
 
     public struct ServerCameraState : IComponentData

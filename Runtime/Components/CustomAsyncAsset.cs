@@ -13,6 +13,7 @@ namespace StormiumTeam.GameBase
 	public class AssetPool<T>
 		where T : Object
 	{
+		private World m_SpawnWorld;
 		private Func<AssetPool<T>, T> m_CreateFunction;
 		
 		private List<T>  m_Objects;
@@ -20,9 +21,10 @@ namespace StormiumTeam.GameBase
 		
 		public int LastDequeueIndex { get; private set; }
 
-		public AssetPool(Func<AssetPool<T>, T> createFunc)
+		public AssetPool(Func<AssetPool<T>, T> createFunc, World spawnWorld = null)
 		{
 			m_CreateFunction = createFunc;
+			m_SpawnWorld = spawnWorld;
 			
 			m_Objects    = new List<T>();
 			m_ObjectPool = new Queue<T>();
@@ -37,7 +39,12 @@ namespace StormiumTeam.GameBase
 		{
 			if (m_ObjectPool.Count == 0)
 			{
+				var previousActiveWorld = World.Active;
+				
+				World.Active = m_SpawnWorld;
 				var obj = m_CreateFunction(this);
+				World.Active = previousActiveWorld;
+				
 				m_Objects.Add(obj);
 				return obj;
 			}
@@ -117,8 +124,8 @@ namespace StormiumTeam.GameBase
 		{
 			if (Asset == null)
 			{
-				if (typeof(T) == typeof(GameObject))
-					return (IAsyncOperation<T>) Addressables.Instantiate(AssetId);
+				/*if (typeof(T) == typeof(GameObject))
+					return (IAsyncOperation<T>) Addressables.Instantiate(AssetId);*/
 				return Addressables.LoadAsset<T>(AssetId);
 			}
 
@@ -183,30 +190,34 @@ namespace StormiumTeam.GameBase
 
 		private void OnCompletePoolDequeue(IAsyncOperation<GameObject> op)
 		{
-			op.Result.transform.parent = transform;
-
+			var previousWorld = World.Active;
+			
+			World.Active = DstEntityManager.World;
+			var opResult = Instantiate(op.Result, transform, true);
+			World.Active = previousWorld;
+			
 			if (DstEntityManager == null)
 			{
-				SetPresentation(op.Result);
+				SetPresentation(opResult);
 				return;
 			}
 
-			var gameObjectEntity = op.Result.GetComponent<GameObjectEntity>();
+			var gameObjectEntity = opResult.GetComponent<GameObjectEntity>();
 			if (!gameObjectEntity)
 			{
-				gameObjectEntity = op.Result.AddComponent<GameObjectEntity>();
+				gameObjectEntity = opResult.AddComponent<GameObjectEntity>();
 			}
 
 			DstEntityManager.SetOrAddComponentData(DstEntity, new SubModel(gameObjectEntity.Entity));
 			DstEntityManager.SetOrAddComponentData(gameObjectEntity.Entity, new ModelParent {Parent = DstEntity});
 
-			var listeners = op.Result.GetComponents<IOnModelLoadedListener>();
+			var listeners = opResult.GetComponents<IOnModelLoadedListener>();
 			foreach (var listener in listeners)
 			{
 				listener.React(DstEntity, DstEntityManager, gameObject);
 			}
 
-			SetPresentation(op.Result);
+			SetPresentation(opResult);
 		}
 
 		public void SetSingleModel(string key, EntityManager targetEm = null, Entity targetEntity = default)
@@ -277,6 +288,25 @@ namespace StormiumTeam.GameBase
 		{
 			if (Presentation != null)
 				m_PresentationPool.Enqueue(Presentation.gameObject);
+		}
+
+		public void Return(bool disable, bool returnPresentation)
+		{
+			if (returnPresentation)
+			{
+				ReturnPresentationToPoolNextFrame = false;
+				ReturnPresentationToPool();
+			}
+
+			if (disable)
+			{
+				gameObject.SetActive(false);
+			}
+
+			DisableNextUpdate                 = false;
+			ReturnToPoolOnDisable             = false;
+
+			m_RootPool.Enqueue(gameObject);
 		}
 
 		public virtual void OnPresentationSet()
