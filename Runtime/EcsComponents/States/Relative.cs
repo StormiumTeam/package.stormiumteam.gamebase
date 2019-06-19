@@ -1,10 +1,14 @@
+using System.Linq;
 using package.stormiumteam.networking.runtime.lowlevel;
 using package.stormiumteam.shared;
 using package.stormiumteam.shared.ecs;
+using Runtime.Systems;
 using StormiumTeam.GameBase.Data;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
+using Unity.NetCode;
+using UnityEngine;
 
 namespace StormiumTeam.GameBase
 {
@@ -17,9 +21,6 @@ namespace StormiumTeam.GameBase
     /// </summary>
     public struct ColliderDescription : IEntityDescription
     {
-        public class OwnerSync : RelativeSync<ColliderDescription>
-        {
-        }
     }
 
     /// <summary>
@@ -27,9 +28,6 @@ namespace StormiumTeam.GameBase
     /// </summary>
     public struct MovableDescription : IEntityDescription
     {
-        public class OwnerSync : RelativeSync<MovableDescription>
-        {
-        }
     }
 
     /// <summary>
@@ -37,9 +35,6 @@ namespace StormiumTeam.GameBase
     /// </summary>
     public struct LivableDescription : IEntityDescription
     {
-        public class OwnerSync : RelativeSync<LivableDescription>
-        {
-        }
     }
 
     /// <summary>
@@ -47,9 +42,6 @@ namespace StormiumTeam.GameBase
     /// </summary>
     public struct CharacterDescription : IEntityDescription
     {
-        public class OwnerSync : RelativeSync<CharacterDescription>
-        {
-        }
     }
 
     /// <summary>
@@ -57,23 +49,14 @@ namespace StormiumTeam.GameBase
     /// </summary>
     public struct PlayerDescription : IEntityDescription
     {
-        public class OwnerSync : RelativeSync<PlayerDescription>
-        {
-        }
     }
 
     public struct ActionDescription : IEntityDescription
     {
-        public class OwnerSync : RelativeSync<ActionDescription>
-        {
-        }
     }
 
     public struct ProjectileDescription : IEntityDescription
     {
-        public class OwnerSync : RelativeSync<ProjectileDescription>
-        {
-        }
     }
 
     public struct Owner : IComponentData
@@ -159,7 +142,7 @@ namespace StormiumTeam.GameBase
     }
 
     [UpdateInGroup(typeof(RelativeGroup))]
-    public class RelativeSync<T> : JobComponentSystem, Relative.ISyncEvent
+    public sealed class RelativeSync<T> : JobComponentSystem, Relative.ISyncEvent
         where T : struct, IEntityDescription
     {
         public ComponentType ComponentType => ComponentType.ReadWrite<T>();
@@ -167,6 +150,9 @@ namespace StormiumTeam.GameBase
         protected override void OnCreate()
         {
             World.GetOrCreateSystem<AppEventSystem>().SubscribeToAll(this);
+
+            if (World.GetExistingSystem<ClientSimulationSystemGroup>() != null)
+                World.GetOrCreateSystem<ConvertGhostToRelativeSystem<T>>();
         }
 
         protected override JobHandle OnUpdate(JobHandle _)
@@ -245,11 +231,50 @@ namespace StormiumTeam.GameBase
         }
     }
 
+    public abstract class FindRelativeComponentBase : ComponentSystem
+    {
+        protected override void OnCreate()
+        {
+            base.OnCreate();
+
+            foreach (var typeInfo in TypeManager.AllTypes)
+            {
+                var descriptionType = typeInfo.Type?.GetInterfaces().FirstOrDefault(t => t == typeof(IEntityDescription));
+                if (descriptionType == null)
+                    continue;
+                
+                var systemType = typeof(RelativeSync<>).MakeGenericType(typeInfo.Type);
+                World.GetOrCreateSystem(systemType);
+            }
+        }
+
+        protected override void OnUpdate()
+        {
+
+        }
+    }
+
+    [UpdateInGroup(typeof(InitializationSystemGroup))]
+    public class MainWorldFindRelativeComponent : FindRelativeComponentBase
+    {
+    }
+
+    [UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
+    public class ClientServerWorldFindRelativeComponent : FindRelativeComponentBase
+    {
+    }
+
     // Todo: find a way to synchronize it nicely.
     public struct Relative<TDescription> : IComponentData
         where TDescription : struct, IEntityDescription
     {
         public Entity Target;
+    }
+
+    public struct GhostRelative<TDescription> : IComponentData
+        where TDescription : struct, IEntityDescription
+    {
+        public int GhostId;
     }
 
     [InternalBufferCapacity(8)]

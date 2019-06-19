@@ -61,6 +61,22 @@ namespace StormiumTeam.GameBase
 			return default;
 		}
 
+		public CameraState GetCurrentCameraState(Entity gamePlayer)
+		{
+			if (gamePlayer == default)
+				return default;
+
+			var serverCamera = EntityManager.GetComponentData<ServerCameraState>(gamePlayer);
+			if (serverCamera.Mode == CameraMode.Forced)
+				return serverCamera.Data;
+
+			var localCamera = EntityManager.GetComponentData<ServerCameraState>(gamePlayer);
+			if (localCamera.Mode == CameraMode.Forced)
+				return localCamera.Data;
+
+			return serverCamera.Data;
+		}
+
 		public World GetActiveClientWorld()
 		{
 #if !UNITY_SERVER

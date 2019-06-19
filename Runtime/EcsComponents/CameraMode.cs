@@ -18,16 +18,30 @@ namespace StormiumTeam.GameBase
         Forced = 1
     }
 
-    public struct LocalCameraState : IComponentData
+    public struct CameraState : IComponentData
     {
+        public CameraMode Mode;
+
         public Entity         Target;
         public RigidTransform Offset;
     }
 
+    public struct LocalCameraState : IComponentData
+    {
+        public CameraState Data;
+
+        public CameraMode     CameraMode => Data.Mode;
+        public Entity         Target     => Data.Target;
+        public RigidTransform Offset     => Data.Offset;
+    }
+
     public struct ServerCameraState : IComponentData
     {
-        public Entity         Target;
-        public RigidTransform Offset;
+        public CameraState Data;
+
+        public CameraMode     Mode   => Data.Mode;
+        public Entity         Target => Data.Target;
+        public RigidTransform Offset => Data.Offset;
     }
 
     public struct CameraStateSnapshotFormat
@@ -35,7 +49,9 @@ namespace StormiumTeam.GameBase
         public const int Quantization    = 1000;
         public const int InvQuantization = 1 / 1000;
 
-        public uint TargetGhostId;
+        public uint       TargetGhostId;
+        public CameraMode CameraMode;
+
         public int3 Position;
         public int4 Rotation;
 
@@ -45,6 +61,7 @@ namespace StormiumTeam.GameBase
                             && Rotation.x != 0 && Rotation.y != 0 && Rotation.z != 0 && Rotation.w != 0;
 
             writer.WritePackedUInt(TargetGhostId, compressionModel);
+            writer.WritePackedUInt((uint) CameraMode, compressionModel);
             writer.WritePackedUInt(useOffset ? (uint) 1 : 0, compressionModel);
             if (!useOffset)
                 return;
@@ -62,6 +79,7 @@ namespace StormiumTeam.GameBase
         public void Read(DataStreamReader reader, NetworkCompressionModel compressionModel, ref DataStreamReader.Context ctx)
         {
             TargetGhostId = reader.ReadPackedUInt(ref ctx, compressionModel);
+            CameraMode    = (CameraMode) reader.ReadPackedUInt(ref ctx, compressionModel);
             var useOffset = reader.ReadPackedUInt(ref ctx, compressionModel) == 1;
             if (!useOffset)
                 return;
@@ -93,6 +111,9 @@ namespace StormiumTeam.GameBase
 
         public void Interpolate(CameraStateSnapshotFormat other, float factor)
         {
+            TargetGhostId = other.TargetGhostId;
+            CameraMode    = other.CameraMode;
+
             Position = (int3) math.lerp(Position, other.Position, factor);
             Rotation = (int4) math.slerp(new quaternion(Rotation), new quaternion(other.Rotation), factor).value;
         }

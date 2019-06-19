@@ -1,6 +1,7 @@
 using DefaultNamespace;
 using package.stormiumteam.networking.runtime.lowlevel;
 using package.stormiumteam.shared;
+using StormiumTeam.Networking.Utilities;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.NetCode;
@@ -94,33 +95,44 @@ namespace StormiumTeam.GameBase
 
         public bool WantsPredictionDelta => false;
 
-        public ComponentType                           ComponentTypePlayer;
-        public ArchetypeChunkComponentType<GamePlayer> GhostPlayerType;
+        public GhostComponentType<GamePlayer> GhostPlayerType;
+        public GhostComponentType<ServerCameraState> GhostCameraStateType;
+
+        [NativeDisableContainerSafetyRestriction]
+        public ComponentDataFromEntity<GhostSystemStateComponent> GhostStateFromEntity;
 
         public void BeginSerialize(ComponentSystemBase system)
         {
-            ComponentTypePlayer = ComponentType.ReadWrite<GamePlayer>();
-            GhostPlayerType     = system.GetArchetypeChunkComponentType<GamePlayer>();
+            system.GetGhostComponentType(out GhostPlayerType);
+            system.GetGhostComponentType(out GhostCameraStateType);
+
+            GhostStateFromEntity = system.GetComponentDataFromEntity<GhostSystemStateComponent>(true);
         }
 
         public bool CanSerialize(EntityArchetype arch)
         {
-            var types = arch.GetComponentTypes();
+            var matches = 0;
+            var types   = arch.GetComponentTypes();
             for (var i = 0; i != types.Length; i++)
             {
-                if (types[i] == ComponentTypePlayer)
-                    return true;
+                if (types[i] == GhostPlayerType) matches++;
+                if (types[i] == GhostCameraStateType) matches++;
             }
 
-            return false;
+            return matches == 2;
         }
 
         public void CopyToSnapshot(ArchetypeChunk chunk, int ent, uint tick, ref GamePlayerSnapshot snapshot)
         {
-            var player = chunk.GetNativeArray(GhostPlayerType)[ent];
+            var player = chunk.GetNativeArray(GhostPlayerType.Archetype)[ent];
             snapshot.Tick           = tick;
             snapshot.ServerId       = player.ServerId;
             snapshot.MasterServerId = player.MasterServerId;
+
+            var camera = chunk.GetNativeArray(GhostCameraStateType.Archetype)[ent];
+            snapshot.CameraSnapshotFormat.TargetGhostId = GhostStateFromEntity.Exists(camera.Target) ? (uint) GhostStateFromEntity[camera.Target].ghostId : 0;
+            snapshot.CameraSnapshotFormat.CameraMode    = camera.Mode;
+            snapshot.CameraSnapshotFormat.SetTransform(camera.Offset);
         }
     }
     
@@ -131,6 +143,8 @@ namespace StormiumTeam.GameBase
             return EntityManager.CreateArchetype
             (
                 typeof(GamePlayer),
+                typeof(LocalCameraState),
+                typeof(ServerCameraState),
                 typeof(GamePlayerSnapshot),
                 typeof(ReplicatedEntityComponent)
             );
@@ -141,6 +155,8 @@ namespace StormiumTeam.GameBase
             return EntityManager.CreateArchetype
             (
                 typeof(GamePlayer),
+                typeof(LocalCameraState),
+                typeof(ServerCameraState),
                 typeof(GamePlayerSnapshot),
                 typeof(ReplicatedEntityComponent),
                 typeof(PredictedEntityComponent)
@@ -154,7 +170,9 @@ namespace StormiumTeam.GameBase
         {
             entityComponents = new[]
             {
-                ComponentType.ReadWrite<GamePlayer>()
+                ComponentType.ReadWrite<GamePlayer>(),
+                typeof(LocalCameraState),
+                typeof(ServerCameraState),
             };
         }
     }

@@ -48,6 +48,8 @@ namespace StormiumTeam.GameBase
 
 			public EntityCommandBuffer.Concurrent CommandBuffer;
 
+			public EntityArchetype PlayerArchetype;
+
 			[ReadOnly]
 			public ComponentDataFromEntity<NetworkIdComponent> NetworkIdFromEntity;
 
@@ -57,8 +59,8 @@ namespace StormiumTeam.GameBase
 
 				var networkId = NetworkIdFromEntity[create.Connection];
 
-				var geEnt = CommandBuffer.CreateEntity(jobIndex);
-				CommandBuffer.AddComponent(jobIndex, geEnt, new GamePlayer(0, false) {ServerId = networkId.Value});
+				var geEnt = CommandBuffer.CreateEntity(jobIndex, PlayerArchetype);
+				CommandBuffer.SetComponent(jobIndex, geEnt, new GamePlayer(0, false) {ServerId = networkId.Value});
 				CommandBuffer.AddComponent(jobIndex, geEnt, new NetworkOwner {Value            = create.Connection});
 				CommandBuffer.AddComponent(jobIndex, geEnt, new GamePlayerReadyTag());
 				CommandBuffer.AddComponent(jobIndex, geEnt, new GhostComponent());
@@ -121,6 +123,7 @@ namespace StormiumTeam.GameBase
 				PreMadeEvents = preMadeEvents,
 
 				CommandBuffer       = m_Barrier.CreateCommandBuffer().ToConcurrent(),
+				PlayerArchetype = World.GetOrCreateSystem<GamePlayerProvider>().EntityArchetype,
 				NetworkIdFromEntity = GetComponentDataFromEntity<NetworkIdComponent>()
 			}.Schedule(this, inputDeps);
 			inputDeps = new SendRpcToConnectionsJob
