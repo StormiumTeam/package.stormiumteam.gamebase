@@ -159,27 +159,26 @@ namespace StormiumTeam.GameBase
 		where TMonoPresentation : CustomAsyncAssetPresentation<TMonoPresentation>
 	{
 		private AsyncAssetPool<GameObject> m_PresentationPool;
-		private AssetPool<GameObject> m_RootPool;
+		private AssetPool<GameObject>      m_RootPool;
 
 		public bool DisableNextUpdate, ReturnToPoolOnDisable, ReturnPresentationToPoolNextFrame;
-		
+
 		public EntityManager DstEntityManager { get; private set; }
-		public Entity DstEntity { get; private set; }
+		public Entity        DstEntity        { get; private set; }
 
 		public TMonoPresentation Presentation { get; protected set; }
 
-		public virtual void OnReset() {}
-		
+		public virtual void OnReset()
+		{
+		}
+
 		public void SetFromPool(AsyncAssetPool<GameObject> pool, EntityManager targetEm = null, Entity targetEntity = default)
 		{
 			m_PresentationPool = pool;
-			
-			if (targetEm != null && targetEntity != default)
-			{
-				DstEntityManager = targetEm;
-				DstEntity        = targetEntity;
-			}
-			
+
+			DstEntityManager = targetEm;
+			DstEntity        = targetEntity;
+
 			pool.Dequeue(OnCompletePoolDequeue);
 		}
 
@@ -190,15 +189,21 @@ namespace StormiumTeam.GameBase
 
 		private void OnCompletePoolDequeue(IAsyncOperation<GameObject> op)
 		{
+			if (op.Result == null)
+			{
+				Debug.LogError($"(Error, {name}) -> reported status: {op.Status}");
+				return;
+			}
+
 			var previousWorld = World.Active;
 			
 			World.Active = DstEntityManager.World;
 			var opResult = Instantiate(op.Result, transform, true);
-			World.Active = previousWorld;
 			
 			if (DstEntityManager == null)
 			{
 				SetPresentation(opResult);
+				World.Active = previousWorld;
 				return;
 			}
 
@@ -207,8 +212,9 @@ namespace StormiumTeam.GameBase
 			{
 				gameObjectEntity = opResult.AddComponent<GameObjectEntity>();
 			}
+			World.Active = previousWorld;
 
-			DstEntityManager.SetOrAddComponentData(DstEntity, new SubModel(gameObjectEntity.Entity));
+			//DstEntityManager.SetOrAddComponentData(DstEntity, new SubModel(gameObjectEntity.Entity)); todo: this is something that should be handled by systems
 			DstEntityManager.SetOrAddComponentData(gameObjectEntity.Entity, new ModelParent {Parent = DstEntity});
 
 			var listeners = opResult.GetComponents<IOnModelLoadedListener>();
