@@ -1,6 +1,8 @@
 using DefaultNamespace;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.NetCode;
 using Unity.Networking.Transport;
 
 namespace StormiumTeam.GameBase
@@ -52,7 +54,7 @@ namespace StormiumTeam.GameBase
             Value = value;
         }
 
-        public void Set(SnapshotData snapshot)
+        public void Set(SnapshotData snapshot, NativeHashMap<int, GhostEntity> ghostMap)
         {
             Value = new float3(snapshot.Velocity) * 0.001f;
         }

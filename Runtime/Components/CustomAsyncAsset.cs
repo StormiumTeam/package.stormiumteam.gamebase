@@ -40,11 +40,11 @@ namespace StormiumTeam.GameBase
 			if (m_ObjectPool.Count == 0)
 			{
 				var previousActiveWorld = World.Active;
-				
-				World.Active = m_SpawnWorld;
+
+				World.Active = m_SpawnWorld ?? previousActiveWorld;
 				var obj = m_CreateFunction(this);
 				World.Active = previousActiveWorld;
-				
+
 				m_Objects.Add(obj);
 				return obj;
 			}
@@ -196,8 +196,8 @@ namespace StormiumTeam.GameBase
 			}
 
 			var previousWorld = World.Active;
-			
-			World.Active = DstEntityManager.World;
+			if (DstEntityManager != null) 
+				World.Active = DstEntityManager.World;
 			var opResult = Instantiate(op.Result, transform, true);
 			
 			if (DstEntityManager == null)

@@ -3,12 +3,21 @@ using package.stormiumteam.networking.runtime.lowlevel;
 using package.stormiumteam.shared;
 using package.stormiumteam.shared.ecs;
 using Runtime.Systems;
+using StormiumTeam.GameBase;
 using StormiumTeam.GameBase.Data;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.NetCode;
 using UnityEngine;
+
+[assembly: RegisterGenericComponentType(typeof(Relative<ColliderDescription>))]
+[assembly: RegisterGenericComponentType(typeof(Relative<MovableDescription>))]
+[assembly: RegisterGenericComponentType(typeof(Relative<LivableDescription>))]
+[assembly: RegisterGenericComponentType(typeof(Relative<CharacterDescription>))]
+[assembly: RegisterGenericComponentType(typeof(Relative<PlayerDescription>))]
+[assembly: RegisterGenericComponentType(typeof(Relative<ActionDescription>))]
+[assembly: RegisterGenericComponentType(typeof(Relative<ProjectileDescription>))]
 
 namespace StormiumTeam.GameBase
 {

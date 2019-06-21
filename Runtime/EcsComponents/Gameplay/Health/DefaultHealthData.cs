@@ -6,6 +6,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.NetCode;
 using Unity.Networking.Transport;
 
 namespace StormiumTeam.GameBase.Components
@@ -64,7 +65,7 @@ namespace StormiumTeam.GameBase.Components
 		public int Value;
 		public int Max;
 
-		public void Set(SnapshotData snapshot)
+		public void Set(SnapshotData snapshot, NativeHashMap<int, GhostEntity> ghostMap)
 		{
 			Value = snapshot.Value;
 			Max   = snapshot.Max;

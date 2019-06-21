@@ -1,9 +1,11 @@
 ﻿using package.StormiumTeam.GameBase;
 using Unity.Entities;
+using Unity.NetCode;
 using UnityEngine;
 
 namespace StormiumTeam.GameBase
 {
+	[UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
 	public class UpdateActionContainerSystem : ComponentSystem
 	{
 		protected override void OnUpdate()

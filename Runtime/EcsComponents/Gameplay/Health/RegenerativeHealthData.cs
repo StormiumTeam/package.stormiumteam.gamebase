@@ -6,6 +6,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.NetCode;
 using Unity.Networking.Transport;
 
 namespace StormiumTeam.GameBase.Components
@@ -97,7 +98,7 @@ namespace StormiumTeam.GameBase.Components
 		public int StartTick;
 
 
-		public void Set(SnapshotData snapshotData)
+		public void Set(SnapshotData snapshotData, NativeHashMap<int, GhostEntity> ghostMap)
 		{
 			Value = snapshotData.Value;
 			Max   = snapshotData.Max;

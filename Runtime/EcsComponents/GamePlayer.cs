@@ -2,6 +2,7 @@ using DefaultNamespace;
 using package.stormiumteam.networking.runtime.lowlevel;
 using package.stormiumteam.shared;
 using StormiumTeam.Networking.Utilities;
+using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.NetCode;
@@ -26,7 +27,7 @@ namespace StormiumTeam.GameBase
         public class UpdateFromSnapshot : BaseUpdateFromSnapshotSystem<GamePlayerSnapshot, GamePlayer>
         {}
 
-        public void Set(GamePlayerSnapshot snapshot)
+        public void Set(GamePlayerSnapshot snapshot, NativeHashMap<int, GhostEntity> ghostMap)
         {
             MasterServerId = snapshot.MasterServerId;
             ServerId = snapshot.ServerId;
