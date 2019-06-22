@@ -58,13 +58,13 @@ namespace StormiumTeam.GameBase
             writer.WritePackedUIntDelta(u1, b1, compressionModel);
             writer.WritePackedUIntDelta(u2, b2, compressionModel);
             
-            CameraSnapshotFormat.Write(writer, compressionModel);
+            CameraSnapshotFormat.Write(writer, baseline.CameraSnapshotFormat, compressionModel);
         }
 
         public void Deserialize(uint tick, ref GamePlayerSnapshot baseline, DataStreamReader reader, ref DataStreamReader.Context ctx, NetworkCompressionModel compressionModel)
         {
             Tick = tick;
-            
+
             ServerId = reader.ReadPackedIntDelta(ref ctx, baseline.ServerId, compressionModel);
 
             var (b1, b2) = StMath.ULongToDoubleUInt(baseline.MasterServerId);
@@ -72,8 +72,8 @@ namespace StormiumTeam.GameBase
             var u2 = reader.ReadPackedUIntDelta(ref ctx, b2, compressionModel);
 
             MasterServerId = StMath.DoubleUIntToULong(u1, u2);
-            
-            CameraSnapshotFormat.Read(reader, compressionModel, ref ctx);
+
+            CameraSnapshotFormat.Read(reader, baseline.CameraSnapshotFormat, compressionModel, ref ctx);
         }
 
         public void Interpolate(ref GamePlayerSnapshot target, float factor)

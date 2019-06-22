@@ -9,7 +9,7 @@ namespace StormiumTeam.GameBase
 		public ColliderCastInput Value;
 		public Entity Entity;
 
-		public float3 Origin    => Value.Position;
+		public float3 Origin    => Value.Start;
 		public float3 Direction => Value.Direction;
 	}
 

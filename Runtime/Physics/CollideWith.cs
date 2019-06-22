@@ -65,7 +65,7 @@ namespace StormiumTeam.GameBase
 				var collider = physicsWorld.Bodies[rigidBodyIndex].Collider;
 				var filter = collider->Filter;
 				
-				MainBit.SetBitAt(ref filter.CategoryBits, 31, true);
+				MainBit.SetBitAt(ref filter.BelongsTo, 31, true);
 
 				UpdateFilterRecursion(collider, filter);
 			}
@@ -80,7 +80,7 @@ namespace StormiumTeam.GameBase
 				var collider       = physicsWorld.Bodies[rigidBodyIndex].Collider;
 				var filter         = collider->Filter;
 				
-				MainBit.SetBitAt(ref filter.CategoryBits, 31, false);
+				MainBit.SetBitAt(ref filter.BelongsTo, 31, false);
 
 				UpdateFilterRecursion(collider, filter);
 			}

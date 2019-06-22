@@ -28,7 +28,7 @@ namespace StormiumTeam.GameBase
 
 		public CustomCollideCollection(UnsafeAllocationLength<CustomCollide> cc)
 		{
-			Count = cc.Length;
+			Count   = cc.Length;
 			DataPtr = new IntPtr(cc.Data);
 		}
 
@@ -41,7 +41,7 @@ namespace StormiumTeam.GameBase
 		public CustomCollideCollection(CustomCollide* ptr, int length = 1)
 		{
 			DataPtr = (IntPtr) ptr;
-			Count = length;
+			Count   = length;
 		}
 
 		public void ConvertFrom(DynamicBuffer<CustomCollide> cwBuffer)
@@ -62,7 +62,7 @@ namespace StormiumTeam.GameBase
 	}
 
 	public unsafe struct CustomCollide : IBufferElementData
-	{	
+	{
 		public Entity Target;
 
 		[NativeDisableUnsafePtrRestriction]
@@ -78,7 +78,7 @@ namespace StormiumTeam.GameBase
 			WorldFromMotion = new RigidTransform(localToWorld.Value);
 
 			RigidBodyIndex = -1;
-			Target = default;
+			Target         = default;
 		}
 
 		public CustomCollide(RigidBody rigidBody)
@@ -111,7 +111,7 @@ namespace StormiumTeam.GameBase
 		{
 			if (!buffer.Valid())
 				throw new InvalidOperationException();
-				
+
 			var ptr    = (CustomCollide*) buffer.DataPtr;
 			var length = buffer.Count;
 
@@ -124,9 +124,10 @@ namespace StormiumTeam.GameBase
 				var inputLs         = input;
 				{
 					var bodyFromWorld = Math.Inverse(worldFromMotion);
-					var originLs      = Math.Mul(bodyFromWorld, input.Ray.Origin);
-					var directionLs   = math.mul(bodyFromWorld.Rotation, input.Ray.Direction);
-					inputLs.Ray = new Ray(originLs, directionLs);
+					var originLs      = Math.Mul(bodyFromWorld, input.Start);
+					var endLs         = math.mul(bodyFromWorld.Rotation, input.End);
+					inputLs.Start = originLs;
+					inputLs.End   = endLs;
 				}
 
 				var numHits  = collector.NumHits;
@@ -157,7 +158,7 @@ namespace StormiumTeam.GameBase
 		{
 			if (!buffer.Valid())
 				throw new InvalidOperationException();
-			
+
 			var ptr    = (CustomCollide*) buffer.DataPtr;
 			var length = buffer.Count;
 
@@ -172,9 +173,9 @@ namespace StormiumTeam.GameBase
 				var inputLs = new ColliderCastInput
 				{
 					Collider    = input.Collider,
-					Position    = Math.Mul(bodyFromWorld, input.Position),
+					Start       = Math.Mul(bodyFromWorld, input.Start),
 					Orientation = math.mul(math.inverse(cw.WorldFromMotion.rot), input.Orientation),
-					Direction   = math.mul(bodyFromWorld.Rotation, input.Direction)
+					End         = math.mul(bodyFromWorld.Rotation, input.End)
 				};
 
 				var numHits  = collector.NumHits;
@@ -205,7 +206,7 @@ namespace StormiumTeam.GameBase
 		{
 			if (!buffer.Valid())
 				throw new InvalidOperationException();
-			
+
 			var ptr    = (CustomCollide*) buffer.DataPtr;
 			var length = buffer.Count;
 

@@ -55,43 +55,43 @@ namespace StormiumTeam.GameBase
         public int3 Position;
         public int4 Rotation;
 
-        public void Write(DataStreamWriter writer, NetworkCompressionModel compressionModel)
+        public void Write(DataStreamWriter writer, CameraStateSnapshotFormat baseline, NetworkCompressionModel compressionModel)
         {
             var useOffset = Position.x != 0 && Position.y != 0 && Position.z != 0
                             && Rotation.x != 0 && Rotation.y != 0 && Rotation.z != 0 && Rotation.w != 0;
 
-            writer.WritePackedUInt(TargetGhostId, compressionModel);
-            writer.WritePackedUInt((uint) CameraMode, compressionModel);
+            writer.WritePackedUIntDelta(TargetGhostId, baseline.TargetGhostId, compressionModel);
+            writer.WritePackedUIntDelta((uint) CameraMode, (uint) baseline.CameraMode, compressionModel);
             writer.WritePackedUInt(useOffset ? (uint) 1 : 0, compressionModel);
             if (!useOffset)
                 return;
 
-            writer.WritePackedInt(Position.x, compressionModel);
-            writer.WritePackedInt(Position.y, compressionModel);
-            writer.WritePackedInt(Position.z, compressionModel);
+            writer.WritePackedIntDelta(Position.x, baseline.Position.x, compressionModel);
+            writer.WritePackedIntDelta(Position.y, baseline.Position.y, compressionModel);
+            writer.WritePackedIntDelta(Position.z, baseline.Position.z, compressionModel);
 
-            writer.WritePackedInt(Rotation.x, compressionModel);
-            writer.WritePackedInt(Rotation.y, compressionModel);
-            writer.WritePackedInt(Rotation.z, compressionModel);
-            writer.WritePackedInt(Rotation.w, compressionModel);
+            writer.WritePackedIntDelta(Rotation.x, baseline.Rotation.x, compressionModel);
+            writer.WritePackedIntDelta(Rotation.y, baseline.Rotation.y, compressionModel);
+            writer.WritePackedIntDelta(Rotation.z, baseline.Rotation.z, compressionModel);
+            writer.WritePackedIntDelta(Rotation.w, baseline.Rotation.w, compressionModel);
         }
 
-        public void Read(DataStreamReader reader, NetworkCompressionModel compressionModel, ref DataStreamReader.Context ctx)
+        public void Read(DataStreamReader reader, CameraStateSnapshotFormat baseline, NetworkCompressionModel compressionModel, ref DataStreamReader.Context ctx)
         {
-            TargetGhostId = reader.ReadPackedUInt(ref ctx, compressionModel);
-            CameraMode    = (CameraMode) reader.ReadPackedUInt(ref ctx, compressionModel);
+            TargetGhostId = reader.ReadPackedUIntDelta(ref ctx, baseline.TargetGhostId, compressionModel);
+            CameraMode    = (CameraMode) reader.ReadPackedUIntDelta(ref ctx, (uint) baseline.CameraMode, compressionModel);
             var useOffset = reader.ReadPackedUInt(ref ctx, compressionModel) == 1;
             if (!useOffset)
                 return;
 
-            Position.x = reader.ReadPackedInt(ref ctx, compressionModel);
-            Position.y = reader.ReadPackedInt(ref ctx, compressionModel);
-            Position.z = reader.ReadPackedInt(ref ctx, compressionModel);
+            Position.x = reader.ReadPackedIntDelta(ref ctx, baseline.Position.x, compressionModel);
+            Position.y = reader.ReadPackedIntDelta(ref ctx, baseline.Position.y, compressionModel);
+            Position.z = reader.ReadPackedIntDelta(ref ctx, baseline.Position.z, compressionModel);
 
-            Rotation.x = reader.ReadPackedInt(ref ctx, compressionModel);
-            Rotation.y = reader.ReadPackedInt(ref ctx, compressionModel);
-            Rotation.z = reader.ReadPackedInt(ref ctx, compressionModel);
-            Rotation.w = reader.ReadPackedInt(ref ctx, compressionModel);
+            Rotation.x = reader.ReadPackedIntDelta(ref ctx, baseline.Rotation.x, compressionModel);
+            Rotation.y = reader.ReadPackedIntDelta(ref ctx, baseline.Rotation.y, compressionModel);
+            Rotation.z = reader.ReadPackedIntDelta(ref ctx, baseline.Rotation.z, compressionModel);
+            Rotation.w = reader.ReadPackedIntDelta(ref ctx, baseline.Rotation.w, compressionModel);
         }
 
         public void SetTransform(RigidTransform rigidTransform)

@@ -63,7 +63,6 @@ namespace StormiumTeam.GameBase
 		public void Serialize(ref SynchronizedSimulationTimeSnapshot baseline, DataStreamWriter writer, NetworkCompressionModel compressionModel)
 		{
 			writer.WritePackedUIntDelta(TimeInterpolated, baseline.TimeInterpolated, compressionModel);
-			writer.WritePackedUIntDelta(TimePredicted, baseline.TimePredicted, compressionModel);
 		}
 
 		public void Deserialize(uint tick, ref SynchronizedSimulationTimeSnapshot baseline, DataStreamReader reader, ref DataStreamReader.Context ctx, NetworkCompressionModel compressionModel)
@@ -71,7 +70,7 @@ namespace StormiumTeam.GameBase
 			Tick = tick;
 
 			TimeInterpolated = reader.ReadPackedUIntDelta(ref ctx, baseline.TimeInterpolated, compressionModel);
-			TimePredicted    = reader.ReadPackedUIntDelta(ref ctx, baseline.TimePredicted, compressionModel);
+			TimePredicted    = TimeInterpolated;
 		}
 
 		public void Interpolate(ref SynchronizedSimulationTimeSnapshot target, float factor)

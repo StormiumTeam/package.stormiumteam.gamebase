@@ -24,7 +24,7 @@ namespace StormiumTeam.GameBase
 			return new ColliderCastInput
 			{
 				Collider    = input.Collider,
-				Position    = Math.Mul(bodyFromWorld, input.Position),
+				Start    = Math.Mul(bodyFromWorld, input.Start),
 				Orientation = math.mul(math.inverse(worldFromMotion.rot), input.Orientation),
 				Direction   = math.mul(bodyFromWorld.Rotation, input.Direction)
 			};

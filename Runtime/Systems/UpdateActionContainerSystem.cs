@@ -1,4 +1,5 @@
 ﻿using package.StormiumTeam.GameBase;
+using StormiumTeam.GameBase.Data;
 using Unity.Entities;
 using Unity.NetCode;
 using UnityEngine;
@@ -6,6 +7,7 @@ using UnityEngine;
 namespace StormiumTeam.GameBase
 {
 	[UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
+	[UpdateAfter(typeof(DestroyChainReactionSystemClientServerWorld))]
 	public class UpdateActionContainerSystem : ComponentSystem
 	{
 		protected override void OnUpdate()
