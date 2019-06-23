@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using package.stormiumteam.shared.ecs;
+using Runtime.Misc;
 using StormiumTeam.GameBase;
 using Unity.Entities;
 using UnityEngine;
@@ -39,11 +40,11 @@ namespace StormiumTeam.GameBase
 		{
 			if (m_ObjectPool.Count == 0)
 			{
-				var previousActiveWorld = World.Active;
-
-				World.Active = m_SpawnWorld ?? previousActiveWorld;
-				var obj = m_CreateFunction(this);
-				World.Active = previousActiveWorld;
+				T obj;
+				using (new SetTemporaryActiveWorld(m_SpawnWorld ?? World.Active))
+				{
+					obj = m_CreateFunction(this);
+				}
 
 				m_Objects.Add(obj);
 				return obj;
