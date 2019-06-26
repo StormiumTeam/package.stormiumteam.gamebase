@@ -7,6 +7,7 @@ using Unity.Networking.Transport;
 using UnityEngine;
 
 [assembly: RegisterGenericComponentType(typeof(Relative<TeamDescription>))]
+[assembly: RegisterGenericComponentType(typeof(GhostRelative<TeamDescription>))]
 
 namespace StormiumTeam.GameBase
 {

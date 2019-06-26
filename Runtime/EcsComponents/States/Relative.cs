@@ -12,12 +12,25 @@ using Unity.NetCode;
 using UnityEngine;
 
 [assembly: RegisterGenericComponentType(typeof(Relative<ColliderDescription>))]
+[assembly: RegisterGenericComponentType(typeof(GhostRelative<ColliderDescription>))]
+
 [assembly: RegisterGenericComponentType(typeof(Relative<MovableDescription>))]
+[assembly: RegisterGenericComponentType(typeof(GhostRelative<MovableDescription>))]
+
 [assembly: RegisterGenericComponentType(typeof(Relative<LivableDescription>))]
+[assembly: RegisterGenericComponentType(typeof(GhostRelative<LivableDescription>))]
+
 [assembly: RegisterGenericComponentType(typeof(Relative<CharacterDescription>))]
+[assembly: RegisterGenericComponentType(typeof(GhostRelative<CharacterDescription>))]
+
 [assembly: RegisterGenericComponentType(typeof(Relative<PlayerDescription>))]
+[assembly: RegisterGenericComponentType(typeof(GhostRelative<PlayerDescription>))]
+
 [assembly: RegisterGenericComponentType(typeof(Relative<ActionDescription>))]
+[assembly: RegisterGenericComponentType(typeof(GhostRelative<ActionDescription>))]
+
 [assembly: RegisterGenericComponentType(typeof(Relative<ProjectileDescription>))]
+[assembly: RegisterGenericComponentType(typeof(GhostRelative<ProjectileDescription>))]
 
 namespace StormiumTeam.GameBase
 {

@@ -263,7 +263,7 @@ namespace StormiumTeam.GameBase
 			return true;
 		}
 
-		private void Update()
+		protected virtual void Update()
 		{
 			if (ReturnPresentationToPoolNextFrame)
 			{

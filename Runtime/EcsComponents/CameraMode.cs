@@ -1,5 +1,8 @@
+using DefaultNamespace;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.NetCode;
 using Unity.Networking.Transport;
 
 namespace StormiumTeam.GameBase
@@ -35,13 +38,21 @@ namespace StormiumTeam.GameBase
         public RigidTransform Offset => Data.Offset;
     }
 
-    public struct ServerCameraState : IComponentData
+    public struct ServerCameraState : IComponentData, IComponentFromSnapshot<GamePlayerSnapshot>
     {
         public CameraState Data;
 
         public CameraMode     Mode   => Data.Mode;
         public Entity         Target => Data.Target;
         public RigidTransform Offset => Data.Offset;
+        
+        public void Set(GamePlayerSnapshot snapshot, NativeHashMap<int, GhostEntity> ghostMap)
+        {
+            if (ghostMap.TryGetValue((int) snapshot.CameraSnapshotFormat.TargetGhostId, out var targetEntity))
+                Data.Target = targetEntity.entity;
+
+            Data.Mode = snapshot.CameraSnapshotFormat.CameraMode;
+        }
     }
 
     public struct CameraStateSnapshotFormat

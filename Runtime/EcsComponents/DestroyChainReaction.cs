@@ -34,7 +34,7 @@ namespace StormiumTeam.GameBase.Data
 		{
 			base.OnCreate();
 
-			m_ToDestroy       = new NativeList<Entity>(Allocator.TempJob);
+			m_ToDestroy       = new NativeList<Entity>(Allocator.Persistent);
 			m_ForEachDelegate = ForEach;
 		}
 

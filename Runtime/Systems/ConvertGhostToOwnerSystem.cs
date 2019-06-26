@@ -41,6 +41,11 @@ namespace Runtime.Systems
 
 	[UpdateInGroup(typeof(ClientSimulationSystemGroup))]
 	[UpdateAfter(typeof(GhostSpawnSystemGroup))]
+	public class ConvertGhostToRelativeSystemGroup : ComponentSystemGroup
+	{
+	}
+
+	[UpdateInGroup(typeof(ConvertGhostToRelativeSystemGroup))]
 	public class ConvertGhostToRelativeSystem<TDescription> : JobComponentSystem
 		where TDescription : struct, IEntityDescription
 	{

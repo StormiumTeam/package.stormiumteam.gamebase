@@ -14,35 +14,40 @@ namespace StormiumTeam.GameBase
     public struct GamePlayer : IComponentFromSnapshot<GamePlayerSnapshot>
     {
         public ulong MasterServerId;
-        public int ServerId;
+        public int   ServerId;
         public bool  IsSelf;
 
         public GamePlayer(ulong masterServerId, bool isSelf)
         {
             MasterServerId = masterServerId;
-            IsSelf        = isSelf;
-            ServerId = -1;
+            IsSelf         = isSelf;
+            ServerId       = -1;
         }
-        
+
         public class UpdateFromSnapshot : BaseUpdateFromSnapshotSystem<GamePlayerSnapshot, GamePlayer>
-        {}
+        {
+        }
 
         public void Set(GamePlayerSnapshot snapshot, NativeHashMap<int, GhostEntity> ghostMap)
         {
             MasterServerId = snapshot.MasterServerId;
-            ServerId = snapshot.ServerId;
+            ServerId       = snapshot.ServerId;
         }
     }
-    
+
+    public class UpdateCameraFromSnapshot : BaseUpdateFromSnapshotSystem<GamePlayerSnapshot, ServerCameraState>
+    {
+    }
+
     public struct GamePlayerSnapshot : ISnapshotData<GamePlayerSnapshot>
     {
         public uint Tick { get; set; }
 
         public CameraStateSnapshotFormat CameraSnapshotFormat;
-        
+
         public ulong MasterServerId;
-        public int ServerId;
-        
+        public int   ServerId;
+
         public void PredictDelta(uint tick, ref GamePlayerSnapshot baseline1, ref GamePlayerSnapshot baseline2)
         {
             throw new System.NotImplementedException();
@@ -52,12 +57,12 @@ namespace StormiumTeam.GameBase
         {
             writer.WritePackedIntDelta(ServerId, baseline.ServerId, compressionModel);
 
-            var (u1, u2) = StMath.ULongToDoubleUInt(MasterServerId);
-            var (b1, b2) = StMath.ULongToDoubleUInt(baseline.MasterServerId);
-            
-            writer.WritePackedUIntDelta(u1, b1, compressionModel);
-            writer.WritePackedUIntDelta(u2, b2, compressionModel);
-            
+            var unionMasterServerId         = new ULongUIntUnion {LongValue = MasterServerId};
+            var baselineUnionMasterServerId = new ULongUIntUnion {LongValue = baseline.MasterServerId};
+
+            writer.WritePackedUIntDelta(unionMasterServerId.Int0Value, baselineUnionMasterServerId.Int0Value, compressionModel);
+            writer.WritePackedUIntDelta(unionMasterServerId.Int1Value, baselineUnionMasterServerId.Int1Value, compressionModel);
+
             CameraSnapshotFormat.Write(writer, baseline.CameraSnapshotFormat, compressionModel);
         }
 
@@ -67,20 +72,21 @@ namespace StormiumTeam.GameBase
 
             ServerId = reader.ReadPackedIntDelta(ref ctx, baseline.ServerId, compressionModel);
 
-            var (b1, b2) = StMath.ULongToDoubleUInt(baseline.MasterServerId);
-            var u1 = reader.ReadPackedUIntDelta(ref ctx, b1, compressionModel);
-            var u2 = reader.ReadPackedUIntDelta(ref ctx, b2, compressionModel);
+            var baselineUnion = new ULongUIntUnion {LongValue = baseline.MasterServerId};
 
-            MasterServerId = StMath.DoubleUIntToULong(u1, u2);
+            var u1 = reader.ReadPackedUIntDelta(ref ctx, baselineUnion.Int0Value, compressionModel);
+            var u2 = reader.ReadPackedUIntDelta(ref ctx, baselineUnion.Int1Value, compressionModel);
+
+            MasterServerId = new ULongUIntUnion {Int0Value = u1, Int1Value = u2}.LongValue;
 
             CameraSnapshotFormat.Read(reader, baseline.CameraSnapshotFormat, compressionModel, ref ctx);
         }
 
         public void Interpolate(ref GamePlayerSnapshot target, float factor)
         {
-            ServerId = target.ServerId;
+            ServerId       = target.ServerId;
             MasterServerId = target.MasterServerId;
-            
+
             CameraSnapshotFormat.Interpolate(target.CameraSnapshotFormat, factor);
         }
     }
@@ -96,7 +102,7 @@ namespace StormiumTeam.GameBase
 
         public bool WantsPredictionDelta => false;
 
-        public GhostComponentType<GamePlayer> GhostPlayerType;
+        public GhostComponentType<GamePlayer>        GhostPlayerType;
         public GhostComponentType<ServerCameraState> GhostCameraStateType;
 
         [NativeDisableContainerSafetyRestriction]
@@ -136,7 +142,7 @@ namespace StormiumTeam.GameBase
             snapshot.CameraSnapshotFormat.SetTransform(camera.Offset);
         }
     }
-    
+
     public class GamePlayerGhostSpawnSystem : DefaultGhostSpawnSystem<GamePlayerSnapshot>
     {
         protected override EntityArchetype GetGhostArchetype()
