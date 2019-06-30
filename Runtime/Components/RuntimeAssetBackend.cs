@@ -137,12 +137,12 @@ namespace StormiumTeam.GameBase
 		}
 	}
 
-	public abstract class CustomAsyncAssetPresentation<TMonoPresentation> : MonoBehaviour
-		where TMonoPresentation : CustomAsyncAssetPresentation<TMonoPresentation>
+	public abstract class RuntimeAssetPresentation<TMonoPresentation> : MonoBehaviour
+		where TMonoPresentation : RuntimeAssetPresentation<TMonoPresentation>
 	{
-		public CustomAsyncAsset<TMonoPresentation> Backend { get; protected set; }
+		public RuntimeAssetBackend<TMonoPresentation> Backend { get; protected set; }
 
-		internal void SetBackend(CustomAsyncAsset<TMonoPresentation> backend)
+		internal void SetBackend(RuntimeAssetBackend<TMonoPresentation> backend)
 		{
 			Backend = backend;
 
@@ -156,12 +156,13 @@ namespace StormiumTeam.GameBase
 		public virtual void OnReset() {}
 	}
 
-	public abstract class CustomAsyncAsset<TMonoPresentation> : MonoBehaviour
-		where TMonoPresentation : CustomAsyncAssetPresentation<TMonoPresentation>
+	public abstract class RuntimeAssetBackend<TMonoPresentation> : MonoBehaviour
+		where TMonoPresentation : RuntimeAssetPresentation<TMonoPresentation>
 	{
 		private AsyncAssetPool<GameObject> m_PresentationPool;
 		private AssetPool<GameObject>      m_RootPool;
 
+		public int DestroyFlags;
 		public bool DisableNextUpdate, ReturnToPoolOnDisable, ReturnPresentationToPoolNextFrame;
 
 		public EntityManager DstEntityManager { get; private set; }
@@ -214,7 +215,7 @@ namespace StormiumTeam.GameBase
 				gameObjectEntity = opResult.AddComponent<GameObjectEntity>();
 			}
 			World.Active = previousWorld;
-
+			
 			//DstEntityManager.SetOrAddComponentData(DstEntity, new SubModel(gameObjectEntity.Entity)); todo: this is something that should be handled by systems
 			DstEntityManager.SetOrAddComponentData(gameObjectEntity.Entity, new ModelParent {Parent = DstEntity});
 
@@ -289,6 +290,27 @@ namespace StormiumTeam.GameBase
 			if (m_PresentationPool != null) throw new InvalidOperationException("AddEntityLink() can't be used if pooling is active.");
 			
 			gameObject.AddComponent<DestroyGameObjectOnEntityDestroyed>().SetTarget(DstEntityManager, DstEntity);
+		}
+
+		public void SetDestroyFlags(int value)
+		{
+			if (value > 0)
+				throw new NotImplementedException();
+
+			DestroyFlags = value;
+
+			if (value == 0)
+			{
+				DisableNextUpdate                 = true;
+				ReturnToPoolOnDisable             = true;
+				ReturnPresentationToPoolNextFrame = true;
+			}
+			else
+			{
+				DisableNextUpdate = false;
+				ReturnToPoolOnDisable = false;
+				ReturnPresentationToPoolNextFrame = false;
+			}
 		}
 
 		public void ReturnPresentationToPool()
