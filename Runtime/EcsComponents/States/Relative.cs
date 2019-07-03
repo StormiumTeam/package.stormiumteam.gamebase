@@ -174,7 +174,12 @@ namespace StormiumTeam.GameBase
             World.GetOrCreateSystem<AppEventSystem>().SubscribeToAll(this);
 
             if (World.GetExistingSystem<ClientSimulationSystemGroup>() != null)
-                World.GetOrCreateSystem<ConvertGhostToRelativeSystem<T>>();
+            {
+                var topGroup      = World.GetOrCreateSystem<ConvertGhostToRelativeSystemGroup>();
+                var convertSystem = World.GetOrCreateSystem<ConvertGhostToRelativeSystem<T>>();
+
+                topGroup.AddSystemToUpdateList(convertSystem);
+            }
         }
 
         protected override JobHandle OnUpdate(JobHandle _)
