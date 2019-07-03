@@ -48,11 +48,12 @@ namespace StormiumTeam.GameBase.Systems
 			InputEvents.Add(ctx);
 		}
 
-		protected void AddActionEvents(InputAction action)
+		protected void AddActionEvents(InputAction action, Action<InputAction.CallbackContext> customCallback = null)
 		{
-			action.started   += InputActionEvent;
-			action.performed += InputActionEvent;
-			action.canceled  += InputActionEvent;
+			var c = customCallback ?? InputActionEvent;
+			action.started   += c;
+			action.performed += c;
+			action.canceled  += c;
 		}
 	}
 
