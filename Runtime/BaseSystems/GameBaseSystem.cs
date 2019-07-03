@@ -25,7 +25,7 @@ namespace StormiumTeam.GameBase
 			(
 				typeof(GamePlayer), typeof(GamePlayerLocalTag)
 			);
-			
+
 			m_PlayerGroup = GetEntityQuery
 			(
 				typeof(GamePlayer)
@@ -44,6 +44,13 @@ namespace StormiumTeam.GameBase
 		private EntityQuery m_GameTimeSingletonGroup;
 		private EntityQuery m_PlayerGroup;
 		private EntityQuery m_LocalPlayerGroup;
+
+		public void GetModule<TModule>(out TModule module)
+			where TModule : BaseSystemModule, new()
+		{
+			module = new TModule();
+			module.Enable(this);
+		}
 
 		public Entity GetFirstSelfGamePlayer()
 		{
@@ -171,6 +178,70 @@ namespace StormiumTeam.GameBase
 #endif
 
 			return null;
+		}
+	}
+
+	public abstract class BaseSystemModule
+	{
+		public ComponentSystemBase System    { get; private set; }
+		public bool                IsEnabled => System != null;
+
+		public void Enable(ComponentSystemBase system)
+		{
+			System = system;
+			OnEnable();
+		}
+
+		public JobHandle Update(JobHandle jobHandle)
+		{
+			if (!IsEnabled)
+				throw new InvalidOperationException();
+
+			OnUpdate(ref jobHandle);
+			return jobHandle;
+		}
+
+		public void Disable()
+		{
+			OnDisable();
+			System = null;
+		}
+
+		protected abstract void OnEnable();
+		protected abstract void OnUpdate(ref JobHandle jobHandle);
+		protected abstract void OnDisable();
+	}
+
+	public sealed class NetworkConnectionModule : BaseSystemModule
+	{
+		public EntityQuery        ConnectedQuery;
+		public NativeList<Entity> ConnectedEntities;
+
+		protected override void OnEnable()
+		{
+			ConnectedQuery = System.EntityManager.CreateEntityQuery(new EntityQueryDesc
+			{
+				All  = new[] {ComponentType.ReadWrite<NetworkIdComponent>()},
+				None = new[] {ComponentType.ReadWrite<NetworkStreamDisconnected>()}
+			});
+			ConnectedEntities = new NativeList<Entity>(Allocator.Persistent);
+		}
+
+		protected override void OnUpdate(ref JobHandle jobHandle)
+		{
+			ConnectedQuery.AddDependency(jobHandle);
+			var connectionChunks = ConnectedQuery.CreateArchetypeChunkArray(Allocator.TempJob, out jobHandle);
+			jobHandle.Complete();
+			for (var chunk = 0; chunk != connectionChunks.Length; chunk++)
+			{
+				var entityArray = connectionChunks[chunk].GetNativeArray(System.GetArchetypeChunkEntityType());
+				ConnectedEntities.AddRange(entityArray);
+			}
+		}
+
+		protected override void OnDisable()
+		{
+			ConnectedEntities.Dispose();
 		}
 	}
 }

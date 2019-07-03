@@ -123,6 +123,11 @@ namespace StormiumTeam.GameBase
 						if (PlayerIds.Length > 0 && PlayerIds[0].Value == gamePlayer.ServerId)
 						{
 							CommandBuffer.AddComponent(jobIndex, entity, default(GamePlayerLocalTag));
+							gamePlayer.IsSelf = true;
+						}
+						else
+						{
+							gamePlayer.IsSelf = false;
 						}
 
 						CommandBuffer.DestroyEntity(jobIndex, DelayedEntities[ent]);

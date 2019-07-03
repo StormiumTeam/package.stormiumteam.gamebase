@@ -149,6 +149,7 @@ namespace StormiumTeam.GameBase
         {
             return EntityManager.CreateArchetype
             (
+                typeof(PlayerDescription),
                 typeof(GamePlayer),
                 typeof(LocalCameraState),
                 typeof(ServerCameraState),
@@ -161,6 +162,7 @@ namespace StormiumTeam.GameBase
         {
             return EntityManager.CreateArchetype
             (
+                typeof(PlayerDescription),
                 typeof(GamePlayer),
                 typeof(LocalCameraState),
                 typeof(ServerCameraState),
@@ -177,6 +179,7 @@ namespace StormiumTeam.GameBase
         {
             entityComponents = new[]
             {
+                typeof(PlayerDescription),
                 ComponentType.ReadWrite<GamePlayer>(),
                 typeof(LocalCameraState),
                 typeof(ServerCameraState),
