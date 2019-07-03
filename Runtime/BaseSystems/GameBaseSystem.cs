@@ -229,6 +229,7 @@ namespace StormiumTeam.GameBase
 
 		protected override void OnUpdate(ref JobHandle jobHandle)
 		{
+			ConnectedEntities.Clear();
 			ConnectedQuery.AddDependency(jobHandle);
 			var connectionChunks = ConnectedQuery.CreateArchetypeChunkArray(Allocator.TempJob, out jobHandle);
 			jobHandle.Complete();
