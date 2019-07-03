@@ -116,6 +116,9 @@ namespace StormiumTeam.GameBase
 
         public static void ReplaceOwnerData(this EntityManager entityManager, Entity entity, Entity owner, bool setRelative = true, bool autoEntityLink = true)
         {
+            // sync...
+            entityManager.CompleteAllJobs();
+
             entityManager.SetOrAddComponentData(entity, new Owner {Target = owner});
 
             if (!setRelative)
@@ -128,16 +131,18 @@ namespace StormiumTeam.GameBase
             var hasBuffer = entityManager.HasComponent(owner, typeof(OwnerChild));
             if (hasBuffer)
                 ownerChildren = new NativeArray<OwnerChild>(entityManager.GetBuffer<OwnerChild>(owner).AsNativeArray(), Allocator.Temp);
-
-            foreach (var obj in AppEvent<ISyncEvent>.GetObjEvents())
+            
+            var relativeGroup = entityManager.World.GetExistingSystem<RelativeGroup>();
+            foreach (var componentSystemBase in relativeGroup.Systems)
             {
+                var system = (ISyncEvent) componentSystemBase;
                 for (var i = 0; hasBuffer && i != ownerChildren.Length; i++)
                 {
-                    if (obj.ComponentType.TypeIndex == ownerChildren[i].TypeId)
-                        obj.SyncRelativeToEntity(entity, ownerChildren[i].Child);
+                    if (system.ComponentType.TypeIndex == ownerChildren[i].TypeId)
+                        system.SyncRelativeToEntity(entity, ownerChildren[i].Child);
                 }
 
-                obj.SyncRelativeToEntity(entity, owner);
+                system.SyncRelativeToEntity(entity, owner);
             }
 
             if (hasBuffer)
@@ -264,14 +269,15 @@ namespace StormiumTeam.GameBase
         {
             base.OnCreate();
 
+            var topGroup = World.GetOrCreateSystem<RelativeGroup>();
             foreach (var typeInfo in TypeManager.AllTypes)
             {
                 var descriptionType = typeInfo.Type?.GetInterfaces().FirstOrDefault(t => t == typeof(IEntityDescription));
                 if (descriptionType == null)
                     continue;
-                
+
                 var systemType = typeof(RelativeSync<>).MakeGenericType(typeInfo.Type);
-                World.GetOrCreateSystem(systemType);
+                topGroup.AddSystemToUpdateList(World.GetOrCreateSystem(systemType));
             }
         }
 
