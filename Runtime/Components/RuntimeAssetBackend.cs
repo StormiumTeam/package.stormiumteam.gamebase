@@ -168,6 +168,10 @@ namespace StormiumTeam.GameBase
 		{
 		}
 
+		public virtual void OnPoolSet()
+		{
+		}
+
 		public void SetFromPool(AsyncAssetPool<GameObject> pool, EntityManager targetEm = null, Entity targetEntity = default)
 		{
 			m_PresentationPool = pool;
@@ -175,6 +179,8 @@ namespace StormiumTeam.GameBase
 			DstEntityManager = targetEm;
 			DstEntity        = targetEntity;
 
+			OnPoolSet();
+			
 			pool.Dequeue(OnCompletePoolDequeue);
 		}
 
