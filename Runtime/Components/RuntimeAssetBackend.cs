@@ -90,7 +90,7 @@ namespace StormiumTeam.GameBase
 			m_ObjectPool.Enqueue(obj);
 		}
 
-		public void Dequeue(Action<IAsyncOperation<T>> complete)
+		public void Dequeue(Action<AsyncOperationHandle<T>> complete)
 		{
 			if (m_ObjectPool.Count == 0)
 			{
@@ -105,8 +105,7 @@ namespace StormiumTeam.GameBase
 			if (obj == null)
 				return;
 
-			var op = new CompletedOperation<T>();
-			op.SetResult(obj);
+			var op = Addressables.ResourceManager.CreateCompletedOperation(Asset, "error");
 			complete.Invoke(op);
 		}
 
@@ -121,19 +120,14 @@ namespace StormiumTeam.GameBase
 			m_ObjectPool.Clear();
 		}
 
-		private IAsyncOperation<T> InternalAddAsset()
+		private AsyncOperationHandle<T> InternalAddAsset()
 		{
 			if (Asset == null)
 			{
-				/*if (typeof(T) == typeof(GameObject))
-					return (IAsyncOperation<T>) Addressables.Instantiate(AssetId);*/
-				return Addressables.LoadAsset<T>(AssetId);
+				return Addressables.LoadAssetAsync<T>(AssetId);
 			}
-
-			var op = new CompletedOperation<T>();
-			op.SetResult(Object.Instantiate(Asset));
-
-			return op;
+			
+			return Addressables.ResourceManager.CreateCompletedOperation(Asset, "error");
 		}
 	}
 
@@ -189,7 +183,7 @@ namespace StormiumTeam.GameBase
 			m_RootPool = rootPool;
 		}
 
-		private void OnCompletePoolDequeue(IAsyncOperation<GameObject> op)
+		private void OnCompletePoolDequeue(AsyncOperationHandle<GameObject> op)
 		{
 			if (op.Result == null)
 			{
