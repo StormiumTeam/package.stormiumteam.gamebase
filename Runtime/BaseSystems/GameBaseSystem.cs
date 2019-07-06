@@ -8,6 +8,8 @@ using Unity.Entities;
 using Unity.Jobs;
 using Unity.NetCode;
 using UnityEngine;
+using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.XR;
 
 namespace StormiumTeam.GameBase
 {
@@ -243,6 +245,48 @@ namespace StormiumTeam.GameBase
 		protected override void OnDisable()
 		{
 			ConnectedEntities.Dispose();
+		}
+	}
+
+	public sealed class AsyncOperationModule : BaseSystemModule
+	{
+		public class BaseHandleDataPair
+		{
+			public AsyncOperationHandle Handle;
+		}
+
+		public class HandleDataPair<THandle, TData> : BaseHandleDataPair
+			where TData : struct
+		{
+			public AsyncOperationHandle<THandle> Generic => Handle.Convert<THandle>();
+			public TData                         Data;
+		}
+
+		public List<BaseHandleDataPair> Handles;
+
+		protected override void OnEnable()
+		{
+			Handles = new List<BaseHandleDataPair>(8);
+		}
+
+		protected override void OnUpdate(ref JobHandle jobHandle)
+		{
+
+		}
+
+		protected override void OnDisable()
+		{
+			Handles.Clear();
+		}
+
+		public void Add<THandle, TData>(AsyncOperationHandle<THandle> handle, TData data)
+			where TData : struct
+		{
+			Handles.Add(new HandleDataPair<THandle, TData>
+			{
+				Handle = handle,
+				Data   = data
+			});
 		}
 	}
 }
