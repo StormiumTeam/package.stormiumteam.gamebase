@@ -260,6 +260,12 @@ namespace StormiumTeam.GameBase
 		{
 			public AsyncOperationHandle<THandle> Generic => Handle.Convert<THandle>();
 			public TData                         Data;
+			
+			public void Deconstruct(out AsyncOperationHandle<THandle> handle, out TData data)
+			{
+				handle = Generic;
+				data   = Data;
+			}
 		}
 
 		public List<BaseHandleDataPair> Handles;
@@ -287,6 +293,12 @@ namespace StormiumTeam.GameBase
 				Handle = handle,
 				Data   = data
 			});
+		}
+
+		public HandleDataPair<THandle, TData> Get<THandle, TData>(int index)
+			where TData : struct
+		{
+			return (HandleDataPair<THandle, TData>) Handles[index];
 		}
 	}
 }
