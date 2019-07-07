@@ -240,6 +240,7 @@ namespace StormiumTeam.GameBase
 				var entityArray = connectionChunks[chunk].GetNativeArray(System.GetArchetypeChunkEntityType());
 				ConnectedEntities.AddRange(entityArray);
 			}
+			connectionChunks.Dispose();
 		}
 
 		protected override void OnDisable()

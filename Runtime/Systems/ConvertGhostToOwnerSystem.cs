@@ -11,6 +11,17 @@ namespace Runtime.Systems
 {
 	[UpdateInGroup(typeof(ClientSimulationSystemGroup))]
 	[UpdateAfter(typeof(GhostSpawnSystemGroup))]
+	public class PreConvertSystemGroup : ComponentSystemGroup
+	{	
+	}
+	
+	[UpdateInGroup(typeof(ClientSimulationSystemGroup))]
+	[UpdateAfter(typeof(GhostSpawnSystemGroup))]
+	public class PostConvertSystemGroup : ComponentSystemGroup
+	{	
+	}
+	
+	[UpdateInGroup(typeof(PostConvertSystemGroup))]
 	public class ConvertGhostToOwnerSystem : JobComponentSystem
 	{
 		[BurstCompile]
@@ -40,8 +51,7 @@ namespace Runtime.Systems
 		}
 	}
 
-	[UpdateInGroup(typeof(ClientSimulationSystemGroup))]
-	[UpdateAfter(typeof(GhostSpawnSystemGroup))]
+	[UpdateInGroup(typeof(PostConvertSystemGroup))]
 	public class ConvertGhostToRelativeSystemGroup : ComponentSystemGroup
 	{
 	}

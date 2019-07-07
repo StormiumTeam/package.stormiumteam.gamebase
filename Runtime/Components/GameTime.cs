@@ -206,6 +206,14 @@ namespace StormiumTeam.GameBase
 				TimeArray = m_TimeArray
 			}.Schedule(this, inputDeps);
 		}
+
+		public JobHandle Schedule(NativeArray<SynchronizedSimulationTime> array, JobHandle inputDeps)
+		{
+			return new GetTimeJob
+			{
+				TimeArray = array
+			}.Schedule(this, inputDeps);		
+		}
 	}
 
 	[UpdateInGroup(typeof(GhostUpdateSystemGroup))]
