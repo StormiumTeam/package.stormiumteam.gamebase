@@ -140,15 +140,15 @@ namespace StormiumTeam.GameBase
 			m_ObjectPool.Clear();
 		}
 
-		private AsyncOperationHandle<T> InternalAddAsset()
+		private IAsyncOperation<T> InternalAddAsset()
 		{
 			if (Asset == null)
 			{
-				return Addressables.LoadAssetAsync<T>(AssetId);
+				return Addressables.LoadAsset<T>(AssetId);
 			}
 
 			Debug.LogError("???????????????");
-			return new AsyncOperationHandle<T>();
+			return default(IAsyncOperation<T>);
 		}
 	}
 

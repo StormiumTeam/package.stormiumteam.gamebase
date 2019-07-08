@@ -240,6 +240,7 @@ namespace StormiumTeam.GameBase
 				var entityArray = connectionChunks[chunk].GetNativeArray(System.GetArchetypeChunkEntityType());
 				ConnectedEntities.AddRange(entityArray);
 			}
+
 			connectionChunks.Dispose();
 		}
 
@@ -253,16 +254,16 @@ namespace StormiumTeam.GameBase
 	{
 		public class BaseHandleDataPair
 		{
-			public AsyncOperationHandle Handle;
+			public IAsyncOperation Handle;
 		}
 
 		public class HandleDataPair<THandle, TData> : BaseHandleDataPair
 			where TData : struct
 		{
-			public AsyncOperationHandle<THandle> Generic => Handle.Convert<THandle>();
-			public TData                         Data;
-			
-			public void Deconstruct(out AsyncOperationHandle<THandle> handle, out TData data)
+			public IAsyncOperation<THandle> Generic => (IAsyncOperation<THandle>) Handle;
+			public TData                    Data;
+
+			public void Deconstruct(out IAsyncOperation<THandle> handle, out TData data)
 			{
 				handle = Generic;
 				data   = Data;
@@ -286,7 +287,7 @@ namespace StormiumTeam.GameBase
 			Handles.Clear();
 		}
 
-		public void Add<THandle, TData>(AsyncOperationHandle<THandle> handle, TData data)
+		public void Add<THandle, TData>(IAsyncOperation<THandle> handle, TData data)
 			where TData : struct
 		{
 			Handles.Add(new HandleDataPair<THandle, TData>
