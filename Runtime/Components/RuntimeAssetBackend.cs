@@ -73,8 +73,7 @@ namespace StormiumTeam.GameBase
 		public string AssetId;
 
 		private T Asset;
-
-		private List<T>  m_Objects;
+		
 		private Queue<T> m_ObjectPool;
 
 		private List<OnLoad> m_EventQueue;
@@ -84,8 +83,7 @@ namespace StormiumTeam.GameBase
 		public AsyncAssetPool(string id)
 		{
 			AssetId = id;
-
-			m_Objects    = new List<T>();
+			
 			m_ObjectPool = new Queue<T>();
 			m_EventQueue = new List<OnLoad>();
 
@@ -110,16 +108,21 @@ namespace StormiumTeam.GameBase
 		{
 			if (m_ObjectPool.Count == 0)
 			{
-				m_Objects.Add(Asset);
+				if (Asset == null)
+				{
+					m_EventQueue.Add(complete);
+				}
+				else
+				{
+					complete(Asset);
+				}
 
-				complete(Asset);
 				return;
 			}
 
 			var obj = m_ObjectPool.Dequeue();
 			if (obj == null)
 			{
-				m_Objects.Add(Asset);
 				complete(Asset);
 				return;
 			}
@@ -132,7 +135,6 @@ namespace StormiumTeam.GameBase
 			foreach (var obj in m_ObjectPool)
 			{
 				Object.Destroy(obj);
-				m_Objects.Remove(obj);
 			}
 
 			m_ObjectPool.Clear();
