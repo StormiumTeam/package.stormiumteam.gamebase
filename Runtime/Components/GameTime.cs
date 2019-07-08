@@ -177,10 +177,13 @@ namespace StormiumTeam.GameBase
 			}
 		}
 
+		private EntityQuery m_TimeQuery;
+
 		protected override void OnCreate()
 		{
 			base.OnCreate();
 
+			m_TimeQuery = GetEntityQuery(typeof(SynchronizedSimulationTime));
 			m_TimeArray = new NativeArray<SynchronizedSimulationTime>(1, Allocator.Persistent);
 			m_ArrayPtr = (SynchronizedSimulationTime*) m_TimeArray.GetUnsafeReadOnlyPtr();
 		}
@@ -209,10 +212,11 @@ namespace StormiumTeam.GameBase
 
 		public JobHandle Schedule(NativeArray<SynchronizedSimulationTime> array, JobHandle inputDeps)
 		{
+			m_TimeQuery.CompleteDependency();
 			return new GetTimeJob
 			{
 				TimeArray = array
-			}.Schedule(this, inputDeps);		
+			}.Schedule(this, JobHandle.CombineDependencies(inputDeps, m_Handle));		
 		}
 	}
 

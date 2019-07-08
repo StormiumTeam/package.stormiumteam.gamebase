@@ -105,7 +105,7 @@ namespace StormiumTeam.GameBase
 			if (obj == null)
 				return;
 
-			var op = Addressables.ResourceManager.CreateCompletedOperation(Asset, "error");
+			var op = Addressables.ResourceManager.CreateCompletedOperation(Asset, null);
 			complete.Invoke(op);
 		}
 
