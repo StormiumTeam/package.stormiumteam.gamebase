@@ -14,19 +14,19 @@ namespace StormiumTeam.GameBase
 	public class AssetPool<T>
 		where T : Object
 	{
-		private World m_SpawnWorld;
+		private World                 m_SpawnWorld;
 		private Func<AssetPool<T>, T> m_CreateFunction;
-		
+
 		private List<T>  m_Objects;
 		private Queue<T> m_ObjectPool;
-		
+
 		public int LastDequeueIndex { get; private set; }
 
 		public AssetPool(Func<AssetPool<T>, T> createFunc, World spawnWorld = null)
 		{
 			m_CreateFunction = createFunc;
-			m_SpawnWorld = spawnWorld;
-			
+			m_SpawnWorld     = spawnWorld;
+
 			m_Objects    = new List<T>();
 			m_ObjectPool = new Queue<T>();
 		}
@@ -66,10 +66,10 @@ namespace StormiumTeam.GameBase
 			return m_Objects.IndexOf(obj);
 		}
 	}
-	
+
 	public class AsyncAssetPool<T>
 		where T : Object
-	{	
+	{
 		public string AssetId;
 
 		private T Asset;
@@ -77,12 +77,28 @@ namespace StormiumTeam.GameBase
 		private List<T>  m_Objects;
 		private Queue<T> m_ObjectPool;
 
+		private List<OnLoad> m_EventQueue;
+
+		public delegate void OnLoad(T result);
+
 		public AsyncAssetPool(string id)
 		{
 			AssetId = id;
-			
-			m_Objects = new List<T>();
+
+			m_Objects    = new List<T>();
 			m_ObjectPool = new Queue<T>();
+			m_EventQueue = new List<OnLoad>();
+
+			InternalAddAsset().Completed += handle =>
+			{
+				Asset = handle.Result;
+				foreach (var onLoad in m_EventQueue)
+				{
+					onLoad(Asset);
+				}
+
+				m_EventQueue.Clear();
+			};
 		}
 
 		public void Enqueue(T obj)
@@ -90,23 +106,25 @@ namespace StormiumTeam.GameBase
 			m_ObjectPool.Enqueue(obj);
 		}
 
-		public void Dequeue(Action<AsyncOperationHandle<T>> complete)
+		public void Dequeue(OnLoad complete)
 		{
 			if (m_ObjectPool.Count == 0)
 			{
-				var addAsset = InternalAddAsset();
-				addAsset.Completed += o => m_Objects.Add(o.Result);
-				addAsset.Completed += complete;
-				
+				m_Objects.Add(Asset);
+
+				complete(Asset);
 				return;
 			}
 
 			var obj = m_ObjectPool.Dequeue();
 			if (obj == null)
+			{
+				m_Objects.Add(Asset);
+				complete(Asset);
 				return;
+			}
 
-			var op = Addressables.ResourceManager.CreateCompletedOperation(Asset, null);
-			complete.Invoke(op);
+			complete(obj);
 		}
 
 		public void SafeUnload()
@@ -116,7 +134,7 @@ namespace StormiumTeam.GameBase
 				Object.Destroy(obj);
 				m_Objects.Remove(obj);
 			}
-			
+
 			m_ObjectPool.Clear();
 		}
 
@@ -126,8 +144,9 @@ namespace StormiumTeam.GameBase
 			{
 				return Addressables.LoadAssetAsync<T>(AssetId);
 			}
-			
-			return Addressables.ResourceManager.CreateCompletedOperation(Asset, "error");
+
+			Debug.LogError("???????????????");
+			return new AsyncOperationHandle<T>();
 		}
 	}
 
@@ -146,8 +165,10 @@ namespace StormiumTeam.GameBase
 		public virtual void OnBackendSet()
 		{
 		}
-		
-		public virtual void OnReset() {}
+
+		public virtual void OnReset()
+		{
+		}
 	}
 
 	public abstract class RuntimeAssetBackend<TMonoPresentation> : MonoBehaviour
@@ -156,7 +177,7 @@ namespace StormiumTeam.GameBase
 		private AsyncAssetPool<GameObject> m_PresentationPool;
 		private AssetPool<GameObject>      m_RootPool;
 
-		public int DestroyFlags;
+		public int  DestroyFlags;
 		public bool DisableNextUpdate, ReturnToPoolOnDisable, ReturnPresentationToPoolNextFrame;
 
 		public EntityManager DstEntityManager { get; private set; }
@@ -180,7 +201,7 @@ namespace StormiumTeam.GameBase
 			DstEntity        = targetEntity;
 
 			OnPoolSet();
-			
+
 			pool.Dequeue(OnCompletePoolDequeue);
 		}
 
@@ -189,19 +210,19 @@ namespace StormiumTeam.GameBase
 			m_RootPool = rootPool;
 		}
 
-		private void OnCompletePoolDequeue(AsyncOperationHandle<GameObject> op)
+		private void OnCompletePoolDequeue(GameObject result)
 		{
-			if (op.Result == null)
+			if (result == null)
 			{
-				Debug.LogError($"(Error, {name}) -> reported status: {op.Status}");
+				//Debug.LogError($"(Error, {name}) -> reported status: {op.Status}");
 				return;
 			}
 
 			var previousWorld = World.Active;
-			if (DstEntityManager != null) 
+			if (DstEntityManager != null)
 				World.Active = DstEntityManager.World;
-			var opResult = Instantiate(op.Result, transform, true);
-			
+			var opResult = Instantiate(result, transform, true);
+
 			if (DstEntityManager == null)
 			{
 				SetPresentation(opResult);
@@ -214,8 +235,9 @@ namespace StormiumTeam.GameBase
 			{
 				gameObjectEntity = opResult.AddComponent<GameObjectEntity>();
 			}
+
 			World.Active = previousWorld;
-			
+
 			//DstEntityManager.SetOrAddComponentData(DstEntity, new SubModel(gameObjectEntity.Entity)); todo: this is something that should be handled by systems
 			DstEntityManager.SetOrAddComponentData(gameObjectEntity.Entity, new ModelParent {Parent = DstEntity});
 
@@ -231,7 +253,7 @@ namespace StormiumTeam.GameBase
 		public void SetSingleModel(string key, EntityManager targetEm = null, Entity targetEntity = default)
 		{
 			if (m_PresentationPool != null) throw new InvalidOperationException("This object is already using pooling, you can't switch to a single operation anymore.");
-			
+
 			var loadModel = GetComponent<LoadModelFromStringBehaviour>();
 			if (!loadModel)
 				loadModel = gameObject.AddComponent<LoadModelFromStringBehaviour>();
@@ -288,7 +310,7 @@ namespace StormiumTeam.GameBase
 		public void AddEntityLink()
 		{
 			if (m_PresentationPool != null) throw new InvalidOperationException("AddEntityLink() can't be used if pooling is active.");
-			
+
 			gameObject.AddComponent<DestroyGameObjectOnEntityDestroyed>().SetTarget(DstEntityManager, DstEntity);
 		}
 
@@ -307,8 +329,8 @@ namespace StormiumTeam.GameBase
 			}
 			else
 			{
-				DisableNextUpdate = false;
-				ReturnToPoolOnDisable = false;
+				DisableNextUpdate                 = false;
+				ReturnToPoolOnDisable             = false;
 				ReturnPresentationToPoolNextFrame = false;
 			}
 		}
@@ -332,8 +354,8 @@ namespace StormiumTeam.GameBase
 				gameObject.SetActive(false);
 			}
 
-			DisableNextUpdate                 = false;
-			ReturnToPoolOnDisable             = false;
+			DisableNextUpdate     = false;
+			ReturnToPoolOnDisable = false;
 
 			m_RootPool.Enqueue(gameObject);
 		}
