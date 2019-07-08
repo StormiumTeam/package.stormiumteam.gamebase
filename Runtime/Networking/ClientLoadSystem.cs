@@ -14,6 +14,8 @@ namespace StormiumTeam.GameBase
 			public EntityCommandBuffer.Concurrent CommandBuffer;
 			public RpcQueue<ClientLoadedRpc>      RpcQueue;
 
+			public int GameVersion;
+
 			[NativeDisableParallelForRestriction]
 			public BufferFromEntity<OutgoingRpcDataStreamBufferComponent> OutgoingDataFromEntity;
 
@@ -21,7 +23,7 @@ namespace StormiumTeam.GameBase
 			{
 				CommandBuffer.AddComponent(jobIndex, connection, default(NetworkStreamInGame));
 
-				RpcQueue.Schedule(OutgoingDataFromEntity[connection], new ClientLoadedRpc());
+				RpcQueue.Schedule(OutgoingDataFromEntity[connection], new ClientLoadedRpc {GameVersion = GameVersion});
 			}
 		}
 
@@ -38,6 +40,8 @@ namespace StormiumTeam.GameBase
 		{
 			inputDeps = new Job
 			{
+				GameVersion = GameStatic.Version,
+				
 				CommandBuffer          = m_Barrier.CreateCommandBuffer().ToConcurrent(),
 				OutgoingDataFromEntity = GetBufferFromEntity<OutgoingRpcDataStreamBufferComponent>(),
 				RpcQueue               = World.GetExistingSystem<RpcQueueSystem<ClientLoadedRpc>>().GetRpcQueue()

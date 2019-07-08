@@ -237,11 +237,13 @@ namespace StormiumTeam.GameBase
 			{
 				gameObjectEntity = opResult.AddComponent<GameObjectEntity>();
 			}
+			
+			//opResult.SetActive(true);
 
 			World.Active = previousWorld;
 
 			//DstEntityManager.SetOrAddComponentData(DstEntity, new SubModel(gameObjectEntity.Entity)); todo: this is something that should be handled by systems
-			DstEntityManager.SetOrAddComponentData(gameObjectEntity.Entity, new ModelParent {Parent = DstEntity});
+			//DstEntityManager.SetOrAddComponentData(gameObjectEntity.Entity, new ModelParent {Parent = DstEntity});
 
 			var listeners = opResult.GetComponents<IOnModelLoadedListener>();
 			foreach (var listener in listeners)

@@ -149,10 +149,10 @@ namespace StormiumTeam.GameBase
 	}
 
 	[UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
-	public unsafe class SynchronizedSimulationTimeSystem : JobComponentSystem
+	public class SynchronizedSimulationTimeSystem : JobComponentSystem
 	{
 		private NativeArray<SynchronizedSimulationTime> m_TimeArray;
-		private SynchronizedSimulationTime* m_ArrayPtr;
+		//private SynchronizedSimulationTime* m_ArrayPtr;
 		
 		private JobHandle m_Handle;
 
@@ -162,7 +162,7 @@ namespace StormiumTeam.GameBase
 			{
 				if (!m_Handle.IsCompleted)
 					m_Handle.Complete();
-				return m_ArrayPtr[0];
+				return m_TimeArray[0];
 			}
 		}
 
@@ -185,7 +185,6 @@ namespace StormiumTeam.GameBase
 
 			m_TimeQuery = GetEntityQuery(typeof(SynchronizedSimulationTime));
 			m_TimeArray = new NativeArray<SynchronizedSimulationTime>(1, Allocator.Persistent);
-			m_ArrayPtr = (SynchronizedSimulationTime*) m_TimeArray.GetUnsafeReadOnlyPtr();
 		}
 
 		protected override void OnDestroy()

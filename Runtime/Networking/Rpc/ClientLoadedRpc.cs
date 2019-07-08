@@ -11,6 +11,8 @@ namespace StormiumTeam.GameBase
 {
 	public struct ClientLoadedRpc : IRpcCommand
 	{
+		public int GameVersion;
+		
 		public void Execute(Entity connection, EntityCommandBuffer.Concurrent commandBuffer, int jobIndex)
 		{
 			commandBuffer.AddComponent(jobIndex, connection, new NetworkStreamInGame());
@@ -18,24 +20,33 @@ namespace StormiumTeam.GameBase
 			var gamePlayerCreate = commandBuffer.CreateEntity(jobIndex);
 			commandBuffer.AddComponent(jobIndex, gamePlayerCreate, new CreateGamePlayer
 			{
-				Connection = connection
+				Connection = connection,
+				GameVersion = GameVersion,
 			});
 		}
 
 		public void Serialize(DataStreamWriter writer)
 		{
-
+			writer.Write(GameVersion);
 		}
 
 		public void Deserialize(DataStreamReader reader, ref DataStreamReader.Context ctx)
 		{
-
+			var byteRead = reader.GetBytesRead(ref ctx);
+			if (reader.Length - byteRead < sizeof(int))
+			{
+				GameVersion = -1;
+				return;
+			}
+			
+			GameVersion = reader.ReadInt(ref ctx);
 		}
 	}
 
 	public struct CreateGamePlayer : IComponentData
 	{
 		public Entity Connection;
+		public int GameVersion;
 	}
 
 	[UpdateInGroup(typeof(ServerSimulationSystemGroup))]
@@ -50,13 +61,27 @@ namespace StormiumTeam.GameBase
 
 			public EntityArchetype PlayerArchetype;
 
+			public int CurrentVersion;
+
+			public UdpNetworkDriver Driver;
+
 			[ReadOnly]
 			public ComponentDataFromEntity<NetworkIdComponent> NetworkIdFromEntity;
+
+			[ReadOnly]
+			public ComponentDataFromEntity<NetworkStreamConnection> NetworkStreamConnectionFromEntity;
 
 			public void Execute(Entity entity, int jobIndex, ref CreateGamePlayer create)
 			{
 				CommandBuffer.DestroyEntity(jobIndex, entity);
 
+				if (create.GameVersion != CurrentVersion)
+				{
+					Debug.Log($"bye bye [player version:{create.GameVersion}, current: {CurrentVersion}]");
+					NetworkStreamConnectionFromEntity[create.Connection].Value.Disconnect(Driver);
+					return;
+				}
+				
 				var networkId = NetworkIdFromEntity[create.Connection];
 
 				var geEnt = CommandBuffer.CreateEntity(jobIndex, PlayerArchetype);
@@ -121,11 +146,15 @@ namespace StormiumTeam.GameBase
 			inputDeps = new CreateJob
 			{
 				PreMadeEvents = preMadeEvents,
+				CurrentVersion = GameStatic.Version,
+				
+				Driver = World.GetExistingSystem<NetworkStreamReceiveSystem>().Driver,
+				NetworkStreamConnectionFromEntity = GetComponentDataFromEntity<NetworkStreamConnection>(true),
 
 				CommandBuffer       = m_Barrier.CreateCommandBuffer().ToConcurrent(),
 				PlayerArchetype = World.GetOrCreateSystem<GamePlayerProvider>().EntityArchetype,
 				NetworkIdFromEntity = GetComponentDataFromEntity<NetworkIdComponent>()
-			}.Schedule(this, inputDeps);
+			}.ScheduleSingle(this, inputDeps);
 			inputDeps = new SendRpcToConnectionsJob
 			{
 				PreMadeEvents          = preMadeEvents,

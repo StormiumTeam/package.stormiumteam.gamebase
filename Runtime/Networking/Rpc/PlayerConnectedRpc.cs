@@ -149,7 +149,7 @@ namespace StormiumTeam.GameBase
 			m_PreviousEventQuery = GetEntityQuery(typeof(PlayerConnectedEvent));
 		}
 
-		protected override unsafe JobHandle OnUpdate(JobHandle inputDeps)
+		protected override JobHandle OnUpdate(JobHandle inputDeps)
 		{
 			var peLength = m_PreviousEventQuery.CalculateLength();
 			if (peLength > 0)
