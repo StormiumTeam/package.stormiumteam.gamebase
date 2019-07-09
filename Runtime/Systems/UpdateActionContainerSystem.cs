@@ -11,6 +11,7 @@ namespace StormiumTeam.GameBase
 {
 	[UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
 	[UpdateAfter(typeof(DestroyChainReactionSystemClientServerWorld))]
+	[UpdateAfter(typeof(GhostUpdateSystemGroup))]
 	public class UpdateActionContainerSystem : JobGameBaseSystem
 	{
 		[BurstCompile]
@@ -42,8 +43,11 @@ namespace StormiumTeam.GameBase
 
 			public void Execute(Entity entity, int i, ref Owner owner)
 			{
-				if (!ActionContainerFromEntity.Exists(owner.Target))
+				if (owner.Target == default || !ActionContainerFromEntity.Exists(owner.Target))
+				{
 					NonBurst_ErrorNoActionContainer(entity, owner.Target);
+					return;
+				}
 
 				ActionContainerFromEntity[owner.Target].Add(new ActionContainer(entity));
 			}

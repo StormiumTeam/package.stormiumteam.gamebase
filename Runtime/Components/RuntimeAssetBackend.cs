@@ -202,7 +202,7 @@ namespace StormiumTeam.GameBase
 			Debug.Assert(m_Enabled, "m_Enabled");
 			
 			var gameObjectEntity = GetComponent<GameObjectEntity>();
-			if (DstEntityManager == null || DstEntity == default || gameObjectEntity == null)
+			if (DstEntityManager == null || gameObjectEntity == null)
 				return;
 
 			if (gameObjectEntity.EntityManager != DstEntityManager)
@@ -216,9 +216,9 @@ namespace StormiumTeam.GameBase
 				Debug.LogError($"'{gameObject.name}' -> {DstEntityManager.World.Name} has no entity found with {DstEntity}'");
 				return;
 			}
-
+			
 			var entityManager = gameObjectEntity.EntityManager;
-			entityManager.SetOrAddComponentData(DstEntity, new ModelParent {Parent = DstEntity});
+			entityManager.SetOrAddComponentData(gameObjectEntity.Entity, new ModelParent {Parent = DstEntity});
 		}
 
 		private void OnEnable()
@@ -226,6 +226,11 @@ namespace StormiumTeam.GameBase
 			m_Enabled = true;
 			
 			UpdateGameObjectEntity();
+		}
+
+		private void OnDisable()
+		{
+			m_Enabled = false;
 		}
 
 		public void SetFromPool(AsyncAssetPool<GameObject> pool, EntityManager targetEm = null, Entity targetEntity = default)
