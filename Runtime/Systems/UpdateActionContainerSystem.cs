@@ -1,7 +1,9 @@
 ﻿using package.StormiumTeam.GameBase;
 using StormiumTeam.GameBase.Data;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Jobs;
 using Unity.NetCode;
 using UnityEngine;
 
@@ -9,65 +11,72 @@ namespace StormiumTeam.GameBase
 {
 	[UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
 	[UpdateAfter(typeof(DestroyChainReactionSystemClientServerWorld))]
-	public class UpdateActionContainerSystem : GameBaseSystem
+	public class UpdateActionContainerSystem : JobGameBaseSystem
 	{
-		private void ForEachClear(DynamicBuffer<ActionContainer> buffer)
+		[BurstCompile]
+		private struct ClearBufferJob : IJob
 		{
-			buffer.Clear();
+			public NativeArray<Entity>               Entities;
+			public BufferFromEntity<ActionContainer> ActionContainerFromEntity;
+
+			public void Execute()
+			{
+				for (var i = 0; i != Entities.Length; i++)
+				{
+					ActionContainerFromEntity[Entities[i]].Clear();
+					ActionContainerFromEntity[Entities[i]].Reserve(8);
+				}
+			}
 		}
 
-		private void ForEachUpdate(Entity entity, ref Owner owner)
+		[BurstCompile]
+		private struct UpdateBufferJob : IJobForEachWithEntity<Owner>
 		{
-			if (!EntityManager.Exists(owner.Target))
+			public BufferFromEntity<ActionContainer> ActionContainerFromEntity;
+
+			[BurstDiscard]
+			private void NonBurst_ErrorNoActionContainer(Entity action, Entity owner)
 			{
-				Debug.LogError("Owner doesn't exist anymore.");
-				return;
+				Debug.LogError($"No ActionContainer found on owner={owner}, action={action}");
 			}
 
-			var newBuffer = EntityManager.HasComponent(owner.Target, typeof(ActionContainer))
-				? PostUpdateCommands.SetBuffer<ActionContainer>(owner.Target)
-				: PostUpdateCommands.AddBuffer<ActionContainer>(owner.Target);
+			public void Execute(Entity entity, int i, ref Owner owner)
+			{
+				if (!ActionContainerFromEntity.Exists(owner.Target))
+					NonBurst_ErrorNoActionContainer(entity, owner.Target);
 
-			newBuffer.Add(new ActionContainer(entity));
+				ActionContainerFromEntity[owner.Target].Add(new ActionContainer(entity));
+			}
 		}
 
-		private EntityQueryBuilder.F_B<ActionContainer> m_ForEachClear;
-		private EntityQueryBuilder                      m_ActionContainerBuilder;
 
+		private EntityQuery m_OwnerQuery;
 		private EntityQuery m_DataQuery;
 
 		protected override void OnCreate()
 		{
 			base.OnCreate();
 
-			m_ForEachClear           = ForEachClear;
-			m_ActionContainerBuilder = Entities.WithAll<ActionContainer>();
-
-			m_DataQuery = GetEntityQuery(typeof(Owner), typeof(ActionDescription));
+			m_OwnerQuery = GetEntityQuery(typeof(ActionContainer));
+			m_DataQuery  = GetEntityQuery(typeof(Owner), typeof(ActionDescription));
 		}
 
-		protected override void OnUpdate()
+		protected override JobHandle OnUpdate(JobHandle inputDeps)
 		{
-			m_ActionContainerBuilder.ForEach(m_ForEachClear);
+			m_OwnerQuery.AddDependency(inputDeps);
 
-			using (var entities = m_DataQuery.ToEntityArray(Allocator.TempJob))
-			using (var owners = m_DataQuery.ToComponentDataArray<Owner>(Allocator.TempJob))
+			inputDeps = new ClearBufferJob
 			{
-				for (var ent = 0; ent != entities.Length; ent++)
-				{
-					if (!EntityManager.HasComponent(owners[ent].Target, typeof(ActionContainer)))
-						continue;
-					
-					var buffer = EntityManager.GetBuffer<ActionContainer>(owners[ent].Target);
-					if (!buffer.IsCreated)
-					{
+				Entities                  = m_OwnerQuery.ToEntityArray(Allocator.TempJob, out var dep1),
+				ActionContainerFromEntity = GetBufferFromEntity<ActionContainer>()
+			}.Schedule(JobHandle.CombineDependencies(inputDeps, dep1));
 
-						Debug.LogWarning(owners[ent].Target + " no action buffer");
-						continue;
-					}
-					buffer.Add(new ActionContainer(entities[ent]));
-				}
-			}
+			inputDeps = new UpdateBufferJob
+			{
+				ActionContainerFromEntity = GetBufferFromEntity<ActionContainer>()
+			}.ScheduleSingle(m_DataQuery, inputDeps);
+
+			return inputDeps;
 		}
 	}
 }
