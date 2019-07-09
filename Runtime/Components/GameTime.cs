@@ -1,3 +1,4 @@
+using StormiumTeam.Networking.Utilities;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -90,14 +91,12 @@ namespace StormiumTeam.GameBase
 		}
 
 		public bool WantsPredictionDelta => true;
-
-		public ComponentType                                           ComponentTypeSynchronizedSimulationTime;
-		public ArchetypeChunkComponentType<SynchronizedSimulationTime> GhostSynchronizedSimulationTypeComponent;
+		
+		public GhostComponentType<SynchronizedSimulationTime> GhostSynchronizedSimulationTimeType;
 
 		public void BeginSerialize(ComponentSystemBase system)
 		{
-			ComponentTypeSynchronizedSimulationTime  = ComponentType.ReadWrite<SynchronizedSimulationTime>();
-			GhostSynchronizedSimulationTypeComponent = system.GetArchetypeChunkComponentType<SynchronizedSimulationTime>();
+			system.GetGhostComponentType(out GhostSynchronizedSimulationTimeType);
 		}
 
 		public bool CanSerialize(EntityArchetype arch)
@@ -105,7 +104,7 @@ namespace StormiumTeam.GameBase
 			var types = arch.GetComponentTypes();
 			for (var i = 0; i != types.Length; i++)
 			{
-				if (types[i] == ComponentTypeSynchronizedSimulationTime)
+				if (types[i] == GhostSynchronizedSimulationTimeType)
 					return true;
 			}
 
@@ -114,7 +113,7 @@ namespace StormiumTeam.GameBase
 
 		public void CopyToSnapshot(ArchetypeChunk chunk, int ent, uint tick, ref SynchronizedSimulationTimeSnapshot snapshot)
 		{
-			var component = chunk.GetNativeArray(GhostSynchronizedSimulationTypeComponent)[ent];
+			var component = chunk.GetNativeArray(GhostSynchronizedSimulationTimeType.Archetype)[ent];
 
 			snapshot.Tick             = tick;
 			snapshot.TimeInterpolated = component.Interpolated;

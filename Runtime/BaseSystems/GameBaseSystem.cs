@@ -183,8 +183,18 @@ namespace StormiumTeam.GameBase
 		}
 	}
 
+	[Flags]
+	public enum ModuleUpdateType
+	{
+		MainThread = 1,
+		Job = 2,
+		All = MainThread | Job
+	}
+
 	public abstract class BaseSystemModule
 	{
+		public virtual ModuleUpdateType UpdateType => ModuleUpdateType.MainThread;
+		
 		public ComponentSystemBase System    { get; private set; }
 		public bool                IsEnabled => System != null;
 
@@ -194,8 +204,23 @@ namespace StormiumTeam.GameBase
 			OnEnable();
 		}
 
+		public void Update()
+		{
+			if ((UpdateType & ModuleUpdateType.MainThread) == 0)
+				throw new InvalidOperationException();
+			
+			if (!IsEnabled)
+				throw new InvalidOperationException();
+
+			var tmp = default(JobHandle);
+			OnUpdate(ref tmp);
+		}
+
 		public JobHandle Update(JobHandle jobHandle)
 		{
+			if ((UpdateType & ModuleUpdateType.Job) == 0)
+				throw new InvalidOperationException();
+			
 			if (!IsEnabled)
 				throw new InvalidOperationException();
 
@@ -216,6 +241,8 @@ namespace StormiumTeam.GameBase
 
 	public sealed class NetworkConnectionModule : BaseSystemModule
 	{
+		public override ModuleUpdateType UpdateType => ModuleUpdateType.All;
+		
 		public EntityQuery        ConnectedQuery;
 		public NativeList<Entity> ConnectedEntities;
 
@@ -252,6 +279,8 @@ namespace StormiumTeam.GameBase
 
 	public sealed class AsyncOperationModule : BaseSystemModule
 	{
+		public override ModuleUpdateType UpdateType => ModuleUpdateType.MainThread;
+
 		public class BaseHandleDataPair
 		{
 			public IAsyncOperation Handle;

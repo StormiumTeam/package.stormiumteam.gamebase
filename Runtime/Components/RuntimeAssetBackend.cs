@@ -179,6 +179,8 @@ namespace StormiumTeam.GameBase
 		private AsyncAssetPool<GameObject> m_PresentationPool;
 		private AssetPool<GameObject>      m_RootPool;
 
+		private bool m_Enabled;
+
 		public int  DestroyFlags;
 		public bool DisableNextUpdate, ReturnToPoolOnDisable, ReturnPresentationToPoolNextFrame;
 
@@ -195,6 +197,37 @@ namespace StormiumTeam.GameBase
 		{
 		}
 
+		protected void UpdateGameObjectEntity()
+		{
+			Debug.Assert(m_Enabled, "m_Enabled");
+			
+			var gameObjectEntity = GetComponent<GameObjectEntity>();
+			if (DstEntityManager == null || DstEntity == default || gameObjectEntity == null)
+				return;
+
+			if (gameObjectEntity.EntityManager != DstEntityManager)
+			{
+				Debug.LogError($"'{gameObject.name}' have a different EntityManager than the destination. [go={gameObjectEntity.EntityManager?.World?.Name ?? "null"}, dst={DstEntityManager?.World?.Name ?? "null"}]");
+				return;
+			}
+
+			if (!DstEntityManager.Exists(DstEntity))
+			{
+				Debug.LogError($"'{gameObject.name}' -> {DstEntityManager.World.Name} has no entity found with {DstEntity}'");
+				return;
+			}
+
+			var entityManager = gameObjectEntity.EntityManager;
+			entityManager.SetOrAddComponentData(DstEntity, new ModelParent {Parent = DstEntity});
+		}
+
+		private void OnEnable()
+		{
+			m_Enabled = true;
+			
+			UpdateGameObjectEntity();
+		}
+
 		public void SetFromPool(AsyncAssetPool<GameObject> pool, EntityManager targetEm = null, Entity targetEntity = default)
 		{
 			m_PresentationPool = pool;
@@ -202,6 +235,11 @@ namespace StormiumTeam.GameBase
 			DstEntityManager = targetEm;
 			DstEntity        = targetEntity;
 
+			if (m_Enabled)
+			{
+				UpdateGameObjectEntity();
+			}
+			
 			OnPoolSet();
 
 			pool.Dequeue(OnCompletePoolDequeue);
@@ -237,13 +275,18 @@ namespace StormiumTeam.GameBase
 			{
 				gameObjectEntity = opResult.AddComponent<GameObjectEntity>();
 			}
-			
-			//opResult.SetActive(true);
 
 			World.Active = previousWorld;
 
 			//DstEntityManager.SetOrAddComponentData(DstEntity, new SubModel(gameObjectEntity.Entity)); todo: this is something that should be handled by systems
-			//DstEntityManager.SetOrAddComponentData(gameObjectEntity.Entity, new ModelParent {Parent = DstEntity});
+			if (gameObjectEntity.Entity != default)
+			{
+				DstEntityManager.SetOrAddComponentData(gameObjectEntity.Entity, new ModelParent {Parent = DstEntity});
+			}
+			else
+			{
+				Debug.LogWarning("Presentation gameObject entity is null, this may happen if the main gameObject is not active.\nPlease fix that behavior by calling gameObject.SetActive(true).");
+			}
 
 			var listeners = opResult.GetComponents<IOnModelLoadedListener>();
 			foreach (var listener in listeners)
