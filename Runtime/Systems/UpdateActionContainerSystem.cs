@@ -38,6 +38,8 @@ namespace StormiumTeam.GameBase
 			[BurstDiscard]
 			private void NonBurst_ErrorNoActionContainer(Entity action, Entity owner)
 			{
+				if (owner == default)
+					return;
 				Debug.LogError($"No ActionContainer found on owner={owner}, action={action}");
 			}
 

@@ -189,6 +189,12 @@ namespace StormiumTeam.GameBase
 
 		public TMonoPresentation Presentation { get; protected set; }
 
+		public virtual void OnComponentEnabled()
+		{}
+		
+		public virtual void OnComponentDisabled()
+		{}
+		
 		public virtual void OnReset()
 		{
 		}
@@ -202,7 +208,7 @@ namespace StormiumTeam.GameBase
 			Debug.Assert(m_Enabled, "m_Enabled");
 			
 			var gameObjectEntity = GetComponent<GameObjectEntity>();
-			if (DstEntityManager == null || gameObjectEntity == null)
+			if (DstEntity == default || DstEntityManager == null || gameObjectEntity == null)
 				return;
 
 			if (gameObjectEntity.EntityManager != DstEntityManager)
@@ -226,11 +232,15 @@ namespace StormiumTeam.GameBase
 			m_Enabled = true;
 			
 			UpdateGameObjectEntity();
+			
+			OnComponentEnabled();
 		}
 
 		private void OnDisable()
 		{
 			m_Enabled = false;
+			
+			OnComponentDisabled();
 		}
 
 		public void SetFromPool(AsyncAssetPool<GameObject> pool, EntityManager targetEm = null, Entity targetEntity = default)
@@ -244,7 +254,7 @@ namespace StormiumTeam.GameBase
 			{
 				UpdateGameObjectEntity();
 			}
-			
+
 			OnPoolSet();
 
 			pool.Dequeue(OnCompletePoolDequeue);
