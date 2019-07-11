@@ -151,6 +151,8 @@ namespace StormiumTeam.GameBase
 	public class SynchronizedSimulationTimeSystem : JobComponentSystem
 	{
 		private NativeArray<SynchronizedSimulationTime> m_TimeArray;
+
+		private SynchronizedSimulationTimeGhostUpdateSystem m_GhostUpdateSystem;
 		//private SynchronizedSimulationTime* m_ArrayPtr;
 		
 		private JobHandle m_Handle;
@@ -167,7 +169,7 @@ namespace StormiumTeam.GameBase
 
 		private struct GetTimeJob : IJobForEachWithEntity<SynchronizedSimulationTime>
 		{
-			[WriteOnly]
+			[NativeDisableContainerSafetyRestriction]
 			public NativeArray<SynchronizedSimulationTime> TimeArray;
 
 			public void Execute(Entity entity, int index, ref SynchronizedSimulationTime time)
@@ -178,12 +180,21 @@ namespace StormiumTeam.GameBase
 
 		private EntityQuery m_TimeQuery;
 
+		public JobHandle InputDependency;
+		public JobHandle OutputDependency;
+
 		protected override void OnCreate()
 		{
 			base.OnCreate();
 
 			m_TimeQuery = GetEntityQuery(typeof(SynchronizedSimulationTime));
 			m_TimeArray = new NativeArray<SynchronizedSimulationTime>(1, Allocator.Persistent);
+
+			Enabled = false;
+		}
+
+		protected override void OnStartRunning()
+		{
 		}
 
 		protected override void OnDestroy()
@@ -195,17 +206,13 @@ namespace StormiumTeam.GameBase
 
 		protected override JobHandle OnUpdate(JobHandle inputDeps)
 		{
-			return inputDeps;
-		}
-
-		internal JobHandle CustomUpdate(JobHandle inputDeps)
-		{
 			m_Handle.Complete();
+			m_TimeQuery.CompleteDependency();
 			
-			return m_Handle = new GetTimeJob
+			return OutputDependency = m_Handle = new GetTimeJob
 			{
 				TimeArray = m_TimeArray
-			}.Schedule(this, inputDeps);
+			}.Schedule(this, JobHandle.CombineDependencies(inputDeps, InputDependency));
 		}
 
 		public JobHandle Schedule(NativeArray<SynchronizedSimulationTime> array, JobHandle inputDeps)
@@ -221,6 +228,8 @@ namespace StormiumTeam.GameBase
 	[UpdateInGroup(typeof(GhostUpdateSystemGroup))]
 	public class SynchronizedSimulationTimeGhostUpdateSystem : JobComponentSystem
 	{
+		public JobHandle LastHandle;
+		
 		[BurstCompile]
 		[RequireComponentTag(typeof(SynchronizedSimulationTimeSnapshot))]
 		private struct UpdateInterpolatedJob : IJobForEachWithEntity<SynchronizedSimulationTime>
@@ -249,7 +258,13 @@ namespace StormiumTeam.GameBase
 				predictTargetTick     = NetworkTimeSystem.predictTargetTick
 			};
 			inputDeps = updateInterpolatedJob.Schedule(this, inputDeps);
-			return World.GetExistingSystem<SynchronizedSimulationTimeSystem>().CustomUpdate(inputDeps);
+			var system = World.GetExistingSystem<SynchronizedSimulationTimeSystem>();
+			system.InputDependency = inputDeps;
+			system.Enabled = true;
+			system.Update();
+			system.Enabled = false;
+
+			return system.OutputDependency;
 		}
 	}
 }

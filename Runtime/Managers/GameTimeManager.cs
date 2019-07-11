@@ -61,15 +61,18 @@ namespace StormiumTeam.GameBase
 
         internal bool IsClient, IsServer;
 
+        private ServerSimulationSystemGroup m_ServerGroup;
+        private ClientSimulationSystemGroup m_ClientGroup;
+
         protected override void OnCreate()
         {
             EntityManager.CreateEntity(typeof(GameTimeComponent));
 
-            var serverGroup = World.GetExistingSystem<ServerSimulationSystemGroup>();
-            var clientGroup = World.GetExistingSystem<ClientSimulationSystemGroup>();
+            m_ServerGroup = World.GetExistingSystem<ServerSimulationSystemGroup>();
+            m_ClientGroup = World.GetExistingSystem<ClientSimulationSystemGroup>();
 
-            IsServer = serverGroup != null;
-            IsClient = clientGroup != null;
+            IsServer = m_ServerGroup != null;
+            IsClient = m_ClientGroup != null;
 
             if (IsServer)
             {
@@ -84,19 +87,17 @@ namespace StormiumTeam.GameBase
 
             if (IsServer)
             {
-                var topGroup = World.GetExistingSystem<ServerSimulationSystemGroup>();
-                dt = topGroup.UpdateDeltaTime;
-                fr = (int) topGroup.ServerTick;
+                dt = m_ServerGroup.UpdateDeltaTime;
+                fr = (int) m_ServerGroup.ServerTick;
             }
 
             if (IsClient)
             {
-                var topGroup = World.GetExistingSystem<ClientSimulationSystemGroup>();
-                dt = topGroup.UpdateDeltaTime;
+                dt = m_ClientGroup.UpdateDeltaTime;
                 fr = (int) NetworkTimeSystem.TimestampMS;
             }
 
-            var lastGameTimeComponent = new NativeArray<GameTimeComponent>(1, Allocator.TempJob);
+            var lastGameTimeComponent = new NativeArray<GameTimeComponent>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
             inputDeps = new JobUpdateGameTime
             {
@@ -112,7 +113,12 @@ namespace StormiumTeam.GameBase
                 {
                     LastGameTimeComponent = lastGameTimeComponent
                 }.Schedule(this, inputDeps);
-                inputDeps = World.GetExistingSystem<SynchronizedSimulationTimeSystem>().CustomUpdate(inputDeps);
+                var system = World.GetExistingSystem<SynchronizedSimulationTimeSystem>();
+                system.InputDependency = inputDeps;
+                system.Enabled = true;
+                system.Update();
+                system.Enabled = false;
+                inputDeps = JobHandle.CombineDependencies(inputDeps, system.OutputDependency);
             }
 
             inputDeps = new DisposeJob

@@ -104,9 +104,10 @@ namespace StormiumTeam.GameBase
 	{
 		public GameTime GameTime => m_GameTimeSingletonGroup.GetSingleton<GameTimeComponent>().Value;
 
-		private ComponentSystemGroup m_ServerComponentGroup;
+		private ServerSimulationSystemGroup m_ServerComponentGroup;
 
 		public bool IsServer => m_ServerComponentGroup != null;
+		public ServerSimulationSystemGroup ServerSimulationSystemGroup => m_ServerComponentGroup;
 
 		protected override void OnCreate()
 		{
