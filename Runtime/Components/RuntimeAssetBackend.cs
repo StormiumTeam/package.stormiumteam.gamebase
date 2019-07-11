@@ -92,7 +92,7 @@ namespace StormiumTeam.GameBase
 				Asset = handle.Result;
 				foreach (var onLoad in m_EventQueue)
 				{
-					onLoad(Asset);
+					onLoad(Object.Instantiate(Asset));
 				}
 
 				m_EventQueue.Clear();
@@ -114,7 +114,7 @@ namespace StormiumTeam.GameBase
 				}
 				else
 				{
-					complete(Asset);
+					complete(Object.Instantiate(Asset));
 				}
 
 				return;
@@ -123,7 +123,7 @@ namespace StormiumTeam.GameBase
 			var obj = m_ObjectPool.Dequeue();
 			if (obj == null)
 			{
-				complete(Asset);
+				complete(Object.Instantiate(Asset));
 				return;
 			}
 
@@ -173,21 +173,42 @@ namespace StormiumTeam.GameBase
 		}
 	}
 
-	public abstract class RuntimeAssetBackend<TMonoPresentation> : MonoBehaviour
-		where TMonoPresentation : RuntimeAssetPresentation<TMonoPresentation>
+	public struct RuntimeAssetDisable : IComponentData
 	{
-		private AsyncAssetPool<GameObject> m_PresentationPool;
-		private AssetPool<GameObject>      m_RootPool;
+		public static RuntimeAssetDisable All =>
+			new RuntimeAssetDisable
+			{
+				DisableGameObject  = true,
+				ReturnToPool       = true,
+				ReturnPresentation = true,
+			};
+		
+		public bool DisableGameObject;
+		public bool ReturnToPool;
+		public bool ReturnPresentation;
+	}
+
+	public abstract class RuntimeAssetBackendBase : MonoBehaviour
+	{
+		public AsyncAssetPool<GameObject> presentationPool;
+		public AssetPool<GameObject>      rootPool;
 
 		private bool m_Enabled;
 
 		public int  DestroyFlags;
 		public bool DisableNextUpdate, ReturnToPoolOnDisable, ReturnPresentationToPoolNextFrame;
 
-		public EntityManager DstEntityManager { get; private set; }
-		public Entity        DstEntity        { get; private set; }
+		public abstract object GetPresentationBoxed();
+		
+		internal abstract void OnCompletePoolDequeue(GameObject result);
+		public abstract void SetSingleModel(string key, EntityManager em = default, Entity ent = default);
+		internal abstract bool SetPresentation(GameObject obj);
+		public abstract void ReturnPresentation();
 
-		public TMonoPresentation Presentation { get; protected set; }
+		public EntityManager DstEntityManager { get; protected set; }
+		public Entity        DstEntity        { get; protected set; }
+
+		public Entity BackendEntity { get; private set; }
 
 		public virtual void OnComponentEnabled()
 		{}
@@ -222,6 +243,8 @@ namespace StormiumTeam.GameBase
 				Debug.LogError($"'{gameObject.name}' -> {DstEntityManager.World.Name} has no entity found with {DstEntity}'");
 				return;
 			}
+
+			BackendEntity = gameObjectEntity.Entity;
 			
 			var entityManager = gameObjectEntity.EntityManager;
 			entityManager.SetOrAddComponentData(gameObjectEntity.Entity, new ModelParent {Parent = DstEntity});
@@ -241,11 +264,13 @@ namespace StormiumTeam.GameBase
 			m_Enabled = false;
 			
 			OnComponentDisabled();
+			DstEntity = default;
+			DstEntityManager = default;
 		}
 
 		public void SetFromPool(AsyncAssetPool<GameObject> pool, EntityManager targetEm = null, Entity targetEntity = default)
 		{
-			m_PresentationPool = pool;
+			presentationPool = pool;
 
 			DstEntityManager = targetEm;
 			DstEntity        = targetEntity;
@@ -262,90 +287,7 @@ namespace StormiumTeam.GameBase
 
 		public void SetRootPool(AssetPool<GameObject> rootPool)
 		{
-			m_RootPool = rootPool;
-		}
-
-		private void OnCompletePoolDequeue(GameObject result)
-		{
-			if (result == null)
-			{
-				//Debug.LogError($"(Error, {name}) -> reported status: {op.Status}");
-				return;
-			}
-
-			var previousWorld = World.Active;
-			if (DstEntityManager != null)
-				World.Active = DstEntityManager.World;
-			var opResult = Instantiate(result, transform, true);
-
-			if (DstEntityManager == null)
-			{
-				SetPresentation(opResult);
-				World.Active = previousWorld;
-				return;
-			}
-
-			var gameObjectEntity = opResult.GetComponent<GameObjectEntity>();
-			if (!gameObjectEntity)
-			{
-				gameObjectEntity = opResult.AddComponent<GameObjectEntity>();
-			}
-
-			World.Active = previousWorld;
-
-			//DstEntityManager.SetOrAddComponentData(DstEntity, new SubModel(gameObjectEntity.Entity)); todo: this is something that should be handled by systems
-			if (gameObjectEntity.Entity != default)
-			{
-				DstEntityManager.SetOrAddComponentData(gameObjectEntity.Entity, new ModelParent {Parent = DstEntity});
-			}
-			else
-			{
-				Debug.LogWarning("Presentation gameObject entity is null, this may happen if the main gameObject is not active.\nPlease fix that behavior by calling gameObject.SetActive(true).");
-			}
-
-			var listeners = opResult.GetComponents<IOnModelLoadedListener>();
-			foreach (var listener in listeners)
-			{
-				listener.React(DstEntity, DstEntityManager, gameObject);
-			}
-
-			SetPresentation(opResult);
-		}
-
-		public void SetSingleModel(string key, EntityManager targetEm = null, Entity targetEntity = default)
-		{
-			if (m_PresentationPool != null) throw new InvalidOperationException("This object is already using pooling, you can't switch to a single operation anymore.");
-
-			var loadModel = GetComponent<LoadModelFromStringBehaviour>();
-			if (!loadModel)
-				loadModel = gameObject.AddComponent<LoadModelFromStringBehaviour>();
-
-			if (targetEm != null && targetEntity != default)
-			{
-				DstEntityManager = targetEm;
-				DstEntity        = targetEntity;
-
-				loadModel.OnLoadSetSubModelFor(targetEm, targetEntity);
-			}
-
-			loadModel.AssetId    = key;
-			loadModel.SpawnRoot  = transform;
-			loadModel.OnComplete = SetPresentation;
-		}
-
-		private bool SetPresentation(GameObject presentation)
-		{
-			presentation.transform.localPosition = Vector3.zero;
-			presentation.transform.localRotation = Quaternion.identity;
-			presentation.transform.localScale    = Vector3.one;
-
-			Presentation = presentation.GetComponent<TMonoPresentation>();
-			Presentation.OnReset();
-			Presentation.SetBackend(this);
-
-			OnPresentationSet();
-
-			return true;
+			this.rootPool = rootPool;
 		}
 
 		protected virtual void Update()
@@ -353,7 +295,7 @@ namespace StormiumTeam.GameBase
 			if (ReturnPresentationToPoolNextFrame)
 			{
 				ReturnPresentationToPoolNextFrame = false;
-				ReturnPresentationToPool();
+				ReturnPresentation();
 			}
 
 			if (!DisableNextUpdate)
@@ -365,13 +307,13 @@ namespace StormiumTeam.GameBase
 			if (ReturnToPoolOnDisable)
 			{
 				ReturnToPoolOnDisable = false;
-				m_RootPool.Enqueue(gameObject);
+				rootPool.Enqueue(gameObject);
 			}
 		}
 
 		public void AddEntityLink()
 		{
-			if (m_PresentationPool != null) throw new InvalidOperationException("AddEntityLink() can't be used if pooling is active.");
+			if (presentationPool != null) throw new InvalidOperationException("AddEntityLink() can't be used if pooling is active.");
 
 			gameObject.AddComponent<DestroyGameObjectOnEntityDestroyed>().SetTarget(DstEntityManager, DstEntity);
 		}
@@ -397,10 +339,13 @@ namespace StormiumTeam.GameBase
 			}
 		}
 
-		public void ReturnPresentationToPool()
+		public void ReturnDelayed(EntityCommandBuffer entityCommandBuffer, bool disable, bool returnPresentation)
 		{
-			if (Presentation != null)
-				m_PresentationPool.Enqueue(Presentation.gameObject);
+			DisableNextUpdate                 = disable;
+			ReturnToPoolOnDisable             = true;
+			ReturnPresentationToPoolNextFrame = returnPresentation;
+
+			entityCommandBuffer.AddComponent(gameObject.GetComponent<GameObjectEntity>().Entity, new Disabled());
 		}
 
 		public void Return(bool disable, bool returnPresentation)
@@ -408,7 +353,7 @@ namespace StormiumTeam.GameBase
 			if (returnPresentation)
 			{
 				ReturnPresentationToPoolNextFrame = false;
-				ReturnPresentationToPool();
+				ReturnPresentation();
 			}
 
 			if (disable)
@@ -419,11 +364,128 @@ namespace StormiumTeam.GameBase
 			DisableNextUpdate     = false;
 			ReturnToPoolOnDisable = false;
 
-			m_RootPool.Enqueue(gameObject);
+			rootPool.Enqueue(gameObject);
 		}
 
 		public virtual void OnPresentationSet()
 		{
+		}		
+	}
+
+	public abstract class RuntimeAssetBackend<TMonoPresentation> : RuntimeAssetBackendBase
+		where TMonoPresentation : RuntimeAssetPresentation<TMonoPresentation>
+	{
+		public TMonoPresentation Presentation { get; protected set; }
+
+		public override object GetPresentationBoxed()
+		{
+			return Presentation;
+		}
+
+		public override void ReturnPresentation()
+		{
+			if (Presentation != null)
+				presentationPool.Enqueue(Presentation.gameObject);
+		}
+
+		internal override void OnCompletePoolDequeue(GameObject result)
+		{
+			if (result == null)
+			{
+				return;
+			}
+
+			var previousWorld = World.Active;
+			if (DstEntityManager != null)
+				World.Active = DstEntityManager.World;
+
+			var opResult = result;
+			opResult.transform.SetParent(transform, true);
+			opResult.SetActive(true);
+
+			if (DstEntityManager == null)
+			{
+				SetPresentation(opResult);
+				World.Active = previousWorld;
+				return;
+			}
+
+			var gameObjectEntity = opResult.GetComponent<GameObjectEntity>();
+			if (!gameObjectEntity)
+			{
+				gameObjectEntity = opResult.AddComponent<GameObjectEntity>();
+			}
+
+			World.Active = previousWorld;
+			
+			if (gameObjectEntity.Entity != default)
+			{
+				DstEntityManager.SetOrAddComponentData(gameObjectEntity.Entity, new ModelParent {Parent = DstEntity});
+			}
+			else
+			{
+				Debug.LogWarning("Presentation gameObject entity is null, this may happen if the main gameObject is not active.\nPlease fix that behavior by calling gameObject.SetActive(true).");
+			}
+
+			var listeners = opResult.GetComponents<IOnModelLoadedListener>();
+			foreach (var listener in listeners)
+			{
+				listener.React(DstEntity, DstEntityManager, gameObject);
+			}
+
+			SetPresentation(opResult);
+		}
+
+		public override void SetSingleModel(string key, EntityManager targetEm = null, Entity targetEntity = default)
+		{
+			if (presentationPool != null) throw new InvalidOperationException("This object is already using pooling, you can't switch to a single operation anymore.");
+
+			var loadModel = GetComponent<LoadModelFromStringBehaviour>();
+			if (!loadModel)
+				loadModel = gameObject.AddComponent<LoadModelFromStringBehaviour>();
+
+			if (targetEm != null && targetEntity != default)
+			{
+				DstEntityManager = targetEm;
+				DstEntity        = targetEntity;
+
+				loadModel.OnLoadSetSubModelFor(targetEm, targetEntity);
+			}
+
+			loadModel.AssetId    = key;
+			loadModel.SpawnRoot  = transform;
+			loadModel.OnComplete = SetPresentation;
+		}
+		
+		internal override bool SetPresentation(GameObject gameObject)
+		{
+			var tr = gameObject.transform;
+			tr.localPosition = Vector3.zero;
+			tr.localRotation = Quaternion.identity;
+			tr.localScale    = Vector3.one;
+
+			Presentation = gameObject.GetComponent<TMonoPresentation>();
+			Presentation.OnReset();
+			Presentation.SetBackend(this);
+
+			OnPresentationSet();
+
+			return true;
+		}
+		
+		public void ReturnPresentationToPool()
+		{
+			if (Presentation != null)
+			{
+				var tr = Presentation.transform;
+				tr.parent = null;
+				
+				Presentation.gameObject.SetActive(false);
+				
+				presentationPool.Enqueue(Presentation.gameObject);
+			}
+
+			Presentation = null;
 		}
 	}
 }
