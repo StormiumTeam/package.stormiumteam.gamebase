@@ -150,6 +150,23 @@ namespace StormiumTeam.GameBase
 			Debug.LogError("???????????????");
 			return default(IAsyncOperation<T>);
 		}
+
+		public void AddElements(int elem)
+		{
+			for (var i = 0; i != elem; i++)
+			{
+				Dequeue((c) =>
+				{
+					var go = c as GameObject;
+					if (go)
+					{
+						go.SetActive(false);
+					}
+
+					Enqueue(c);
+				});
+			}
+		}
 	}
 
 	public abstract class RuntimeAssetPresentation<TMonoPresentation> : MonoBehaviour
