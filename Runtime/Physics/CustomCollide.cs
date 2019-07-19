@@ -31,6 +31,12 @@ namespace StormiumTeam.GameBase
 			Count   = cc.Length;
 			DataPtr = new IntPtr(cc.Data);
 		}
+		
+		public CustomCollideCollection(NativeArray<CustomCollide> cc)
+		{
+			Count   = cc.Length;
+			DataPtr = new IntPtr(cc.GetUnsafePtr());
+		}
 
 		public CustomCollideCollection(CustomCollide cc)
 		{
@@ -72,6 +78,15 @@ namespace StormiumTeam.GameBase
 
 		public RigidTransform WorldFromMotion;
 
+		public CustomCollide(PhysicsCollider collider, RigidTransform worldFromMotion)
+		{
+			Collider        = collider.ColliderPtr;
+			WorldFromMotion = worldFromMotion;
+
+			RigidBodyIndex = -1;
+			Target         = default;
+		}
+		
 		public CustomCollide(PhysicsCollider collider, LocalToWorld localToWorld)
 		{
 			Collider        = collider.ColliderPtr;
@@ -125,7 +140,7 @@ namespace StormiumTeam.GameBase
 				{
 					var bodyFromWorld = Math.Inverse(worldFromMotion);
 					var originLs      = Math.Mul(bodyFromWorld, input.Start);
-					var endLs         = math.mul(bodyFromWorld.Rotation, input.End);
+					var endLs         = Math.Mul(bodyFromWorld, input.End);
 					inputLs.Start = originLs;
 					inputLs.End   = endLs;
 				}
@@ -175,7 +190,7 @@ namespace StormiumTeam.GameBase
 					Collider    = input.Collider,
 					Start       = Math.Mul(bodyFromWorld, input.Start),
 					Orientation = math.mul(math.inverse(cw.WorldFromMotion.rot), input.Orientation),
-					End         = math.mul(bodyFromWorld.Rotation, input.End)
+					End         = Math.Mul(bodyFromWorld, input.End)
 				};
 
 				var numHits  = collector.NumHits;

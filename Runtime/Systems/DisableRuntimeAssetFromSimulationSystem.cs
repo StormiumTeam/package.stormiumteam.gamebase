@@ -27,16 +27,14 @@ namespace Runtime.Systems
 					var transformArray = chunk.GetComponentObjects(GetArchetypeChunkComponentType<Transform>(), EntityManager);
 					for (int ent = 0, count = chunk.Count; ent != count; ent++)
 					{
-						var modelParent = modelParentArray[ent];
-						if (EntityManager.Exists(modelParent.Parent))
+						var disable     = disableDataArray[ent];
+						var modelParent = disable.IgnoreParent ? default : modelParentArray[ent];
+						if (modelParent.Parent != default && EntityManager.Exists(modelParent.Parent))
 							continue;
-						
-						var disable = disableDataArray[ent];
+
 						var backend = transformArray[ent].GetComponent<RuntimeAssetBackendBase>();
 						
 						backend.Return(disable.DisableGameObject, disable.ReturnPresentation);
-						
-						Debug.Log("ye");
 					}
 				}
 			}

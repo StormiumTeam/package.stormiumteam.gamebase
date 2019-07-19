@@ -195,11 +195,21 @@ namespace StormiumTeam.GameBase
 		public static RuntimeAssetDisable All =>
 			new RuntimeAssetDisable
 			{
+				IgnoreParent = false,
+				DisableGameObject = true,
+				ReturnToPool       = true,
+				ReturnPresentation = true,
+			};
+		public static RuntimeAssetDisable AllAndIgnoreParent =>
+			new RuntimeAssetDisable
+			{
+				IgnoreParent       = true,
 				DisableGameObject  = true,
 				ReturnToPool       = true,
 				ReturnPresentation = true,
 			};
 		
+		public bool IgnoreParent;
 		public bool DisableGameObject;
 		public bool ReturnToPool;
 		public bool ReturnPresentation;
@@ -246,6 +256,11 @@ namespace StormiumTeam.GameBase
 			Debug.Assert(m_Enabled, "m_Enabled");
 			
 			var gameObjectEntity = GetComponent<GameObjectEntity>();
+			if (gameObjectEntity != null)
+			{
+				BackendEntity = gameObjectEntity.Entity;
+			}
+
 			if (DstEntity == default || DstEntityManager == null || gameObjectEntity == null)
 				return;
 
@@ -260,8 +275,6 @@ namespace StormiumTeam.GameBase
 				Debug.LogError($"'{gameObject.name}' -> {DstEntityManager.World.Name} has no entity found with {DstEntity}'");
 				return;
 			}
-
-			BackendEntity = gameObjectEntity.Entity;
 			
 			var entityManager = gameObjectEntity.EntityManager;
 			entityManager.SetOrAddComponentData(gameObjectEntity.Entity, new ModelParent {Parent = DstEntity});
@@ -311,12 +324,16 @@ namespace StormiumTeam.GameBase
 		{
 			if (ReturnPresentationToPoolNextFrame)
 			{
+				Debug.Log("return pp " + gameObject.name);
+				
 				ReturnPresentationToPoolNextFrame = false;
 				ReturnPresentation();
 			}
 
 			if (!DisableNextUpdate)
 				return;
+			
+			Debug.Log("return " + gameObject.name);
 
 			DisableNextUpdate = false;
 			gameObject.SetActive(false);
@@ -367,6 +384,8 @@ namespace StormiumTeam.GameBase
 
 		public void Return(bool disable, bool returnPresentation)
 		{
+			Debug.Log("return " + gameObject.name);
+			
 			if (returnPresentation)
 			{
 				ReturnPresentationToPoolNextFrame = false;
