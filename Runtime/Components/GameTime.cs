@@ -91,7 +91,7 @@ namespace StormiumTeam.GameBase
 		}
 
 		public bool WantsPredictionDelta => true;
-		
+
 		public GhostComponentType<SynchronizedSimulationTime> GhostSynchronizedSimulationTimeType;
 
 		public void BeginSerialize(ComponentSystemBase system)
@@ -154,7 +154,7 @@ namespace StormiumTeam.GameBase
 
 		private SynchronizedSimulationTimeGhostUpdateSystem m_GhostUpdateSystem;
 		//private SynchronizedSimulationTime* m_ArrayPtr;
-		
+
 		private JobHandle m_Handle;
 
 		public SynchronizedSimulationTime Value
@@ -208,7 +208,7 @@ namespace StormiumTeam.GameBase
 		{
 			m_Handle.Complete();
 			m_TimeQuery.CompleteDependency();
-			
+
 			return OutputDependency = m_Handle = new GetTimeJob
 			{
 				TimeArray = m_TimeArray
@@ -221,7 +221,7 @@ namespace StormiumTeam.GameBase
 			return new GetTimeJob
 			{
 				TimeArray = array
-			}.Schedule(this, JobHandle.CombineDependencies(inputDeps, m_Handle));		
+			}.Schedule(this, JobHandle.CombineDependencies(inputDeps, m_Handle));
 		}
 	}
 
@@ -229,7 +229,7 @@ namespace StormiumTeam.GameBase
 	public class SynchronizedSimulationTimeGhostUpdateSystem : JobComponentSystem
 	{
 		public JobHandle LastHandle;
-		
+
 		[BurstCompile]
 		[RequireComponentTag(typeof(SynchronizedSimulationTimeSnapshot))]
 		private struct UpdateInterpolatedJob : IJobForEachWithEntity<SynchronizedSimulationTime>
@@ -249,18 +249,26 @@ namespace StormiumTeam.GameBase
 			}
 		}
 
+		private NetworkTimeSystem m_NetworkTimeSystem;
+
+		protected override void OnCreate()
+		{
+			base.OnCreate();
+			m_NetworkTimeSystem = World.GetOrCreateSystem<NetworkTimeSystem>();
+		}
+
 		protected override JobHandle OnUpdate(JobHandle inputDeps)
 		{
 			var updateInterpolatedJob = new UpdateInterpolatedJob
 			{
 				snapshotFromEntity    = GetBufferFromEntity<SynchronizedSimulationTimeSnapshot>(),
-				interpolateTargetTick = NetworkTimeSystem.interpolateTargetTick,
-				predictTargetTick     = NetworkTimeSystem.predictTargetTick
+				interpolateTargetTick = m_NetworkTimeSystem.interpolateTargetTick,
+				predictTargetTick     = m_NetworkTimeSystem.predictTargetTick
 			};
 			inputDeps = updateInterpolatedJob.Schedule(this, inputDeps);
 			var system = World.GetExistingSystem<SynchronizedSimulationTimeSystem>();
 			system.InputDependency = inputDeps;
-			system.Enabled = true;
+			system.Enabled         = true;
 			system.Update();
 			system.Enabled = false;
 
