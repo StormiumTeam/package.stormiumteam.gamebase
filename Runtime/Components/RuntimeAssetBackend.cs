@@ -247,7 +247,12 @@ namespace StormiumTeam.GameBase
 		{
 		}
 
-		public virtual void OnPoolSet()
+		public virtual void OnTargetUpdate()
+		{
+			
+		}
+
+		public virtual void OnPresentationPoolUpdate()
 		{
 		}
 
@@ -298,21 +303,26 @@ namespace StormiumTeam.GameBase
 			DstEntityManager = default;
 		}
 
-		public void SetFromPool(AsyncAssetPool<GameObject> pool, EntityManager targetEm = null, Entity targetEntity = default)
+		public void SetTarget(EntityManager entityManager, Entity target = default)
 		{
-			presentationPool = pool;
-
-			DstEntityManager = targetEm;
-			DstEntity        = targetEntity;
+			DstEntityManager = entityManager;
+			DstEntity        = target;
 
 			if (m_Enabled)
 			{
 				UpdateGameObjectEntity();
 			}
 
-			OnPoolSet();
+			OnTargetUpdate();
+		}
 
-			pool.Dequeue(OnCompletePoolDequeue);
+		public void SetPresentation(AsyncAssetPool<GameObject> pool)
+		{
+			presentationPool = pool;
+
+			OnPresentationPoolUpdate();
+
+			pool.Dequeue(OnCompletePoolDequeue);	
 		}
 
 		public void SetRootPool(AssetPool<GameObject> rootPool)
