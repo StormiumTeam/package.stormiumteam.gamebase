@@ -140,7 +140,7 @@ namespace StormiumTeam.GameBase
 			m_ObjectPool.Clear();
 		}
 
-		private IAsyncOperation<T> InternalAddAsset()
+		private AsyncOperationHandle<T> InternalAddAsset()
 		{
 			if (Asset == null)
 			{
@@ -148,7 +148,7 @@ namespace StormiumTeam.GameBase
 			}
 
 			Debug.LogError("???????????????");
-			return default(IAsyncOperation<T>);
+			return default(AsyncOperationHandle<T>);
 		}
 
 		public void AddElements(int elem)

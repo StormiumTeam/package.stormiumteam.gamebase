@@ -106,7 +106,7 @@ namespace StormiumTeam.GameBase
 
 		private ServerSimulationSystemGroup m_ServerComponentGroup;
 
-		public bool IsServer => m_ServerComponentGroup != null;
+		public bool                        IsServer                    => m_ServerComponentGroup != null;
 		public ServerSimulationSystemGroup ServerSimulationSystemGroup => m_ServerComponentGroup;
 
 		protected override void OnCreate()
@@ -188,14 +188,14 @@ namespace StormiumTeam.GameBase
 	public enum ModuleUpdateType
 	{
 		MainThread = 1,
-		Job = 2,
-		All = MainThread | Job
+		Job        = 2,
+		All        = MainThread | Job
 	}
 
 	public abstract class BaseSystemModule
 	{
 		public virtual ModuleUpdateType UpdateType => ModuleUpdateType.MainThread;
-		
+
 		public ComponentSystemBase System    { get; private set; }
 		public bool                IsEnabled => System != null;
 
@@ -209,7 +209,7 @@ namespace StormiumTeam.GameBase
 		{
 			if ((UpdateType & ModuleUpdateType.MainThread) == 0)
 				throw new InvalidOperationException();
-			
+
 			if (!IsEnabled)
 				throw new InvalidOperationException();
 
@@ -221,7 +221,7 @@ namespace StormiumTeam.GameBase
 		{
 			if ((UpdateType & ModuleUpdateType.Job) == 0)
 				throw new InvalidOperationException();
-			
+
 			if (!IsEnabled)
 				throw new InvalidOperationException();
 
@@ -243,7 +243,7 @@ namespace StormiumTeam.GameBase
 	public sealed class NetworkConnectionModule : BaseSystemModule
 	{
 		public override ModuleUpdateType UpdateType => ModuleUpdateType.All;
-		
+
 		public EntityQuery        ConnectedQuery;
 		public NativeList<Entity> ConnectedEntities;
 
@@ -284,16 +284,16 @@ namespace StormiumTeam.GameBase
 
 		public class BaseHandleDataPair
 		{
-			public IAsyncOperation Handle;
+			public AsyncOperationHandle Handle;
 		}
 
 		public class HandleDataPair<THandle, TData> : BaseHandleDataPair
 			where TData : struct
 		{
-			public IAsyncOperation<THandle> Generic => (IAsyncOperation<THandle>) Handle;
-			public TData                    Data;
+			public AsyncOperationHandle<THandle> Generic => Handle.Convert<THandle>();
+			public TData                         Data;
 
-			public void Deconstruct(out IAsyncOperation<THandle> handle, out TData data)
+			public void Deconstruct(out AsyncOperationHandle<THandle> handle, out TData data)
 			{
 				handle = Generic;
 				data   = Data;
@@ -317,7 +317,7 @@ namespace StormiumTeam.GameBase
 			Handles.Clear();
 		}
 
-		public void Add<THandle, TData>(IAsyncOperation<THandle> handle, TData data)
+		public void Add<THandle, TData>(AsyncOperationHandle<THandle> handle, TData data)
 			where TData : struct
 		{
 			Handles.Add(new HandleDataPair<THandle, TData>
