@@ -20,6 +20,11 @@ namespace StormiumTeam.GameBase
 		public int    FixedTickPerSecond;
 		public double Time;
 		public float  DeltaTime;
+
+		public static int Convert(float f)
+		{
+			return (int)(f * 1000);
+		}
 	}
 
 	public struct GameTimeComponent : IComponentData

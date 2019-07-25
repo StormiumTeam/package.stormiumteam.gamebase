@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using package.stormiumteam.networking.runtime.lowlevel;
 using StormiumTeam.GameBase;
+using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
+using Unity.Jobs;
 
 namespace Runtime.BaseSystems
 {
@@ -114,16 +116,40 @@ namespace Runtime.BaseSystems
 		}
 	}
 
+	[DisableAutoCreation]
+	public class RuleSystemBarrier : EntityCommandBufferSystem
+	{
+	}
+
 	[UpdateInGroup(typeof(RuleSystemGroup))]
 	public abstract class RuleSystemGroupBase : ComponentSystemGroup
 	{
+		private RuleSystemBarrier m_Barrier;
+
+		protected override void OnCreate()
+		{
+			base.OnCreate();
+
+			m_Barrier = World.GetOrCreateSystem<RuleSystemBarrier>();
+		}
+
 		protected override void OnUpdate()
 		{
 		}
 
 		public virtual void Process()
 		{
+			foreach (var componentSystem in Systems)
+			{
+				if (!(componentSystem is RuleBaseSystem ruleSystem))
+					return;
+
+				ruleSystem.Barrier = m_Barrier;
+			}
+			
 			base.OnUpdate();
+			
+			m_Barrier.Update();
 		}
 	}
 
@@ -141,6 +167,18 @@ namespace Runtime.BaseSystems
 
 		public virtual string Name        => "NoName";
 		public virtual string Description => "NoDescription";
+
+		protected internal RuleSystemBarrier Barrier { get; internal set; }
+
+		protected void AddJobHandleForProducer(JobHandle inputDeps)
+		{
+			Barrier.AddJobHandleForProducer(inputDeps);
+		}
+
+		protected EntityCommandBuffer GetCommandBuffer()
+		{
+			return Barrier.CreateCommandBuffer();
+		}
 
 		protected override void OnCreate()
 		{
