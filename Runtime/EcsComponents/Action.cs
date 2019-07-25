@@ -19,21 +19,6 @@ namespace package.StormiumTeam.GameBase
         }
     }
 
-    public struct ActionTag : IComponentData
-    {
-        public int ActionTypeIndex;
-        
-        public ActionTag(int actionTypeIndex)
-        {
-            ActionTypeIndex = actionTypeIndex;
-        }
-
-        public Type GetActionType()
-        {
-            return TypeManager.GetType(ActionTypeIndex);
-        }
-    }
-
     /// <summary>
     /// (Recommended) Use it if you don't want the order of the action container
     /// </summary>
