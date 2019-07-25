@@ -9,7 +9,6 @@ using static Unity.Mathematics.math;
 
 namespace StormiumTeam.GameBase
 {
-    [UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
     public class GameTimeManager : JobComponentSystem
     {
         [BurstCompile]

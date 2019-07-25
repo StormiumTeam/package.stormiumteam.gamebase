@@ -3,7 +3,7 @@ using Unity.NetCode;
 
 namespace StormiumTeam.GameBase
 {
-	[UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
+	[UpdateInGroup(typeof(ServerSimulationSystemGroup))]
 	public class ActionSystemGroup : ComponentSystemGroup
 	{}
 }	

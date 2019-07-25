@@ -62,8 +62,7 @@ namespace StormiumTeam.GameBase
 
         public abstract void SetEntityData(Entity entity, TCreateData data);
     }
-
-    [UpdateInGroup(typeof(ProviderGroup))]
+    
     public abstract class BaseProvider<TCreateData> : ComponentSystem
         where TCreateData : struct
     {

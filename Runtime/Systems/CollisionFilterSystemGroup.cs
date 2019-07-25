@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using Runtime.BaseSystems;
 using StormiumTeam.GameBase;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
@@ -15,64 +16,105 @@ namespace Runtime.Systems
 	[UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
 	public class CollisionFilterSystemGroup : RuleSystemGroupBase
 	{
+		private struct DisposeJob : IJob
+		{
+			[DeallocateOnJobCompletion] public NativeArray<Entity> Entities;
+
+			public void Execute()
+			{
+			}
+		}
+
+		[BurstCompile]
+		private struct UpdateAndCleanCollideWithBufferJob : IJobParallelFor
+		{
+			[NativeDisableParallelForRestriction]
+			public BufferFromEntity<CollideWith> CollideWithFromEntity;
+
+			[ReadOnly]
+			public NativeArray<Entity> Entities;
+
+			public void Execute(int index)
+			{
+				var cwBuffer = CollideWithFromEntity[Entities[index]];
+				if (cwBuffer.Capacity <= 10)
+				{
+					cwBuffer.ResizeUninitialized(11);
+				}
+
+				cwBuffer.Clear();
+			}
+		}
+
+		[BurstCompile]
+		private struct ClearCollideWithBufferJob : IJobParallelFor
+		{
+			[NativeDisableParallelForRestriction]
+			public BufferFromEntity<CollideWith> CollideWithFromEntity;
+
+			[ReadOnly]
+			public NativeArray<Entity> Entities;
+
+			public void Execute(int index)
+			{
+				var cwBuffer = CollideWithFromEntity[Entities[index]];
+				cwBuffer.Clear();
+			}
+		}
+
 		public override void Process()
 		{
 			throw new NotImplementedException("CollisionFilterSystemGroup doesn't implement RuleSystemGroupBase.Process(). Use Filter(query) instead.");
 		}
 
-		private EntityQuery m_ResetBufferQuery;
+		private EntityQuery         m_ResetBufferQuery;
+		private GameJobHiddenSystem m_HiddenJobSystem;
 
 		protected override void OnCreate()
 		{
 			base.OnCreate();
 
 			m_ResetBufferQuery = GetEntityQuery(typeof(CollideWith));
+			m_HiddenJobSystem  = World.GetOrCreateSystem<GameJobHiddenSystem>();
 		}
 
 		public JobHandle Filter(EntityQuery query, JobHandle inputDeps)
 		{
-			using (var entities = query.ToEntityArray(Allocator.TempJob, out var queryDep))
+			var entities = query.ToEntityArray(Allocator.TempJob, out var queryDep);
+			inputDeps = Filter(entities, JobHandle.CombineDependencies(inputDeps, queryDep));
+			inputDeps = new DisposeJob
 			{
-				return Filter(entities, JobHandle.CombineDependencies(inputDeps, queryDep));
-			}
+				Entities = entities
+			}.Schedule(inputDeps);
+
+			return inputDeps;
 		}
+
+		private int m_PreviousBufferVersion;
 
 		public unsafe JobHandle Filter(NativeArray<Entity> targets, JobHandle inputDeps)
 		{
-			var handle = inputDeps;
-			handle.Complete();
-
-			var physicsWorld = World.GetExistingSystem<BuildPhysicsWorld>().PhysicsWorld;
-
-			// Reset buffer range
-			var entityType          = GetArchetypeChunkEntityType();
-			var chunkComponentType0 = GetArchetypeChunkBufferType<CollideWith>();
-
-			// Would there be a way to set 'CollideWith' living outside of chunks automatically?
-			using (var ecb = new EntityCommandBuffer(Allocator.TempJob))
-			using (var chunks = m_ResetBufferQuery.CreateArchetypeChunkArray(Allocator.TempJob))
+			var handle     = inputDeps;
+			var newVersion = EntityManager.GetComponentOrderVersion<CollideWith>();
+			if (m_PreviousBufferVersion != newVersion)
 			{
-				foreach (var chunk in chunks)
+				handle.Complete();
+				handle = new UpdateAndCleanCollideWithBufferJob
 				{
-					var bufferArray = chunk.GetBufferAccessor(chunkComponentType0);
-					var entityArray = (Entity*) chunk.GetNativeArray(entityType).GetUnsafeReadOnlyPtr();
-
-					for (int i = 0, count = chunk.Count; i < count; ++i)
-					{
-						var buffer = bufferArray[i];
-						if (buffer.Capacity <= 10)
-						{
-							buffer = ecb.SetBuffer<CollideWith>(entityArray[i]);
-							buffer.ResizeUninitialized(11);
-						}
-
-						buffer.Clear();
-					}
-				}
-				
-				ecb.Playback(EntityManager);
+					Entities              = targets,
+					CollideWithFromEntity = m_HiddenJobSystem.GetBufferFromEntity<CollideWith>()
+				}.Schedule(targets.Length, 16, handle);
+			}
+			else
+			{
+				handle = new ClearCollideWithBufferJob
+				{
+					Entities              = targets,
+					CollideWithFromEntity = m_HiddenJobSystem.GetBufferFromEntity<CollideWith>()
+				}.Schedule(targets.Length, 64, handle);
 			}
 
+			var physicsWorld = World.GetExistingSystem<BuildPhysicsWorld>().PhysicsWorld;
 			foreach (var system in m_systemsToUpdate)
 			{
 				var filterSystem = system as CollisionFilterSystemBase;

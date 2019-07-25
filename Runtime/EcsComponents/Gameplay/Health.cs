@@ -3,6 +3,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.NetCode;
 using UnityEngine;
 
 namespace StormiumTeam.GameBase.Components
@@ -78,6 +79,7 @@ namespace StormiumTeam.GameBase.Components
 		}
 	}
 
+	[UpdateInGroup(typeof(ServerSimulationSystemGroup))]
 	public class HealthProcessGroup : ComponentSystemGroup
 	{
 		public class BeforeGathering : ComponentSystemGroup
