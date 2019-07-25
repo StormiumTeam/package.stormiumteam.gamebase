@@ -23,6 +23,9 @@ namespace StormiumTeam.GameBase
 
 		protected override void OnCreate()
 		{
+			m_JobHiddenSystem = World.GetOrCreateSystem<GameJobHiddenSystem>();
+			m_JobHiddenSystem.Enabled = false;
+			
 			m_LocalPlayerGroup = GetEntityQuery
 			(
 				typeof(GamePlayer), typeof(GamePlayerLocalTag)
@@ -97,6 +100,22 @@ namespace StormiumTeam.GameBase
 #endif
 
 			return null;
+		}
+
+		private GameJobHiddenSystem m_JobHiddenSystem;
+		public BufferFromEntity<T> GetBufferFromEntity<T>()
+			where T : struct, IBufferElementData
+		{
+			return m_JobHiddenSystem.GetBufferFromEntity<T>();
+		}
+	}
+	
+	[DisableAutoCreation]
+	internal class GameJobHiddenSystem : JobComponentSystem
+	{
+		protected override JobHandle OnUpdate(JobHandle inputDeps)
+		{
+			return inputDeps;
 		}
 	}
 
