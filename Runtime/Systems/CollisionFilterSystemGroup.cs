@@ -29,17 +29,18 @@ namespace Runtime.Systems
 			m_ResetBufferQuery = GetEntityQuery(typeof(CollideWith));
 		}
 
-		public void Filter(EntityQuery query)
+		public JobHandle Filter(EntityQuery query, JobHandle inputDeps)
 		{
-			using (var entities = query.ToEntityArray(Allocator.TempJob))
+			using (var entities = query.ToEntityArray(Allocator.TempJob, out var queryDep))
 			{
-				Filter(entities);
+				return Filter(entities, JobHandle.CombineDependencies(inputDeps, queryDep));
 			}
 		}
 
-		public unsafe void Filter(NativeArray<Entity> targets)
+		public unsafe JobHandle Filter(NativeArray<Entity> targets, JobHandle inputDeps)
 		{
-			JobHandle handle = default;
+			var handle = inputDeps;
+			handle.Complete();
 
 			var physicsWorld = World.GetExistingSystem<BuildPhysicsWorld>().PhysicsWorld;
 
@@ -47,6 +48,7 @@ namespace Runtime.Systems
 			var entityType          = GetArchetypeChunkEntityType();
 			var chunkComponentType0 = GetArchetypeChunkBufferType<CollideWith>();
 
+			// Would there be a way to set 'CollideWith' living outside of chunks automatically?
 			using (var ecb = new EntityCommandBuffer(Allocator.TempJob))
 			using (var chunks = m_ResetBufferQuery.CreateArchetypeChunkArray(Allocator.TempJob))
 			{
@@ -79,7 +81,7 @@ namespace Runtime.Systems
 				handle = filterSystem.InternalStartFiltering(physicsWorld, targets, handle);
 			}
 
-			handle.Complete();
+			return handle;
 		}
 	}
 
