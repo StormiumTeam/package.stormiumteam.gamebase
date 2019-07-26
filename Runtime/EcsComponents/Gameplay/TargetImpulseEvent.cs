@@ -38,8 +38,6 @@ namespace StormiumTeam.GameBase.Components
 
 			public override void SetEntityData(Entity entity, TargetImpulseEvent data)
 			{
-				Debug.Log("yay");
-				
 				EntityManager.SetComponentData(entity, data);
 			}
 

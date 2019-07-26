@@ -2,6 +2,7 @@ using DefaultNamespace;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
+using Unity.Mathematics;
 using Unity.NetCode;
 using Unity.Networking.Transport;
 using UnityEngine;
@@ -12,6 +13,7 @@ namespace StormiumTeam.GameBase.Components
 	{
 		public Entity Origin;
 		public Entity Destination;
+		public float3 Position;
 		public int    Damage;
 
 		public class Provider : BaseProviderBatch<TargetDamageEvent>
@@ -56,10 +58,9 @@ namespace StormiumTeam.GameBase.Components
 			{
 				m_ConvertGhostEntityMap.HashMap.TryGetValue((int) replicated.OriginGhostId, out ev.Origin);
 				m_ConvertGhostEntityMap.HashMap.TryGetValue((int) replicated.DestinationGhostId, out ev.Destination);
-				
-				ev.Damage = replicated.Damage;
-				
-				Debug.Log($"v:{ev.Damage} o:{ev.Origin}({replicated.OriginGhostId}) d:{ev.Destination}({replicated.DestinationGhostId})");
+
+				ev.Damage   = replicated.Damage;
+				ev.Position = (float3) replicated.Position * 0.001f;
 			}
 		}
 	}
@@ -69,6 +70,7 @@ namespace StormiumTeam.GameBase.Components
 		public uint OriginGhostId;
 		public uint DestinationGhostId;
 		public int  Damage;
+		public int3 Position;
 
 		public uint SnapshotTick   { get; set; }
 		public int  SimulationTick { get; set; }
@@ -94,15 +96,19 @@ namespace StormiumTeam.GameBase.Components
 			using (var compression = new NetworkCompressionModel(Allocator.Temp))
 			{
 				var count = ReplicatedArray.Length;
-				
+
 				writer.WritePackedInt(count, compression);
 				for (var i = 0; i != count; i++)
 				{
 					writer.WritePackedUInt(ReplicatedArray[i].OriginGhostId, compression);
 					writer.WritePackedUInt(ReplicatedArray[i].DestinationGhostId, compression);
 					writer.WritePackedInt(ReplicatedArray[i].Damage, compression);
+					writer.WritePackedInt(ReplicatedArray[i].Position.x, compression);
+					writer.WritePackedInt(ReplicatedArray[i].Position.y, compression);
+					writer.WritePackedInt(ReplicatedArray[i].Position.z, compression);
 				}
 			}
+
 			writer.Flush();
 		}
 
@@ -120,6 +126,12 @@ namespace StormiumTeam.GameBase.Components
 						OriginGhostId      = reader.ReadPackedUInt(ref ctx, compression),
 						DestinationGhostId = reader.ReadPackedUInt(ref ctx, compression),
 						Damage             = reader.ReadPackedInt(ref ctx, compression),
+						Position = new int3
+						(
+							reader.ReadPackedInt(ref ctx, compression),
+							reader.ReadPackedInt(ref ctx, compression),
+							reader.ReadPackedInt(ref ctx, compression)
+						)
 					};
 				}
 			}
@@ -144,6 +156,7 @@ namespace StormiumTeam.GameBase.Components
 					OriginGhostId      = m_GhostStateFromEntity.GetGhostId(ev.Origin),
 					DestinationGhostId = m_GhostStateFromEntity.GetGhostId(ev.Destination),
 					Damage             = ev.Damage,
+					Position           = (int3) (ev.Position * 1000)
 				};
 			}
 		}

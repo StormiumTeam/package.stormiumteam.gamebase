@@ -394,8 +394,6 @@ namespace StormiumTeam.GameBase
 
 		public void Return(bool disable, bool returnPresentation)
 		{
-			Debug.Log("return " + gameObject.name);
-			
 			if (returnPresentation)
 			{
 				ReturnPresentationToPoolNextFrame = false;

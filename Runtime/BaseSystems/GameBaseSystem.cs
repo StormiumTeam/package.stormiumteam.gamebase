@@ -18,14 +18,16 @@ namespace StormiumTeam.GameBase
 		public GameTime GameTime => m_GameTimeSingletonGroup.GetSingleton<GameTimeComponent>().Value;
 
 		private ComponentSystemGroup m_ServerComponentGroup;
+		private ComponentSystemGroup m_ClientPresentationGroup;
 
 		public bool IsServer => m_ServerComponentGroup != null;
+		public bool IsPresentationActive => m_ClientPresentationGroup != null && m_ClientPresentationGroup.Enabled;
 
 		protected override void OnCreate()
 		{
-			m_JobHiddenSystem = World.GetOrCreateSystem<GameJobHiddenSystem>();
+			m_JobHiddenSystem         = World.GetOrCreateSystem<GameJobHiddenSystem>();
 			m_JobHiddenSystem.Enabled = false;
-			
+
 			m_LocalPlayerGroup = GetEntityQuery
 			(
 				typeof(GamePlayer), typeof(GamePlayerLocalTag)
@@ -43,6 +45,9 @@ namespace StormiumTeam.GameBase
 
 #if !UNITY_CLIENT
 			m_ServerComponentGroup = World.GetExistingSystem<ServerSimulationSystemGroup>();
+#endif
+#if !UNITY_SERVER
+			m_ClientPresentationGroup = World.GetExistingSystem<ClientPresentationSystemGroup>();
 #endif
 		}
 

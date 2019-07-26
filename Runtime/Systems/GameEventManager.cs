@@ -117,7 +117,7 @@ namespace StormiumTeam.GameBase
 			m_EventArchetype = GetCustomEventArchetype();
 			m_EventArchetype = m_EventArchetype.Valid
 				? m_EventArchetype
-				: EntityManager.CreateArchetype(typeof(TReplicated), typeof(TEvent), typeof(ReplicatedEventTag));
+				: EntityManager.CreateArchetype(typeof(GameEvent), typeof(TReplicated), typeof(TEvent), typeof(ReplicatedEventTag));
 
 			m_ReplicatedQuery = GetEntityQuery(typeof(TReplicated), ComponentType.Exclude<ReplicatedEventTag>());
 			m_EventQuery      = GetEntityQuery(typeof(TReplicated), typeof(TEvent), typeof(ReplicatedEventTag));
