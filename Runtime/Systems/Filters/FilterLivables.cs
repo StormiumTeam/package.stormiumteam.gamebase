@@ -6,22 +6,21 @@ using Unity.Jobs;
 using Unity.NetCode;
 using Unity.Physics;
 using Unity.Physics.Extensions;
+using UnityEngine;
 
 namespace Runtime.Systems.Filters
 {
-	[UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
 	public class FilterLivables : CollisionFilterSystemBase
 	{
-		public override string Name => "Livables filter rule.";
+		public override string Name        => "Livables filter rule.";
 		public override string Description => "Automatically add Livables colliders to collision physics filters";
 
-		[BurstCompile]
-		private struct Job : IJobForEachWithEntity<PhysicsCollider, Relative<LivableDescription>>, IFilter
+		[BurstCompile, RequireComponentTag(typeof(LivableDescription))]
+		private struct Job : IJobForEachWithEntity<PhysicsCollider>, IFilter
 		{
-			public void Execute(Entity entity, int index, ref PhysicsCollider c0, ref Relative<LivableDescription> owner)
+			public void Execute(Entity entity, int index, ref PhysicsCollider c0)
 			{
 				var rigidBodyIndex = PhysicsWorld.GetRigidBodyIndex(entity);
-
 				for (var i = 0; i != Targets.Length; i++)
 				{
 					CollideWithFromEntity[Targets[i]].Add(new CollideWith(rigidBodyIndex));

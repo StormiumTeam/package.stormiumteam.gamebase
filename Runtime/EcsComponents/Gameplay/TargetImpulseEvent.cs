@@ -1,5 +1,6 @@
 using Unity.Entities;
 using Unity.Mathematics;
+using UnityEngine;
 
 namespace StormiumTeam.GameBase.Components
 {
@@ -37,7 +38,16 @@ namespace StormiumTeam.GameBase.Components
 
 			public override void SetEntityData(Entity entity, TargetImpulseEvent data)
 			{
+				Debug.Log("yay");
+				
 				EntityManager.SetComponentData(entity, data);
+			}
+
+			protected override void OnUpdate()
+			{
+				EntityManager.DestroyEntity(Entities.WithAll<GameEvent, TargetImpulseEvent>().ToEntityQuery());
+				
+				base.OnUpdate();
 			}
 		}
 	}
