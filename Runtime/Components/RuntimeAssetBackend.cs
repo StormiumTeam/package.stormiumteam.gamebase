@@ -428,6 +428,9 @@ namespace StormiumTeam.GameBase
 
 		public override void ReturnPresentation()
 		{
+			ReturnPresentationToPool();
+			return;
+
 			if (Presentation != null)
 				presentationPool.Enqueue(Presentation.gameObject);
 		}

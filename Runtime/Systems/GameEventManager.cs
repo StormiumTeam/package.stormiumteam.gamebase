@@ -43,13 +43,13 @@ namespace StormiumTeam.GameBase
 	{
 		private struct JobSend : IJob
 		{
-			[ReadOnly]
+			[ReadOnly, DeallocateOnJobCompletion]
 			public NativeArray<TEvent> Events;
 
 			public RpcQueue<TRpc> RpcQueue;
 			public TRpc           RpcData;
 
-			[ReadOnly]
+			[ReadOnly, DeallocateOnJobCompletion]
 			public NativeArray<Entity> Clients;
 
 			public BufferFromEntity<OutgoingRpcDataStreamBufferComponent> OutgoingBuffer;
@@ -145,6 +145,7 @@ namespace StormiumTeam.GameBase
 				EntityManager.SetComponentData(entities[i], data);
 			}
 
+			replicatedEntities.Dispose();
 			entities.Dispose();
 
 			EntityManager.DestroyEntity(m_ReplicatedQuery);

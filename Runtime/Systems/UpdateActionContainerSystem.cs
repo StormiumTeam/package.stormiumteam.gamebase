@@ -17,6 +17,7 @@ namespace StormiumTeam.GameBase
 		[BurstCompile]
 		private struct ClearBufferJob : IJob
 		{
+			[DeallocateOnJobCompletion]
 			public NativeArray<Entity>               Entities;
 			public BufferFromEntity<ActionContainer> ActionContainerFromEntity;
 
