@@ -143,6 +143,10 @@ namespace StormiumTeam.GameBase
 				SetEventData(repl, ref data);
 
 				EntityManager.SetComponentData(entities[i], data);
+				EntityManager.SetComponentData(entities[i], new GameEvent
+				{
+					SnapshotTick = repl.SnapshotTick
+				});
 			}
 
 			replicatedEntities.Dispose();

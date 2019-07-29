@@ -79,6 +79,7 @@ namespace StormiumTeam.GameBase.Components
 	public struct TargetDamageEventRpc : IEventRpcCommand<TargetDamageEvent, TargetDamageEventReplication>
 	{
 		public NativeArray<TargetDamageEventReplication> ReplicatedArray;
+		public uint SnapshotTick;
 
 		public void Execute(Entity connection, EntityCommandBuffer.Concurrent commandBuffer, int jobIndex)
 		{
@@ -95,6 +96,8 @@ namespace StormiumTeam.GameBase.Components
 		{
 			using (var compression = new NetworkCompressionModel(Allocator.Temp))
 			{
+				writer.WritePackedUInt(SnapshotTick, compression);
+				
 				var count = ReplicatedArray.Length;
 
 				writer.WritePackedInt(count, compression);
@@ -116,6 +119,8 @@ namespace StormiumTeam.GameBase.Components
 		{
 			using (var compression = new NetworkCompressionModel(Allocator.Temp))
 			{
+				SnapshotTick = reader.ReadPackedUInt(ref ctx, compression);
+
 				var count = reader.ReadPackedInt(ref ctx, compression);
 				ReplicatedArray = new NativeArray<TargetDamageEventReplication>(count, Allocator.Temp);
 
@@ -131,7 +136,8 @@ namespace StormiumTeam.GameBase.Components
 							reader.ReadPackedInt(ref ctx, compression),
 							reader.ReadPackedInt(ref ctx, compression),
 							reader.ReadPackedInt(ref ctx, compression)
-						)
+						),
+						SnapshotTick = SnapshotTick
 					};
 				}
 			}
@@ -143,6 +149,8 @@ namespace StormiumTeam.GameBase.Components
 		public void Init(JobComponentSystem system)
 		{
 			m_GhostStateFromEntity = system.GetComponentDataFromEntity<GhostSystemStateComponent>();
+
+			SnapshotTick = system.World.GetExistingSystem<ServerSimulationSystemGroup>().ServerTick;
 		}
 
 		public void SetData(Entity connection, NativeArray<TargetDamageEvent> events)

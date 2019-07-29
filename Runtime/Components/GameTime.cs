@@ -21,9 +21,14 @@ namespace StormiumTeam.GameBase
 		public double Time;
 		public float  DeltaTime;
 
-		public static int Convert(float f)
+		public static int ConvertToTick(float f)
 		{
 			return (int)(f * 1000);
+		}
+
+		public static float ConvertToTime(int i)
+		{
+			return i * 0.001f;
 		}
 	}
 

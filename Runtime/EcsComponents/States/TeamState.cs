@@ -1,7 +1,10 @@
 using StormiumTeam.GameBase;
 using StormiumTeam.Networking.Utilities;
+using Unity.Burst;
+using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
+using Unity.Jobs;
 using Unity.NetCode;
 using Unity.Networking.Transport;
 using UnityEngine;
@@ -13,6 +16,13 @@ namespace StormiumTeam.GameBase
 {
 	public struct TeamDescription : IEntityDescription
 	{
+	}
+
+	// added automatically
+	[InternalBufferCapacity(0)]
+	public struct TeamEntityContainer : IBufferElementData
+	{
+		public Entity Value;
 	}
 
 	public struct TeamEmptySnapshotData : ISnapshotData<TeamEmptySnapshotData>
@@ -94,6 +104,72 @@ namespace StormiumTeam.GameBase
 				typeof(ReplicatedEntityComponent),
 				typeof(PredictedEntityComponent)
 			);
+		}
+	}
+
+	public class TeamUpdateContainerSystem : JobComponentSystem
+	{
+		private struct JobClearBuffer : IJobForEach_B<TeamEntityContainer>
+		{
+			public void Execute(DynamicBuffer<TeamEntityContainer> ctn)
+			{
+				ctn.Clear();
+			}
+		}
+
+		[BurstCompile]
+		private struct JobFindAndAdd : IJobForEachWithEntity<Relative<TeamDescription>>
+		{
+			public BufferFromEntity<TeamEntityContainer> ContainerFromEntity;
+
+			public void Execute(Entity entity, int index, ref Relative<TeamDescription> teamRelative)
+			{
+				if (teamRelative.Target == default || !ContainerFromEntity.Exists(teamRelative.Target))
+					return;
+
+				var ctn = default(TeamEntityContainer);
+				ctn.Value = entity;
+
+				ContainerFromEntity[teamRelative.Target].Add(ctn);
+			}
+		}
+
+		private EntityQuery m_TeamWithoutContainer;
+		private EntityQuery m_TeamWithContainer;
+		private EntityQuery m_EntityWithTeam;
+
+		protected override void OnCreate()
+		{
+			base.OnCreate();
+
+			m_TeamWithoutContainer = GetEntityQuery(new EntityQueryDesc
+			{
+				All  = new ComponentType[] {typeof(TeamDescription)},
+				None = new ComponentType[] {typeof(TeamEntityContainer)}
+			});
+			m_TeamWithContainer = GetEntityQuery(typeof(TeamDescription), typeof(TeamEntityContainer));
+			m_EntityWithTeam    = GetEntityQuery(typeof(Relative<TeamDescription>));
+		}
+
+		protected override JobHandle OnUpdate(JobHandle inputDeps)
+		{
+			if (m_TeamWithoutContainer.CalculateLength() > 0)
+			{
+				EntityManager.AddComponent(m_TeamWithoutContainer, typeof(TeamEntityContainer));
+				var entities = m_TeamWithoutContainer.ToEntityArray(Allocator.TempJob);
+				foreach (var ent in entities)
+				{
+					EntityManager.GetBuffer<TeamEntityContainer>(ent).Reserve(10);
+				}
+			}
+
+			inputDeps = new JobClearBuffer().Schedule(m_TeamWithContainer, inputDeps);
+			inputDeps = new JobFindAndAdd
+			{
+				ContainerFromEntity = GetBufferFromEntity<TeamEntityContainer>()
+			}.ScheduleSingle(m_EntityWithTeam, inputDeps);
+
+			return inputDeps;
 		}
 	}
 }
