@@ -79,7 +79,7 @@ namespace StormiumTeam.GameBase
 				PhysicsWorld = physicsWorld
 			};
 
-			jobHandle = job.Schedule(m_Group.CalculateLength(), 8, jobHandle);
+			jobHandle = job.Schedule(m_Group.CalculateEntityCount(), 8, jobHandle);
 
 			return jobHandle;
 		}
@@ -100,7 +100,7 @@ namespace StormiumTeam.GameBase
 				Rotations             = GetComponentDataFromEntity<Rotation>(),
 				
 				PhysicsWorld = physicsWorld
-			}.Schedule(m_Group.CalculateLength(), 8, jobHandle);
+			}.Schedule(m_Group.CalculateEntityCount(), 8, jobHandle);
 		}
 	}
 }

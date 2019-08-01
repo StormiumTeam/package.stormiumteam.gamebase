@@ -125,13 +125,13 @@ namespace StormiumTeam.GameBase
 
 		protected override JobHandle OnUpdate(JobHandle inputDeps)
 		{
-			if (m_EventQuery.CalculateLength() > 0)
+			if (m_EventQuery.CalculateEntityCount() > 0)
 				EntityManager.DestroyEntity(m_EventQuery);
 
-			if (m_ReplicatedQuery.CalculateLength() < 0)
+			if (m_ReplicatedQuery.CalculateEntityCount() < 0)
 				return inputDeps;
 
-			var entities = new NativeArray<Entity>(m_ReplicatedQuery.CalculateLength(), Allocator.TempJob);
+			var entities = new NativeArray<Entity>(m_ReplicatedQuery.CalculateEntityCount(), Allocator.TempJob);
 			EntityManager.CreateEntity(m_EventArchetype, entities);
 
 			var replicatedEntities = m_ReplicatedQuery.ToEntityArray(Allocator.TempJob);

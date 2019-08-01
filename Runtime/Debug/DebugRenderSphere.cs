@@ -1,6 +1,5 @@
 using System;
 using Unity.Entities;
-using Unity.Rendering;
 using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -62,7 +61,7 @@ namespace StormiumTeam.GameBase
 		}
 	}
 
-	[UpdateBefore(typeof(RenderMeshSystemV2))]
+	//[UpdateBefore(typeof(RenderMeshSystemV2))]
 	public class DebugRenderSphereSystem : ComponentSystem
 	{
 		private EntityQuery m_FindQuery;

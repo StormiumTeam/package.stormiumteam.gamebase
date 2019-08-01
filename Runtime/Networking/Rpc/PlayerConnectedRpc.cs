@@ -151,7 +151,7 @@ namespace StormiumTeam.GameBase
 
 		protected override JobHandle OnUpdate(JobHandle inputDeps)
 		{
-			var peLength = m_PreviousEventQuery.CalculateLength();
+			var peLength = m_PreviousEventQuery.CalculateEntityCount();
 			if (peLength > 0)
 			{
 				EntityManager.DestroyEntity(m_PreviousEventQuery);

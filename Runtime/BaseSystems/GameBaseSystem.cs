@@ -64,7 +64,7 @@ namespace StormiumTeam.GameBase
 
 		public Entity GetFirstSelfGamePlayer()
 		{
-			if (m_LocalPlayerGroup.CalculateLength() > 0)
+			if (m_LocalPlayerGroup.CalculateEntityCount() > 0)
 				return m_LocalPlayerGroup.GetSingletonEntity();
 
 			return default;

@@ -153,7 +153,7 @@ namespace StormiumTeam.GameBase
 
 		protected override JobHandle OnUpdate(JobHandle inputDeps)
 		{
-			if (m_TeamWithoutContainer.CalculateLength() > 0)
+			if (m_TeamWithoutContainer.CalculateEntityCount() > 0)
 			{
 				EntityManager.AddComponent(m_TeamWithoutContainer, typeof(TeamEntityContainer));
 				var entities = m_TeamWithoutContainer.ToEntityArray(Allocator.TempJob);

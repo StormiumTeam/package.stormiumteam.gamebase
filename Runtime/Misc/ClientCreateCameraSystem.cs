@@ -89,7 +89,7 @@ namespace Runtime.Misc
 
 		protected override void OnUpdate()
 		{
-			if (m_Camera == null && m_GameCameraQuery.CalculateLength() > 0)
+			if (m_Camera == null && m_GameCameraQuery.CalculateEntityCount() > 0)
 			{
 				var entity = m_GameCameraQuery.GetSingletonEntity();
 				m_Camera = EntityManager.GetComponentObject<Camera>(entity);
