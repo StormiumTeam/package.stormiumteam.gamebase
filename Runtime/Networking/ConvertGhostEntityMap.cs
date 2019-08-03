@@ -5,6 +5,8 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.NetCode;
+using Unity.Networking.Transport.Utilities;
+using UnityEngine;
 
 namespace StormiumTeam.GameBase
 {
@@ -25,10 +27,11 @@ namespace StormiumTeam.GameBase
 
 				var keys   = GhostEntityMap.GetKeyArray(Allocator.Temp);
 				var values = GhostEntityMap.GetValueArray(Allocator.Temp);
-				// ^ it shouldn't cause problems, right?
-				// todo: check if it cause problems
+
 				for (var i = 0; i != keys.Length; i++)
 				{
+					if (!values[i].valid)
+						continue;
 					TargetMap.TryAdd(keys[i], values[i].entity);
 				}
 			}
@@ -53,8 +56,8 @@ namespace StormiumTeam.GameBase
 		{
 			return dependency = new Job
 			{
-				GhostEntityMap = m_ReceiveGroup.GhostEntityMap,
-				TargetMap      = HashMap
+				GhostEntityMap  = m_ReceiveGroup.GhostEntityMap,
+				TargetMap       = HashMap
 			}.Schedule(inputDeps);
 		}
 

@@ -43,6 +43,8 @@ namespace StormiumTeam.GameBase
     /// </summary>
     public struct ColliderDescription : IEntityDescription
     {
+        public class Sync : SynchronizeRelativeSystem<ColliderDescription>
+        {}
     }
 
     /// <summary>
@@ -50,6 +52,8 @@ namespace StormiumTeam.GameBase
     /// </summary>
     public struct MovableDescription : IEntityDescription
     {
+        public class Sync : SynchronizeRelativeSystem<MovableDescription>
+        {}
     }
 
     /// <summary>
@@ -57,6 +61,8 @@ namespace StormiumTeam.GameBase
     /// </summary>
     public struct LivableDescription : IEntityDescription
     {
+        public class Sync : SynchronizeRelativeSystem<LivableDescription>
+        {}
     }
 
     /// <summary>
@@ -64,6 +70,8 @@ namespace StormiumTeam.GameBase
     /// </summary>
     public struct CharacterDescription : IEntityDescription
     {
+        public class Sync : SynchronizeRelativeSystem<CharacterDescription>
+        {}
     }
 
     /// <summary>
@@ -71,14 +79,20 @@ namespace StormiumTeam.GameBase
     /// </summary>
     public struct PlayerDescription : IEntityDescription
     {
+        public class Sync : SynchronizeRelativeSystem<PlayerDescription>
+        {}
     }
 
     public struct ActionDescription : IEntityDescription
     {
+        public class Sync : SynchronizeRelativeSystem<ActionDescription>
+        {}
     }
 
     public struct ProjectileDescription : IEntityDescription
     {
+        public class Sync : SynchronizeRelativeSystem<ProjectileDescription>
+        {}
     }
 
     public struct Owner : IComponentData
@@ -180,10 +194,23 @@ namespace StormiumTeam.GameBase
 
             if (World.GetExistingSystem<ClientSimulationSystemGroup>() != null)
             {
-                var topGroup      = World.GetOrCreateSystem<ConvertGhostToRelativeSystemGroup>();
-                var convertSystem = World.GetOrCreateSystem<ConvertGhostToRelativeSystem<T>>();
+                ComponentSystemGroup topGroup;
 
+                var convertSystem = World.GetOrCreateSystem<ConvertGhostToRelativeSystem<T>>();
+                topGroup = World.GetOrCreateSystem<ConvertGhostToRelativeSystemGroup>();
                 topGroup.AddSystemToUpdateList(convertSystem);
+
+                var receiveSystem = World.GetOrCreateSystem<ReceiveRelativeSystem<T>>();
+                topGroup = World.GetOrCreateSystem<ReceiveRelativeSystemGroup>();
+                topGroup.AddSystemToUpdateList(receiveSystem);
+            }
+
+            if (World.GetExistingSystem<ServerSimulationSystemGroup>() != null)
+            {
+                var topGroup = World.GetOrCreateSystem<SynchronizeRelativeSystemGroup>();
+                var system   = World.GetOrCreateSystem<SynchronizeRelativeSystem<T>>();
+
+                topGroup.AddSystemToUpdateList(system);
             }
         }
 

@@ -16,6 +16,8 @@ namespace StormiumTeam.GameBase
 {
 	public struct TeamDescription : IEntityDescription
 	{
+		public class Sync : SynchronizeRelativeSystem<TeamDescription>
+		{}
 	}
 
 	// added automatically
