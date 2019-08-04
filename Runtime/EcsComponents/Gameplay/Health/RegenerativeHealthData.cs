@@ -161,7 +161,7 @@ namespace StormiumTeam.GameBase.Components
 						if (healthData.Value < difference)
 						{
 							healthData.CurrentRegeneration = default;
-							healthData.StartTick           = UTick.AddMs(Tick, healthData.Cooldown).Value;
+							healthData.StartTick           = UTick.AddMs(Tick, (uint) healthData.Cooldown).Value;
 						}
 					}
 

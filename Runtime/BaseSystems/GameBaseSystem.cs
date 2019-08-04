@@ -29,7 +29,7 @@ namespace StormiumTeam.GameBase
 					throw new InvalidOperationException("Can only be called on client or server world.");
 
 				return isClient
-					? m_NetworkTimeSystem.GetTick()
+					? m_NetworkTimeSystem.GetTickInterpolated()
 					: m_ServerComponentGroup.GetTick();
 			}
 		}
