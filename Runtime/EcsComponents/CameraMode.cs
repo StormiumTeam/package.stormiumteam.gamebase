@@ -45,11 +45,13 @@ namespace StormiumTeam.GameBase
         public CameraMode     Mode   => Data.Mode;
         public Entity         Target => Data.Target;
         public RigidTransform Offset => Data.Offset;
-        
+
         public void Set(GamePlayerSnapshot snapshot, NativeHashMap<int, GhostEntity> ghostMap)
         {
-            if (ghostMap.TryGetValue((int) snapshot.CameraSnapshotFormat.TargetGhostId, out var targetEntity))
-                Data.Target = targetEntity.entity;
+            if (ghostMap.TryGetValue((int) snapshot.CameraSnapshotFormat.TargetGhostId, out var target) && target.valid)
+                Data.Target = target.entity;
+            else
+                Data.Target = default;
 
             Data.Mode = snapshot.CameraSnapshotFormat.CameraMode;
         }

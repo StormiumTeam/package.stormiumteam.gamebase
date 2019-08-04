@@ -15,10 +15,24 @@ namespace StormiumTeam.GameBase
 {
 	public abstract class GameBaseSystem : BaseComponentSystem
 	{
-		public GameTime GameTime => m_GameTimeSingletonGroup.GetSingleton<GameTimeComponent>().Value;
-
-		private ComponentSystemGroup m_ServerComponentGroup;
+		private ServerSimulationSystemGroup m_ServerComponentGroup;
 		private ComponentSystemGroup m_ClientPresentationGroup;
+		private NetworkTimeSystem m_NetworkTimeSystem;
+
+		public UTick ServerTick
+		{
+			get
+			{
+				var isClient = m_NetworkTimeSystem != null;
+				var isServer = m_ServerComponentGroup != null;
+				if (!isClient && !isServer)
+					throw new InvalidOperationException("Can only be called on client or server world.");
+
+				return isClient
+					? m_NetworkTimeSystem.GetTick()
+					: m_ServerComponentGroup.GetTick();
+			}
+		}
 
 		public bool IsServer => m_ServerComponentGroup != null;
 		public bool IsPresentationActive => m_ClientPresentationGroup != null && m_ClientPresentationGroup.Enabled;
@@ -38,20 +52,19 @@ namespace StormiumTeam.GameBase
 				typeof(GamePlayer)
 			);
 
-			m_GameTimeSingletonGroup = GetEntityQuery
-			(
-				typeof(GameTimeComponent)
-			);
-
 #if !UNITY_CLIENT
 			m_ServerComponentGroup = World.GetExistingSystem<ServerSimulationSystemGroup>();
 #endif
 #if !UNITY_SERVER
 			m_ClientPresentationGroup = World.GetExistingSystem<ClientPresentationSystemGroup>();
 #endif
-		}
 
-		private EntityQuery m_GameTimeSingletonGroup;
+			if (m_ClientPresentationGroup != null)
+			{
+				m_NetworkTimeSystem = World.GetOrCreateSystem<NetworkTimeSystem>();
+			}
+		}
+		
 		private EntityQuery m_PlayerGroup;
 		private EntityQuery m_LocalPlayerGroup;
 
@@ -126,8 +139,6 @@ namespace StormiumTeam.GameBase
 
 	public abstract class JobGameBaseSystem : JobComponentSystem
 	{
-		public GameTime GameTime => m_GameTimeSingletonGroup.GetSingleton<GameTimeComponent>().Value;
-
 		private ServerSimulationSystemGroup m_ServerComponentGroup;
 
 		public bool                        IsServer                    => m_ServerComponentGroup != null;
@@ -140,17 +151,11 @@ namespace StormiumTeam.GameBase
 				typeof(GamePlayer)
 			);
 
-			m_GameTimeSingletonGroup = GetEntityQuery
-			(
-				typeof(GameTimeComponent)
-			);
-
 #if !UNITY_CLIENT
 			m_ServerComponentGroup = World.GetExistingSystem<ServerSimulationSystemGroup>();
 #endif
 		}
-
-		private EntityQuery m_GameTimeSingletonGroup;
+		
 		private EntityQuery m_PlayerGroup;
 
 		public Entity GetFirstSelfGamePlayer()

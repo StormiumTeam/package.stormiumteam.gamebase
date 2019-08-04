@@ -32,8 +32,8 @@ namespace StormiumTeam.GameBase.Components
 			public int Rate;                // float * 1000
 			public int CurrentRegeneration; // float * 1000
 
-			public int Cooldown;
-			public int StartTick;
+			public int  Cooldown;
+			public uint StartTick;
 
 			public void PredictDelta(uint tick, ref SnapshotData baseline1, ref SnapshotData baseline2)
 			{
@@ -48,7 +48,7 @@ namespace StormiumTeam.GameBase.Components
 				writer.WritePackedInt(CurrentRegeneration, compressionModel);
 
 				writer.WritePackedInt(Cooldown, compressionModel);
-				writer.WritePackedInt(StartTick, compressionModel);
+				writer.WritePackedUInt(StartTick, compressionModel);
 			}
 
 			public void Deserialize(uint tick, ref SnapshotData baseline, DataStreamReader reader, ref DataStreamReader.Context ctx, NetworkCompressionModel compressionModel)
@@ -62,7 +62,7 @@ namespace StormiumTeam.GameBase.Components
 				CurrentRegeneration = reader.ReadPackedInt(ref ctx, compressionModel);
 
 				Cooldown  = reader.ReadPackedInt(ref ctx, compressionModel);
-				StartTick = reader.ReadPackedInt(ref ctx, compressionModel);
+				StartTick = reader.ReadPackedUInt(ref ctx, compressionModel);
 			}
 
 			public void Interpolate(ref SnapshotData target, float factor)
@@ -72,7 +72,7 @@ namespace StormiumTeam.GameBase.Components
 				Rate                = (int) math.lerp(Rate, target.Rate, factor);
 				CurrentRegeneration = (int) math.lerp(CurrentRegeneration, target.CurrentRegeneration, factor);
 				Cooldown            = (int) math.lerp(Cooldown, target.Cooldown, factor);
-				StartTick           = (int) math.lerp(StartTick, target.StartTick, factor);
+				StartTick           = (uint) math.lerp(StartTick, target.StartTick, factor);
 			}
 
 			public void Set(RegenerativeHealthData component)
@@ -94,8 +94,8 @@ namespace StormiumTeam.GameBase.Components
 		public float Rate;
 		public float CurrentRegeneration;
 
-		public int Cooldown;
-		public int StartTick;
+		public int  Cooldown;
+		public uint StartTick;
 
 
 		public void Set(SnapshotData snapshotData, NativeHashMap<int, GhostEntity> ghostMap)
@@ -111,15 +111,16 @@ namespace StormiumTeam.GameBase.Components
 		}
 
 		public class UpdateFromSnapshot : BaseUpdateFromSnapshotSystem<SnapshotData, RegenerativeHealthData>
-		{}
-		
+		{
+		}
+
 		[UpdateInGroup(typeof(HealthProcessGroup))]
 		public class System : HealthProcessSystem
 		{
 			//[BurstCompile]
 			private unsafe struct Job : IJobForEach<HealthContainerParent, RegenerativeHealthData, HealthConcreteValue>
 			{
-				public int   Tick;
+				public UTick Tick;
 				public float Dt;
 
 				[NativeDisableParallelForRestriction]
@@ -160,11 +161,11 @@ namespace StormiumTeam.GameBase.Components
 						if (healthData.Value < difference)
 						{
 							healthData.CurrentRegeneration = default;
-							healthData.StartTick           = Tick + healthData.Cooldown;
+							healthData.StartTick           = UTick.AddMs(Tick, healthData.Cooldown).Value;
 						}
 					}
 
-					if (healthData.Cooldown <= 0 || healthData.StartTick <= Tick)
+					if (healthData.Cooldown <= 0 || Tick > healthData.StartTick)
 						healthData.CurrentRegeneration += healthData.Rate * Dt;
 
 					if (healthData.CurrentRegeneration >= 1.0f)
@@ -187,8 +188,7 @@ namespace StormiumTeam.GameBase.Components
 				return new Job
 				{
 					ModifyHealthEventList = ModifyHealthEventList,
-					Tick                  = GetSingleton<GameTimeComponent>().Tick,
-					Dt                    = GetSingleton<GameTimeComponent>().DeltaTime
+					Tick                  = World.GetExistingSystem<ServerSimulationSystemGroup>().GetTick()
 				}.Schedule(this, jobHandle);
 			}
 		}

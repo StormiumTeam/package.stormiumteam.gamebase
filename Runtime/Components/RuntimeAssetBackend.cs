@@ -121,7 +121,7 @@ namespace StormiumTeam.GameBase
 			}
 
 			var obj = m_ObjectPool.Dequeue();
-			if (obj == null)
+			if (obj == null || true)
 			{
 				complete(Object.Instantiate(Asset));
 				return;
@@ -439,6 +439,7 @@ namespace StormiumTeam.GameBase
 		{
 			if (result == null)
 			{
+				Debug.Log($"got for '{name}' null presentation.");
 				return;
 			}
 
@@ -450,6 +451,8 @@ namespace StormiumTeam.GameBase
 			opResult.transform.SetParent(transform, true);
 			opResult.SetActive(true);
 
+			Debug.Log($"{name} new presentation.");
+			
 			if (DstEntityManager == null)
 			{
 				SetPresentation(opResult);
