@@ -28,7 +28,7 @@ namespace Runtime.Systems
 			public string[] serverScenes;
 		}
 
-		public bool IsMapLoaded      => m_ExecutingQuery.CalculateEntityCount() > 0;
+		public bool IsMapLoaded      => m_ExecutingQuery.CalculateEntityCount() > 0 && !IsMapBeingLoaded;
 		public bool AnyMapQueued     => m_RequestLoadQuery.CalculateEntityCount() > 0 || m_ForceDataQuery.CalculateEntityCount() > 0;
 		public bool IsMapBeingLoaded => m_LoadOperationQuery.CalculateEntityCount() > 0;
 		public bool AnyOperation => m_OperationQuery.CalculateEntityCount() > 0;
@@ -63,32 +63,21 @@ namespace Runtime.Systems
 			m_LoadOperationQuery = GetEntityQuery(typeof(AsyncMapOperation), typeof(OperationMapLoadTag));
 			m_OperationQuery = GetEntityQuery(typeof(AsyncMapOperation));
 			m_ForceDataQuery     = GetEntityQuery(typeof(ForceMapData));
-			
-			AddMapToCatalog("vs", new JMapFormat
+
+			foreach (var file in Directory.GetFiles(Application.streamingAssetsPath + "/maps/", "*.json"))
 			{
-				name = "VS Test Map",
-				description = "test desc",
-				addrPrefix = "guerro.maps.testvs_",
-				serverScenes = new []
-				{
-					"server.scene"
-				}
-			});
+				var txt = File.ReadAllText(file);
+				var id = new FileInfo(file).Name.Replace(".json", string.Empty);
+				var format = JsonUtility.FromJson<JMapFormat>(txt);
+				
+				Debug.Log($"Added Map({id}) [name: {format.name}]");
+				
+				AddMapToCatalog(id, format);
+			}
 		}
 
 		protected override void OnUpdate()
 		{
-			if (Input.GetKeyDown(KeyCode.L) && World.GetExistingSystem<ServerSimulationSystemGroup>() != null)
-			{
-				var r = EntityManager.CreateEntity(typeof(RequestMapLoad));
-				EntityManager.SetComponentData(r, new RequestMapLoad {Key = new NativeString512("vs")});
-			}
-
-			if (Input.GetKeyDown(KeyCode.U) && World.GetExistingSystem<ServerSimulationSystemGroup>() != null)
-			{
-				EntityManager.CreateEntity(typeof(RequestMapUnload));
-			}
-			
 			if (!AnyOperation && m_RequestUnloadQuery.CalculateEntityCount() > 0)
 			{
 				UnloadMap(false);

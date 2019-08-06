@@ -1,4 +1,6 @@
 using package.stormiumteam.shared.ecs;
+using Runtime.Systems;
+using StormiumTeam.GameBase.Data;
 using Unity.Entities;
 
 namespace StormiumTeam.GameBase
@@ -71,13 +73,24 @@ namespace StormiumTeam.GameBase
 		where TGameMode : struct, IGameMode
 	{
 		private EntityQuery m_GameModeQuery;
-		private Entity      m_LoopEntity;
+		private EntityQuery m_ExecutingMapQuery;
+		private EntityQuery m_MapLoadQuery;
+
+		private MapManager m_MapManager;
+
+		private Entity m_LoopEntity;
+
+		protected MapManager MapManager => m_MapManager;
 
 		protected override void OnCreate()
 		{
 			base.OnCreate();
 
-			m_GameModeQuery = GetEntityQuery(typeof(ExecutingGameMode), typeof(TGameMode));
+			m_MapManager = World.GetOrCreateSystem<MapManager>();
+
+			m_GameModeQuery     = GetEntityQuery(typeof(ExecutingGameMode), typeof(TGameMode));
+			m_ExecutingMapQuery = GetEntityQuery(typeof(ExecutingMapData));
+			m_MapLoadQuery      = GetEntityQuery(typeof(OperationMapLoadTag));
 		}
 
 		public abstract void OnGameModeUpdate(Entity entity, ref TGameMode gameMode);
@@ -109,6 +122,12 @@ namespace StormiumTeam.GameBase
 		public void FinishCleanUp()
 		{
 			EntityManager.RemoveComponent(m_LoopEntity, typeof(TGameMode));
+		}
+
+		public void LoadMap()
+		{
+			var ent = EntityManager.CreateEntity(typeof(RequestMapLoad));
+			EntityManager.SetComponentData(ent, new RequestMapLoad {Key = new NativeString512("testvs")});
 		}
 	}
 }

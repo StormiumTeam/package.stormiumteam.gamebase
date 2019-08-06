@@ -203,7 +203,8 @@ namespace StormiumTeam.GameBase.Components
 					ComponentType.ReadWrite<RegenerativeHealthData>(),
 					ComponentType.ReadWrite<HealthConcreteValue>(),
 					ComponentType.ReadWrite<HealthContainerParent>(),
-					ComponentType.ReadWrite<DestroyChainReaction>()
+					ComponentType.ReadWrite<DestroyChainReaction>(),
+					typeof(PlayEntityTag),
 				};
 			}
 
