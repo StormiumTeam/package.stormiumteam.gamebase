@@ -303,7 +303,7 @@ namespace StormiumTeam.GameBase
 		}
 
 		[RequireComponentTag(typeof(SynchronizeRelativeSystemGroup.ClientSyncedTag))]
-		[BurstCompile]
+		//[BurstCompile]
 		private struct SendDeltaRpcJob : IJobForEach_B<OutgoingRpcDataStreamBufferComponent>
 		{
 			public NativeList<Pair> DestroyList;
@@ -369,6 +369,8 @@ namespace StormiumTeam.GameBase
 		private NativeList<Pair> AddList;
 		private NativeList<Pair> DestroyList;
 
+		private EntityQuery m_GhostQuery;
+		
 		protected override void OnCreate()
 		{
 			base.OnCreate();
@@ -376,6 +378,8 @@ namespace StormiumTeam.GameBase
 			m_EndBarrier              = World.GetOrCreateSystem<EndSimulationEntityCommandBufferSystem>();
 			m_SendAllRpcQueueSystem   = World.GetOrCreateSystem<RpcQueueSystem<SendAllRpc>>();
 			m_SendDeltaRpcQueueSystem = World.GetOrCreateSystem<RpcQueueSystem<SendDeltaRpc>>();
+
+			m_GhostQuery = GetEntityQuery(typeof(GhostComponent), typeof(GhostSystemStateComponent), typeof(Relative<TRelative>));
 
 			Entities = new NativeList<Entity>(128, Allocator.Persistent);
 			GhostIds = new NativeList<int>(128, Allocator.Persistent);
@@ -386,6 +390,9 @@ namespace StormiumTeam.GameBase
 
 		protected override JobHandle OnUpdate(JobHandle inputDeps)
 		{
+			if (m_GhostQuery.CalculateEntityCount() <= 0 && Entities.Length <= 0)
+				return inputDeps;
+			
 			inputDeps = new ClearLists
 			{
 				AddList = AddList

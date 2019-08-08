@@ -43,8 +43,6 @@ namespace StormiumTeam.GameBase
     /// </summary>
     public struct ColliderDescription : IEntityDescription
     {
-        public class Sync : SynchronizeRelativeSystem<ColliderDescription>
-        {}
     }
 
     /// <summary>
@@ -52,8 +50,6 @@ namespace StormiumTeam.GameBase
     /// </summary>
     public struct MovableDescription : IEntityDescription
     {
-        public class Sync : SynchronizeRelativeSystem<MovableDescription>
-        {}
     }
 
     /// <summary>
@@ -61,8 +57,6 @@ namespace StormiumTeam.GameBase
     /// </summary>
     public struct LivableDescription : IEntityDescription
     {
-        public class Sync : SynchronizeRelativeSystem<LivableDescription>
-        {}
     }
 
     /// <summary>
@@ -70,8 +64,6 @@ namespace StormiumTeam.GameBase
     /// </summary>
     public struct CharacterDescription : IEntityDescription
     {
-        public class Sync : SynchronizeRelativeSystem<CharacterDescription>
-        {}
     }
 
     /// <summary>
@@ -79,20 +71,14 @@ namespace StormiumTeam.GameBase
     /// </summary>
     public struct PlayerDescription : IEntityDescription
     {
-        public class Sync : SynchronizeRelativeSystem<PlayerDescription>
-        {}
     }
 
     public struct ActionDescription : IEntityDescription
     {
-        public class Sync : SynchronizeRelativeSystem<ActionDescription>
-        {}
     }
 
     public struct ProjectileDescription : IEntityDescription
     {
-        public class Sync : SynchronizeRelativeSystem<ProjectileDescription>
-        {}
     }
 
     public struct Owner : IComponentData

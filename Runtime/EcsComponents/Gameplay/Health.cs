@@ -93,7 +93,7 @@ namespace StormiumTeam.GameBase.Components
 				base.OnUpdate();
 			}
 		}
-		
+
 		[BurstCompile]
 		private struct ClearBuffer : IJobChunk
 		{
@@ -167,8 +167,8 @@ namespace StormiumTeam.GameBase.Components
 		}
 
 		private NativeList<ModifyHealthEvent> m_ModifyEventList;
-		private EntityQuery                m_GroupEvent;
-		private EntityQuery                m_GroupLivableBuffer;
+		private EntityQuery                   m_GroupEvent;
+		private EntityQuery                   m_GroupLivableBuffer;
 
 		protected override void OnCreate()
 		{
@@ -203,26 +203,29 @@ namespace StormiumTeam.GameBase.Components
 			s_LastInstance = this;
 
 			m_ModifyEventList.Clear();
-			
+
 			JobHandle job = default;
 
 			job = new ClearBuffer
 			{
 				HealthContainerType = GetArchetypeChunkBufferType<HealthContainer>()
 			}.Schedule(m_GroupLivableBuffer, job);
-			
+
 			//job.Complete();
-			
+
 			job = new ClearLivableHealthData
 			{
 				LivableHealthFromEntity = GetComponentDataFromEntity<LivableHealth>()
 			}.Schedule(this, job);
-			job = new GatherEvents
+			if (m_GroupEvent.CalculateEntityCount() > 0)
 			{
-				ModifyEventList = m_ModifyEventList,
+				job = new GatherEvents
+				{
+					ModifyEventList = m_ModifyEventList,
 
-				ModifyHealthEventType = GetArchetypeChunkComponentType<ModifyHealthEvent>(true),
-			}.Schedule(m_GroupEvent, job);
+					ModifyHealthEventType = GetArchetypeChunkComponentType<ModifyHealthEvent>(true),
+				}.Schedule(m_GroupEvent, job);
+			}
 
 			foreach (var componentSystemBase in m_systemsToUpdate)
 			{
@@ -244,19 +247,19 @@ namespace StormiumTeam.GameBase.Components
 					Debug.LogWarning($"No health container found for {e} (target: {container.Parent})");
 					return;
 				}
-					
+
+				if (!EntityManager.HasComponent(container.Parent, typeof(HealthContainer)))
+				{
+					EntityManager.AddComponent(container.Parent, typeof(HealthContainer));
+					Debug.LogWarning("Added 'HealthContainer' to " + container.Parent);
+				}
+
 				var buffer = s_LastInstance.EntityManager.GetBuffer<HealthContainer>(container.Parent);
-				if (buffer.Capacity > buffer.Length)
-				{
-					buffer.Add(new HealthContainer(e));
-				}
-				else
-				{
-					Debug.LogError("Out of bounds for health container parent: " + container.Parent);
-				}
+				buffer.Add(new HealthContainer(e));
 			});
-			
-			EntityManager.DestroyEntity(m_GroupEvent);
+
+			if (m_GroupEvent.CalculateEntityCount() > 0)
+				EntityManager.DestroyEntity(m_GroupEvent);
 		}
 	}
 
