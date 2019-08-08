@@ -379,7 +379,10 @@ namespace StormiumTeam.GameBase
 			m_SendAllRpcQueueSystem   = World.GetOrCreateSystem<RpcQueueSystem<SendAllRpc>>();
 			m_SendDeltaRpcQueueSystem = World.GetOrCreateSystem<RpcQueueSystem<SendDeltaRpc>>();
 
-			m_GhostQuery = GetEntityQuery(typeof(GhostComponent), typeof(GhostSystemStateComponent), typeof(Relative<TRelative>));
+			m_GhostQuery = GetEntityQuery(new EntityQueryDesc
+			{
+				All = new ComponentType[] {typeof(GhostComponent), typeof(GhostSystemStateComponent), typeof(Relative<TRelative>)}
+			});
 
 			Entities = new NativeList<Entity>(128, Allocator.Persistent);
 			GhostIds = new NativeList<int>(128, Allocator.Persistent);
