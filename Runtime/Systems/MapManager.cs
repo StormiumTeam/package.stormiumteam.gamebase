@@ -49,6 +49,11 @@ namespace Runtime.Systems
 			return m_LoadOperations;
 		}
 
+		public JMapFormat GetMapFormat(string id)
+		{
+			return m_MapCatalog[id];
+		}
+
 		protected override void OnCreate()
 		{
 			base.OnCreate();
@@ -146,6 +151,7 @@ namespace Runtime.Systems
 			}
 
 			EntityManager.CreateEntity(typeof(AsyncMapOperation), typeof(OperationMapLoadTag));
+			EntityManager.SetComponentData(mapEntity, new ExecutingMapData {Key = new NativeString512(strKey)});
 		}
 
 		private void SynchronizeMapLoad()

@@ -197,13 +197,77 @@ namespace StormiumTeam.GameBase
 			}
 		}
 
+		public struct SendUpdateRpc : IRpcCommand
+		{
+			public NativeArray<int> GhostIds;
+			public NativeArray<int> RelativeIds;
+
+			public void Execute(Entity connection, EntityCommandBuffer.Concurrent commandBuffer, int jobIndex)
+			{
+				var ent       = commandBuffer.CreateEntity(jobIndex);
+				var remBuffer = commandBuffer.AddBuffer<DeleteRelativeCommand>(jobIndex, ent).Reinterpret<int>();
+				var addBuffer = commandBuffer.AddBuffer<ReceiveRelativeCommand>(jobIndex, ent);
+
+				for (int i = 0, length = GhostIds.Length; i != length; i++)
+				{
+					if (RelativeIds[i] <= 0)
+						continue;
+
+					addBuffer.Add(new ReceiveRelativeCommand
+					{
+						GhostId    = GhostIds[i],
+						RelativeId = RelativeIds[i]
+					});
+				}
+
+				commandBuffer.AddSharedComponent(jobIndex, ent, new RelativeComponent {ComponentId = TypeManager.GetTypeIndex<Relative<TRelative>>()});
+			}
+
+			public void Serialize(DataStreamWriter writer)
+			{
+				using (var compression = new NetworkCompressionModel(Allocator.Temp))
+				{
+					int length = default;
+
+					length = GhostIds.Length;
+					writer.WritePackedUInt((uint) length, compression);
+					for (var i = 0; i != length; i++)
+					{
+						writer.WritePackedInt(GhostIds[i], compression);
+						writer.WritePackedInt(RelativeIds[i], compression);
+					}
+				}
+
+				writer.Flush();
+			}
+
+			public void Deserialize(DataStreamReader reader, ref DataStreamReader.Context ctx)
+			{
+				using (var compression = new NetworkCompressionModel(Allocator.Temp))
+				{
+					int length = default;
+
+					length      = (int) reader.ReadPackedUInt(ref ctx, compression);
+					GhostIds    = new NativeArray<int>(length, Allocator.Temp);
+					RelativeIds = new NativeArray<int>(length, Allocator.Temp);
+					for (var i = 0; i != length; i++)
+					{
+						GhostIds[i]    = reader.ReadPackedInt(ref ctx, compression);
+						RelativeIds[i] = reader.ReadPackedInt(ref ctx, compression);
+					}
+				}
+			}
+		}
+
 		private struct ClearLists : IJob
 		{
 			public NativeList<Pair> AddList;
+			public NativeList<Pair> UpdateList;
 			
 			public void Execute()
 			{
 				AddList.Clear();
+				UpdateList.Clear();
 			}
 		}
 
@@ -215,14 +279,27 @@ namespace StormiumTeam.GameBase
 			public NativeList<int>    GhostIds;
 
 			public NativeList<Pair> AddList;
+			public NativeList<Pair> UpdateList;
 
-			public void Execute(Entity entity, int index, ref Relative<TRelative> relative, ref GhostSystemStateComponent ghostSystemState)
+			public NativeHashMap<Entity, Entity> EntityToRelative;
+			
+			public void Execute(Entity entity, int index, [ReadOnly] ref Relative<TRelative> relative, ref GhostSystemStateComponent ghostSystemState)
 			{
 				var length = Entities.Length;
 				for (var i = 0; i != length; i++)
 				{
 					if (Entities[i] == entity)
+					{
+						if (!EntityToRelative.TryGetValue(entity, out var previousRelative)
+						    || previousRelative != relative.Target)
+						{
+							EntityToRelative[entity] = relative.Target;
+							
+							UpdateList.Add(new Pair {entity = entity, ghostId = ghostSystemState.ghostId});
+						}
+
 						return;
+					}
 				}
 
 				Entities.Add(entity);
@@ -239,18 +316,24 @@ namespace StormiumTeam.GameBase
 
 			public NativeList<Pair> DestroyList;
 
+			public NativeHashMap<Entity, Entity> EntityToRelative;
+
+
 			[ReadOnly] public ComponentDataFromEntity<Relative<TRelative>> RelativeFromEntity;
 
 			public void Execute()
 			{
 				DestroyList.Clear();
-				
+
 				for (var i = 0; i != Entities.Length; i++)
 				{
 					if (RelativeFromEntity.Exists(Entities[i]))
 						continue;
 
 					DestroyList.Add(new Pair {entity = Entities[i], ghostId = GhostIds[i]});
+
+					if (EntityToRelative.ContainsKey(Entities[i]))
+						EntityToRelative.Remove(Entities[i]);
 
 					Entities.RemoveAtSwapBack(i);
 					GhostIds.RemoveAtSwapBack(i);
@@ -288,8 +371,6 @@ namespace StormiumTeam.GameBase
 
 					relativeIds[i] = GhostStateFromEntity[relative.Target].ghostId;
 				}
-				
-				Debug.Log("Sent full to " + entity);
 
 				var rpcCall = new SendAllRpc
 				{
@@ -351,22 +432,72 @@ namespace StormiumTeam.GameBase
 				};
 				SendDeltaRpcQueue.Schedule(outgoingData, rpcCall);
 				
-				Debug.Log($"Sent Relative<{typeof(TRelative)}> delta... -{deletedGhostIds.Length} +{addedGhostIds.Length}");
+				//Debug.Log($"Sent Relative<{typeof(TRelative)}> delta... -{deletedGhostIds.Length} +{addedGhostIds.Length}");
 
 				relativeIds.Dispose();
 				deletedGhostIds.Dispose();
 				addedGhostIds.Dispose();
 			}
 		}
+		
+		private struct SendUpdateRpcJob : IJobForEach_B<OutgoingRpcDataStreamBufferComponent>
+		{
+			public NativeList<Pair> UpdateList;
+			
+			[ReadOnly] public ComponentDataFromEntity<Relative<TRelative>>       RelativeFromEntity;
+			[ReadOnly] public ComponentDataFromEntity<GhostSystemStateComponent> GhostStateFromEntity;
+
+			public RpcQueue<SendUpdateRpc> SendUpdateRpcQueue;
+			
+			public void Execute(DynamicBuffer<OutgoingRpcDataStreamBufferComponent> outgoingData)
+			{
+				if (UpdateList.Length <= 0)
+					return;
+				
+				var relativeIds = new NativeArray<int>(UpdateList.Length, Allocator.Temp);
+				for (int i = 0, length = UpdateList.Length; i < length; i++)
+				{
+					if (!RelativeFromEntity.Exists(UpdateList[i].entity))
+						continue;
+					var relative = RelativeFromEntity[UpdateList[i].entity];
+					if (relative.Target == default || !GhostStateFromEntity.Exists(relative.Target))
+						continue;
+
+					relativeIds[i] = GhostStateFromEntity[relative.Target].ghostId;
+				}
+				
+				var ghostIds   = new NativeArray<int>(UpdateList.Length, Allocator.Temp);
+				for (int i = 0, length = ghostIds.Length; i < length; i++)
+				{
+					ghostIds[i] = UpdateList[i].ghostId;
+				}
+
+				var rpcCall = new SendUpdateRpc
+				{
+					GhostIds   = ghostIds,
+					RelativeIds     = relativeIds
+				};
+				SendUpdateRpcQueue.Schedule(outgoingData, rpcCall);
+				
+				//Debug.Log($"Sent Relative<{typeof(TRelative)}> update... ={ghostIds.Length}");
+
+				relativeIds.Dispose();
+				ghostIds.Dispose();
+			}
+		}
 
 		private EntityCommandBufferSystem    m_EndBarrier;
 		private RpcQueueSystem<SendAllRpc>   m_SendAllRpcQueueSystem;
 		private RpcQueueSystem<SendDeltaRpc> m_SendDeltaRpcQueueSystem;
+		private RpcQueueSystem<SendUpdateRpc> m_SendUpdateRpcQueueSystem;
 
+		private NativeHashMap<Entity, Entity> EntityToRelative;
+		
 		private NativeList<Entity> Entities;
 		private NativeList<int>    GhostIds;
 
 		private NativeList<Pair> AddList;
+		private NativeList<Pair> UpdateList;
 		private NativeList<Pair> DestroyList;
 
 		private EntityQuery m_GhostQuery;
@@ -378,6 +509,9 @@ namespace StormiumTeam.GameBase
 			m_EndBarrier              = World.GetOrCreateSystem<EndSimulationEntityCommandBufferSystem>();
 			m_SendAllRpcQueueSystem   = World.GetOrCreateSystem<RpcQueueSystem<SendAllRpc>>();
 			m_SendDeltaRpcQueueSystem = World.GetOrCreateSystem<RpcQueueSystem<SendDeltaRpc>>();
+			m_SendUpdateRpcQueueSystem = World.GetOrCreateSystem<RpcQueueSystem<SendUpdateRpc>>();
+			
+			EntityToRelative = new NativeHashMap<Entity, Entity>(128, Allocator.Persistent);
 
 			m_GhostQuery = GetEntityQuery(new EntityQueryDesc
 			{
@@ -388,29 +522,31 @@ namespace StormiumTeam.GameBase
 			GhostIds = new NativeList<int>(128, Allocator.Persistent);
 
 			AddList     = new NativeList<Pair>(128, Allocator.Persistent);
+			UpdateList     = new NativeList<Pair>(128, Allocator.Persistent);
 			DestroyList = new NativeList<Pair>(128, Allocator.Persistent);
 		}
 
 		protected override JobHandle OnUpdate(JobHandle inputDeps)
 		{
-			if (m_GhostQuery.CalculateEntityCount() <= 0 && Entities.Length <= 0)
-				return inputDeps;
-			
 			inputDeps = new ClearLists
 			{
-				AddList = AddList
+				AddList = AddList,
+				UpdateList = UpdateList
 			}.Schedule(inputDeps);
 			inputDeps = new FindGhostWithRelative
 			{
 				Entities = Entities,
 				GhostIds = GhostIds,
-				AddList  = AddList
+				AddList  = AddList,
+				UpdateList = UpdateList,
+				EntityToRelative = EntityToRelative
 			}.ScheduleSingle(this, inputDeps);
 			inputDeps = new SeekAndDestroyJob
 			{
-				Entities    = Entities,
-				GhostIds    = GhostIds,
-				DestroyList = DestroyList,
+				Entities           = Entities,
+				GhostIds           = GhostIds,
+				DestroyList        = DestroyList,
+				EntityToRelative = EntityToRelative,
 				RelativeFromEntity = GetComponentDataFromEntity<Relative<TRelative>>(true),
 			}.Schedule(inputDeps);
 			inputDeps = new SendFullRpcJob
@@ -430,7 +566,14 @@ namespace StormiumTeam.GameBase
 				GhostStateFromEntity = GetComponentDataFromEntity<GhostSystemStateComponent>(true),
 				SendDeltaRpcQueue    = m_SendDeltaRpcQueueSystem.GetRpcQueue()
 			}.ScheduleSingle(this, inputDeps);
-			
+			inputDeps = new SendUpdateRpcJob
+			{
+				UpdateList           = UpdateList,
+				RelativeFromEntity   = GetComponentDataFromEntity<Relative<TRelative>>(true),
+				GhostStateFromEntity = GetComponentDataFromEntity<GhostSystemStateComponent>(true),
+				SendUpdateRpcQueue   = m_SendUpdateRpcQueueSystem.GetRpcQueue()
+			}.ScheduleSingle(this, inputDeps);
+
 			m_EndBarrier.AddJobHandleForProducer(inputDeps);
 
 			return inputDeps;

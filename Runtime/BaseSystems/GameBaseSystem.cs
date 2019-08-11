@@ -19,19 +19,17 @@ namespace StormiumTeam.GameBase
 		private ComponentSystemGroup m_ClientPresentationGroup;
 		private NetworkTimeSystem m_NetworkTimeSystem;
 
-		public UTick ServerTick
+		public UTick ServerTick => GetTick(false);
+		public UTick GetTick(bool predicted)
 		{
-			get
-			{
-				var isClient = m_NetworkTimeSystem != null;
-				var isServer = m_ServerComponentGroup != null;
-				if (!isClient && !isServer)
-					throw new InvalidOperationException("Can only be called on client or server world.");
+			var isClient = m_NetworkTimeSystem != null;
+			var isServer = m_ServerComponentGroup != null;
+			if (!isClient && !isServer)
+				throw new InvalidOperationException("Can only be called on client or server world.");
 
-				return isClient
-					? m_NetworkTimeSystem.GetTickInterpolated()
-					: m_ServerComponentGroup.GetTick();
-			}
+			return isClient
+				? predicted ? m_NetworkTimeSystem.GetTickPredicted() : m_NetworkTimeSystem.GetTickInterpolated()
+				: m_ServerComponentGroup.GetTick();
 		}
 
 		public bool IsServer => m_ServerComponentGroup != null;

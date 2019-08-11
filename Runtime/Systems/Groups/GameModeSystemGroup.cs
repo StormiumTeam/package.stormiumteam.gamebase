@@ -22,4 +22,8 @@ namespace StormiumTeam.GameBase
 			base.OnUpdate();
 		}
 	}
+	
+	[UpdateInGroup(typeof(ClientSimulationSystemGroup))]
+	public class ClientGameModeSystemGroup : ComponentSystemGroup
+	{}
 }

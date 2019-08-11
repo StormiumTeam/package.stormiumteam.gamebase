@@ -8,6 +8,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.NetCode;
 using Unity.Networking.Transport;
+using UnityEngine;
 
 namespace StormiumTeam.GameBase.Components
 {
@@ -112,6 +113,7 @@ namespace StormiumTeam.GameBase.Components
 							default:
 								throw new ArgumentOutOfRangeException();
 						}
+						Debug.Log(ev.Type);
 
 						ev.Consumed -= math.abs(healthData.Value - difference);
 					}

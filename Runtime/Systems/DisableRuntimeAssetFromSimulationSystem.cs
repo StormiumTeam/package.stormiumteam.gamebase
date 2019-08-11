@@ -17,7 +17,7 @@ namespace Runtime.Systems
 		{
 			m_Query = GetEntityQuery(new EntityQueryDesc
 			{
-				All = new ComponentType[] {typeof(RuntimeAssetDisable), typeof(Transform)},
+				All = new ComponentType[] {typeof(RuntimeAssetDisable), typeof(RuntimeAssetDetection)},
 				//Any = new ComponentType[]{typeof(ModelParent)}
 			});
 
@@ -32,11 +32,12 @@ namespace Runtime.Systems
 				foreach (var chunk in chunks)
 				{
 					var disableDataArray = chunk.GetNativeArray(GetArchetypeChunkComponentType<RuntimeAssetDisable>(true));
-					var transformArray   = chunk.GetComponentObjects(GetArchetypeChunkComponentType<Transform>(), EntityManager);
+					var detectionArray   = chunk.GetComponentObjects(GetArchetypeChunkComponentType<RuntimeAssetDetection>(), EntityManager);
 					for (int ent = 0, count = chunk.Count; ent != count; ent++)
 					{
 						var disable     = disableDataArray[ent];
 						var modelParent = default(Entity);
+						
 						if (!disable.IgnoreParent && chunk.Has(GetArchetypeChunkComponentType<ModelParent>(true)))
 						{
 							var modelParentArray = chunk.GetNativeArray(GetArchetypeChunkComponentType<ModelParent>(true));
@@ -44,9 +45,11 @@ namespace Runtime.Systems
 						}
 
 						if ((!disable.IgnoreParent && modelParent == default) || EntityManager.Exists(modelParent))
+						{
 							continue;
+						}
 
-						var backend = transformArray[ent].GetComponent<RuntimeAssetBackendBase>();
+						var backend = detectionArray[ent].GetComponent<RuntimeAssetBackendBase>();
 						m_List.Add((disable.DisableGameObject, disable.ReturnPresentation, backend));
 					}
 				}

@@ -2,6 +2,7 @@ using package.stormiumteam.shared.ecs;
 using Runtime.Systems;
 using StormiumTeam.GameBase.Data;
 using Unity.Entities;
+using Unity.NetCode;
 
 namespace StormiumTeam.GameBase
 {
@@ -36,7 +37,7 @@ namespace StormiumTeam.GameBase
 
 		}
 
-		public void SetGameMode<T>(T data, string name = null)
+		public void SetGameMode<T>(T data, string name = null, bool serialize = true)
 			where T : struct, IGameMode
 		{
 			EntityManager.DestroyEntity(m_RunningGameMode);
@@ -52,9 +53,10 @@ namespace StormiumTeam.GameBase
 #if UNITY_EDITOR
 			EntityManager.SetName(entity, $"GameMode: {name ?? typeof(T).Name}");
 #endif
+			EntityManager.AddComponent(entity, typeof(GhostComponent));
 		}
 
-		public void SetGameMode<T>(Entity entity, string name = null)
+		public void SetGameMode<T>(Entity entity, string name = null, bool serialize = true)
 			where T : struct, IGameMode
 		{
 			EntityManager.DestroyEntity(m_RunningGameMode);
@@ -65,6 +67,7 @@ namespace StormiumTeam.GameBase
 				TypeIndex = ComponentType.ReadWrite<T>().TypeIndex,
 				Name      = new NativeString64(name ?? typeof(T).Name)
 			});
+			EntityManager.AddComponent(entity, typeof(GhostComponent));
 		}
 	}
 

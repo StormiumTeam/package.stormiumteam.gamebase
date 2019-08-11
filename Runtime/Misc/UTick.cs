@@ -136,38 +136,76 @@ namespace StormiumTeam.GameBase
 
 		#endregion
 
-		public uint  Value;
+		public long   Value;
 		public float Delta;
 
-		public double Seconds => Value * Delta;
-		public uint   Ms      => (uint) (Seconds * 1000);
+		public double Seconds => Value * (double) Delta;
+		public int    Ms      => (int) (Seconds * 1000);
+
+		public uint AsUInt
+		{
+			get
+			{
+				#if ENABLE_UNITY_COLLECTIONS_CHECKS
+				if (Value > uint.MaxValue)
+					throw new ArgumentOutOfRangeException($"<getAsUInt> Current Tick Value ({Value}) is bigger than {uint.MaxValue}");
+				#endif
+
+				return (uint) Value;
+			}
+		}
+
+		public int AsInt
+		{
+			get
+			{
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+				if (Value > uint.MaxValue)
+					throw new ArgumentOutOfRangeException($"<getAsInt> Current Tick Value ({Value}) is bigger than {int.MaxValue}");
+#endif
+
+				return (int) Value;
+			}
+		}
+
+		public static UTick AddTick(UTick tick, long value)
+		{
+			tick.Value += value;
+			return tick;
+		}
+		
+		public static UTick AddTick(UTick tick, UTick other)
+		{
+			tick.Value += other.Value;
+			return tick;
+		}
 
 		public void AddMs(uint arg)
 		{
-			Value += (uint) (arg * Delta);
+			Value += (int) (arg * Delta);
 		}
 
 		/// <summary>
 		/// Add milliseconds as ticks, if it's not modified, add another tick.
 		/// </summary>
 		/// <param name="arg"></param>
-		public void AddMsNextFrame(uint arg)
+		public void AddMsNextFrame(long arg)
 		{
-			var val = (uint) (arg * Delta);
+			var val = (int) (arg * Delta);
 			Value = math.select(Value + 1, Value + val, val > 0);
 		}
 
-		public static UTick MsToTick(in UTick reference, uint ms)
+		public static UTick MsToTick(in UTick reference, long ms)
 		{
 			UTick tick;
-			tick.Value = (uint) (ms * reference.Delta);
+			tick.Value = (int) (ms * reference.Delta);
 			tick.Delta = reference.Delta;
 			return tick;
 		}
 
-		public static UTick MsToTickNextFrame(in UTick reference, uint ms)
+		public static UTick MsToTickNextFrame(in UTick reference, long ms)
 		{
-			var   val = (uint) (ms * reference.Delta);
+			var   val = (int) (ms * reference.Delta);
 			UTick tick;
 			tick.Value = math.select(1, val, val > 0);
 			tick.Delta = reference.Delta;
@@ -175,22 +213,22 @@ namespace StormiumTeam.GameBase
 			return tick;
 		}
 
-		public static UTick AddMs(UTick tick, uint arg)
+		public static UTick AddMs(UTick tick, long arg)
 		{
-			tick.Value += (uint) (arg * tick.Delta);
+			tick.Value += (int) (arg * tick.Delta);
 			return tick;
 		}
-
-		public static UTick AddMsNextFrame(UTick tick, uint arg)
+		
+		public static UTick AddMsNextFrame(UTick tick, long arg)
 		{
-			var val = (uint) (arg * tick.Delta);
+			var val = (int) (arg * tick.Delta);
 			tick.Value = math.select(tick.Value + 1, tick.Value + val, val > 0);
 			return tick;
 		}
-
-		public static UTick CopyDelta(UTick reference, uint newTick)
+		
+		public static UTick CopyDelta(UTick reference, long newTick)
 		{
-			reference.Value = newTick;
+			reference.Value = (int) newTick;
 			return reference;
 		}
 	}
@@ -200,7 +238,7 @@ namespace StormiumTeam.GameBase
 		public static UTick GetTick(this ServerSimulationSystemGroup system)
 		{
 			UTick tick;
-			tick.Value = system.ServerTick;
+			tick.Value = (int) system.ServerTick;
 			tick.Delta = FixedTimeLoop.fixedTimeStep;
 			return tick;
 		}
@@ -208,7 +246,7 @@ namespace StormiumTeam.GameBase
 		public static UTick GetTickInterpolated(this NetworkTimeSystem system)
 		{
 			UTick tick;
-			tick.Value = system.interpolateTargetTick;
+			tick.Value = (int) system.interpolateTargetTick;
 			tick.Delta = FixedTimeLoop.fixedTimeStep;
 			return tick;
 		}
@@ -216,7 +254,7 @@ namespace StormiumTeam.GameBase
 		public static UTick GetTickPredicted(this NetworkTimeSystem system)
 		{
 			UTick tick;
-			tick.Value = system.predictTargetTick;
+			tick.Value = (int) system.predictTargetTick;
 			tick.Delta = FixedTimeLoop.fixedTimeStep;
 			return tick;
 		}

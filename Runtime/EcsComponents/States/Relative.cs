@@ -11,26 +11,13 @@ using Unity.Jobs;
 using Unity.NetCode;
 using UnityEngine;
 
-[assembly: RegisterGenericComponentType(typeof(Relative<ColliderDescription>))]
-[assembly: RegisterGenericComponentType(typeof(GhostRelative<ColliderDescription>))]
-
+[assembly: RegisterGenericComponentType(typeof(Relative<HitShapeDescription>))]
 [assembly: RegisterGenericComponentType(typeof(Relative<MovableDescription>))]
-[assembly: RegisterGenericComponentType(typeof(GhostRelative<MovableDescription>))]
-
 [assembly: RegisterGenericComponentType(typeof(Relative<LivableDescription>))]
-[assembly: RegisterGenericComponentType(typeof(GhostRelative<LivableDescription>))]
-
 [assembly: RegisterGenericComponentType(typeof(Relative<CharacterDescription>))]
-[assembly: RegisterGenericComponentType(typeof(GhostRelative<CharacterDescription>))]
-
 [assembly: RegisterGenericComponentType(typeof(Relative<PlayerDescription>))]
-[assembly: RegisterGenericComponentType(typeof(GhostRelative<PlayerDescription>))]
-
 [assembly: RegisterGenericComponentType(typeof(Relative<ActionDescription>))]
-[assembly: RegisterGenericComponentType(typeof(GhostRelative<ActionDescription>))]
-
 [assembly: RegisterGenericComponentType(typeof(Relative<ProjectileDescription>))]
-[assembly: RegisterGenericComponentType(typeof(GhostRelative<ProjectileDescription>))]
 
 namespace StormiumTeam.GameBase
 {
@@ -39,9 +26,9 @@ namespace StormiumTeam.GameBase
     }
 
     /// <summary>
-    /// All entities that can be collided/hit/damaged (eg: character movable entity (not the character itself!))
+    /// All entities that can be hit/damaged (eg: character hitshape entities (not the character itself!))
     /// </summary>
-    public struct ColliderDescription : IEntityDescription
+    public struct HitShapeDescription : IEntityDescription
     {
     }
 
@@ -114,7 +101,7 @@ namespace StormiumTeam.GameBase
             }
         }
 
-        public static void ReplaceOwnerData(this EntityManager entityManager, Entity entity, Entity owner, bool setRelative = true, bool autoEntityLink = true)
+        public static void ReplaceOwnerData(this EntityManager entityManager, Entity entity, Entity owner, bool setRelative = true, bool setChildrenRelative = true, bool createChildBuffer = true, bool addAsChildren = true, bool autoEntityLink = true)
         {
             // sync...
             entityManager.CompleteAllJobs();
@@ -124,19 +111,24 @@ namespace StormiumTeam.GameBase
             if (!setRelative)
                 return;
 
-            // the name OwnerChildren can be confusing, but let's you have a LivableDesc with a MovableDesc and ColliderDesc.
+            // the name OwnerChildren can be confusing, but let's say you have a LivableDesc with a MovableDesc and ColliderDesc.
             // if you want to get the collider from the movable, OwnerChild will be able to help with that.
             NativeArray<OwnerChild> ownerChildren = default;
 
             var hasBuffer = entityManager.HasComponent(owner, typeof(OwnerChild));
             if (hasBuffer)
-                ownerChildren = new NativeArray<OwnerChild>(entityManager.GetBuffer<OwnerChild>(owner).AsNativeArray(), Allocator.Temp);
-            
+                ownerChildren = entityManager.GetBuffer<OwnerChild>(owner).ToNativeArray(Allocator.Temp);
+            if (!hasBuffer && createChildBuffer)
+            {
+                ownerChildren = entityManager.AddBuffer<OwnerChild>(owner).ToNativeArray(Allocator.Temp);
+                hasBuffer     = true;
+            }
+
             var relativeGroup = entityManager.World.GetExistingSystem<RelativeGroup>();
             foreach (var componentSystemBase in relativeGroup.Systems)
             {
                 var system = (ISyncEvent) componentSystemBase;
-                for (var i = 0; hasBuffer && i != ownerChildren.Length; i++)
+                for (var i = 0; setChildrenRelative && hasBuffer && i != ownerChildren.Length; i++)
                 {
                     if (system.ComponentType.TypeIndex == ownerChildren[i].TypeId)
                         system.SyncRelativeToEntity(entity, ownerChildren[i].Child);
@@ -150,6 +142,11 @@ namespace StormiumTeam.GameBase
 
             if (autoEntityLink)
                 entityManager.SetOrAddComponentData(entity, new DestroyChainReaction(owner));
+
+            if (hasBuffer && addAsChildren)
+            {
+                AddChildrenOwner(entityManager, entity, owner);
+            }
         }
 
         public static void ReplaceOwnerData(this EntityCommandBuffer entityCommandBuffer, Entity source, Entity owner)
@@ -181,11 +178,7 @@ namespace StormiumTeam.GameBase
             if (World.GetExistingSystem<ClientSimulationSystemGroup>() != null)
             {
                 ComponentSystemGroup topGroup;
-
-                var convertSystem = World.GetOrCreateSystem<ConvertGhostToRelativeSystem<T>>();
-                topGroup = World.GetOrCreateSystem<ConvertGhostToRelativeSystemGroup>();
-                topGroup.AddSystemToUpdateList(convertSystem);
-
+                
                 var receiveSystem = World.GetOrCreateSystem<ReceiveRelativeSystem<T>>();
                 topGroup = World.GetOrCreateSystem<ReceiveRelativeSystemGroup>();
                 topGroup.AddSystemToUpdateList(receiveSystem);
@@ -315,12 +308,6 @@ namespace StormiumTeam.GameBase
         where TDescription : struct, IEntityDescription
     {
         public Entity Target;
-    }
-
-    public struct GhostRelative<TDescription> : IComponentData
-        where TDescription : struct, IEntityDescription
-    {
-        public int GhostId;
     }
 
     [InternalBufferCapacity(8)]

@@ -215,6 +215,11 @@ namespace StormiumTeam.GameBase
 		public bool ReturnPresentation;
 	}
 
+	// only used to detect
+	public class RuntimeAssetDetection : MonoBehaviour
+	{
+	}
+
 	public abstract class RuntimeAssetBackendBase : MonoBehaviour
 	{
 		public AsyncAssetPool<GameObject> presentationPool;
@@ -288,6 +293,9 @@ namespace StormiumTeam.GameBase
 		private void OnEnable()
 		{
 			m_Enabled = true;
+
+			if (!GetComponent<RuntimeAssetDetection>())
+				gameObject.AddComponent<RuntimeAssetDetection>();
 			
 			UpdateGameObjectEntity();
 			
@@ -450,8 +458,6 @@ namespace StormiumTeam.GameBase
 			var opResult = result;
 			opResult.transform.SetParent(transform, true);
 			opResult.SetActive(true);
-
-			Debug.Log($"{name} new presentation.");
 			
 			if (DstEntityManager == null)
 			{

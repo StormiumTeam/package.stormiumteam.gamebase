@@ -10,7 +10,6 @@ using Unity.Networking.Transport;
 using UnityEngine;
 
 [assembly: RegisterGenericComponentType(typeof(Relative<TeamDescription>))]
-[assembly: RegisterGenericComponentType(typeof(GhostRelative<TeamDescription>))]
 
 namespace StormiumTeam.GameBase
 {
@@ -122,7 +121,7 @@ namespace StormiumTeam.GameBase
 		{
 			public BufferFromEntity<TeamEntityContainer> ContainerFromEntity;
 
-			public void Execute(Entity entity, int index, ref Relative<TeamDescription> teamRelative)
+			public void Execute(Entity entity, int index, [ReadOnly] ref Relative<TeamDescription> teamRelative)
 			{
 				if (teamRelative.Target == default || !ContainerFromEntity.Exists(teamRelative.Target))
 					return;

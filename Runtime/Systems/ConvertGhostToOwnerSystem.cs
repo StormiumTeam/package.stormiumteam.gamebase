@@ -50,40 +50,4 @@ namespace Runtime.Systems
 			}.Schedule(this, inputDeps);
 		}
 	}
-
-	[UpdateInGroup(typeof(PostConvertSystemGroup))]
-	public class ConvertGhostToRelativeSystemGroup : ComponentSystemGroup
-	{
-	}
-
-	[UpdateInGroup(typeof(ConvertGhostToRelativeSystemGroup))]
-	public class ConvertGhostToRelativeSystem<TDescription> : JobComponentSystem
-		where TDescription : struct, IEntityDescription
-	{
-		[BurstCompile]
-		private struct ConvertJob : IJobForEach<GhostRelative<TDescription>, Relative<TDescription>>
-		{
-			[ReadOnly, NativeDisableContainerSafetyRestriction]
-			public NativeHashMap<int, GhostEntity> GhostEntityMap;
-
-			public void Execute([ReadOnly] ref GhostRelative<TDescription> ghostRelative, ref Relative<TDescription> relative)
-			{
-				if (ghostRelative.GhostId == 0)
-					return;
-
-				if (GhostEntityMap.TryGetValue(ghostRelative.GhostId, out var ghostEntity))
-				{
-					relative.Target = ghostEntity.entity;
-				}
-			}
-		}
-
-		protected override JobHandle OnUpdate(JobHandle inputDeps)
-		{
-			return new ConvertJob
-			{
-				GhostEntityMap = World.GetExistingSystem<GhostReceiveSystemGroup>().GhostEntityMap
-			}.Schedule(this, inputDeps);
-		}
-	}
 }

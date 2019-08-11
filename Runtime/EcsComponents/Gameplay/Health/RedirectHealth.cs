@@ -31,7 +31,7 @@ namespace StormiumTeam.GameBase.Components
 
 						Debug.Log($"Redirecting health event from {entity} to {redirectData.Target}.");
 
-						ev.Target = entity;
+						ev.Target = redirectData.Target;
 						ModifyHealthEventList.Add(ev);
 					}
 				}

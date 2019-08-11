@@ -16,6 +16,26 @@ namespace StormiumTeam.GameBase.Components
 	public struct LivableHealth : IComponentData
 	{
 		public int Value, Max;
+
+		// Manual variable.
+		// > This value should be set by the gamemode.
+		// > If it's true, no entities will be added to 
+		public bool IsDead;
+	}
+
+	public struct HealthModifyingHistory : IBufferElementData
+	{
+		/// <summary>
+		/// The entity who bring the damage
+		/// </summary>
+		public Entity Instigator;
+
+		/// <summary>
+		/// The modifying value (it can be negative for damage or positive for healing)
+		/// </summary>
+		public int Value;
+
+		public UTick Tick;
 	}
 
 	public struct HealthContainer : IBufferElementData
@@ -25,11 +45,6 @@ namespace StormiumTeam.GameBase.Components
 		public HealthContainer(Entity healthTarget)
 		{
 			Target = healthTarget;
-		}
-
-		public bool TargetValid()
-		{
-			return World.Active.EntityManager.Exists(Target);
 		}
 	}
 
@@ -120,7 +135,13 @@ namespace StormiumTeam.GameBase.Components
 			public void Execute([ReadOnly] ref HealthConcreteValue concrete, [ReadOnly] ref HealthContainerParent container)
 			{
 				if (LivableHealthFromEntity.Exists(container.Parent))
-					LivableHealthFromEntity[container.Parent] = default;
+				{
+					var prev = LivableHealthFromEntity[container.Parent];
+					prev.Value = 0;
+					prev.Max   = 0;
+
+					LivableHealthFromEntity[container.Parent] = prev;
+				}
 			}
 		}
 
@@ -160,14 +181,16 @@ namespace StormiumTeam.GameBase.Components
 
 				LivableHealthFromEntity[container.Parent] = new LivableHealth
 				{
-					Value = result.x,
-					Max   = result.y
+					Value  = result.x,
+					Max    = result.y,
+					IsDead = health.IsDead
 				};
 			}
 		}
 
 		private NativeList<ModifyHealthEvent> m_ModifyEventList;
 		private EntityQuery                   m_GroupEvent;
+		private EntityQuery m_LivableWithoutHistory;
 		private EntityQuery                   m_GroupLivableBuffer;
 
 		protected override void OnCreate()
@@ -181,6 +204,11 @@ namespace StormiumTeam.GameBase.Components
 				{
 					ComponentType.ReadOnly<ModifyHealthEvent>(),
 				}
+			});
+			m_LivableWithoutHistory = GetEntityQuery(new EntityQueryDesc
+			{
+				All  = new ComponentType[] {typeof(LivableHealth)},
+				None = new ComponentType[] {typeof(HealthModifyingHistory)}
 			});
 			m_GroupLivableBuffer = GetEntityQuery(typeof(HealthContainer));
 		}
@@ -197,6 +225,17 @@ namespace StormiumTeam.GameBase.Components
 		protected override void OnUpdate()
 		{
 			base.OnUpdate();
+
+			if (m_LivableWithoutHistory.CalculateEntityCount() > 0)
+			{
+				Entities.With(m_LivableWithoutHistory).ForEach((Entity entity) =>
+				{
+					var history = EntityManager.AddBuffer<HealthModifyingHistory>(entity);
+					
+					history.Reserve(history.Capacity + 1);
+					history.Clear();
+				});
+			}
 
 			World.GetExistingSystem<BeforeGathering>().Process();
 
@@ -256,6 +295,15 @@ namespace StormiumTeam.GameBase.Components
 
 				var buffer = s_LastInstance.EntityManager.GetBuffer<HealthContainer>(container.Parent);
 				buffer.Add(new HealthContainer(e));
+			});
+
+			Entities.ForEach((Entity entity, ref LivableHealth livableHealth, DynamicBuffer<HealthModifyingHistory> history) =>
+			{
+				if (livableHealth.IsDead)
+					history.Clear();
+				
+				while (history.Length > 32)
+					history.RemoveAt(0);
 			});
 
 			if (m_GroupEvent.CalculateEntityCount() > 0)
