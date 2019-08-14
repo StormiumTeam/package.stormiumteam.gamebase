@@ -1,8 +1,10 @@
 using System.Collections.Generic;
 using DefaultNamespace;
+using package.stormiumteam.shared.ecs;
 using Scripts.Utilities;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
+using Unity.NetCode;
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -30,8 +32,7 @@ namespace Runtime.Authoring
 				UnsafeUtility.MemCpy(&v, ptr, sizeof(ReplSceneId));
 
 				dstManager.AddComponentData(entity, v);
-				
-				Debug.Log($"B0: {v.B0}\nB1: {v.B1}\nB2: {v.B2}\nB3: {v.B3}");
+				dstManager.AddComponent(entity, typeof(GhostComponent));
 			}
 		}
 

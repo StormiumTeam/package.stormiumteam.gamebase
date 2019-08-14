@@ -48,16 +48,6 @@ namespace StormiumTeam.GameBase.Components
 		}
 	}
 
-	public struct HealthContainerParent : IComponentData
-	{
-		public Entity Parent;
-
-		public HealthContainerParent(Entity parent)
-		{
-			Parent = parent;
-		}
-	}
-
 	public struct HealthAssetDescription : IComponentData
 	{
 	}
@@ -77,7 +67,7 @@ namespace StormiumTeam.GameBase.Components
 	public struct ModifyHealthEvent : IComponentData
 	{
 		public ModifyHealthType Type;
-		public int  Origin;
+		public int              Origin;
 
 		public int Consumed;
 
@@ -94,7 +84,7 @@ namespace StormiumTeam.GameBase.Components
 		}
 	}
 
-	[UpdateInGroup(typeof(ServerSimulationSystemGroup))]
+	[UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
 	public class HealthProcessGroup : ComponentSystemGroup
 	{
 		public class BeforeGathering : ComponentSystemGroup
@@ -127,20 +117,20 @@ namespace StormiumTeam.GameBase.Components
 		}
 
 		[BurstCompile]
-		private struct ClearLivableHealthData : IJobForEach<HealthConcreteValue, HealthContainerParent>
+		private struct ClearLivableHealthData : IJobForEach<HealthConcreteValue, Owner>
 		{
 			[NativeDisableParallelForRestriction]
 			public ComponentDataFromEntity<LivableHealth> LivableHealthFromEntity;
 
-			public void Execute([ReadOnly] ref HealthConcreteValue concrete, [ReadOnly] ref HealthContainerParent container)
+			public void Execute([ReadOnly] ref HealthConcreteValue concrete, [ReadOnly] ref Owner owner)
 			{
-				if (LivableHealthFromEntity.Exists(container.Parent))
+				if (LivableHealthFromEntity.Exists(owner.Target))
 				{
-					var prev = LivableHealthFromEntity[container.Parent];
+					var prev = LivableHealthFromEntity[owner.Target];
 					prev.Value = 0;
 					prev.Max   = 0;
 
-					LivableHealthFromEntity[container.Parent] = prev;
+					LivableHealthFromEntity[owner.Target] = prev;
 				}
 			}
 		}
@@ -167,19 +157,23 @@ namespace StormiumTeam.GameBase.Components
 		}
 
 		[BurstCompile]
-		private struct AssignLivableHealthData : IJobForEach<HealthConcreteValue, HealthContainerParent>
+		private struct AssignLivableHealthData : IJobForEach<HealthConcreteValue, Owner>
 		{
 			[NativeDisableParallelForRestriction]
 			public ComponentDataFromEntity<LivableHealth> LivableHealthFromEntity;
 
-			public void Execute([ReadOnly] ref HealthConcreteValue concrete, [ReadOnly] ref HealthContainerParent container)
+			public void Execute([ReadOnly] ref HealthConcreteValue concrete, [ReadOnly] ref Owner owner)
 			{
-				var health             = LivableHealthFromEntity[container.Parent];
+				// this may be possible if we are switching owners or if the owner is destroyed or if we are on clients and didn't received the owner yet
+				if (!LivableHealthFromEntity.Exists(owner.Target))
+					return;
+				
+				var health             = LivableHealthFromEntity[owner.Target];
 				var livableVectorized  = new int2(health.Value, health.Max);
 				var concreteVectorized = new int2(concrete.Value, concrete.Max);
 				var result             = livableVectorized + concreteVectorized;
 
-				LivableHealthFromEntity[container.Parent] = new LivableHealth
+				LivableHealthFromEntity[owner.Target] = new LivableHealth
 				{
 					Value  = result.x,
 					Max    = result.y,
@@ -190,8 +184,10 @@ namespace StormiumTeam.GameBase.Components
 
 		private NativeList<ModifyHealthEvent> m_ModifyEventList;
 		private EntityQuery                   m_GroupEvent;
-		private EntityQuery m_LivableWithoutHistory;
+		private EntityQuery                   m_LivableWithoutHistory;
 		private EntityQuery                   m_GroupLivableBuffer;
+
+		private ComponentSystemGroup m_ServerSimulationSystemGroup;
 
 		protected override void OnCreate()
 		{
@@ -211,6 +207,8 @@ namespace StormiumTeam.GameBase.Components
 				None = new ComponentType[] {typeof(HealthModifyingHistory)}
 			});
 			m_GroupLivableBuffer = GetEntityQuery(typeof(HealthContainer));
+
+			m_ServerSimulationSystemGroup = World.GetExistingSystem<ServerSimulationSystemGroup>();
 		}
 
 		protected override void OnDestroy()
@@ -219,8 +217,6 @@ namespace StormiumTeam.GameBase.Components
 
 			m_ModifyEventList.Dispose();
 		}
-
-		private static HealthProcessGroup s_LastInstance;
 
 		protected override void OnUpdate()
 		{
@@ -231,15 +227,13 @@ namespace StormiumTeam.GameBase.Components
 				Entities.With(m_LivableWithoutHistory).ForEach((Entity entity) =>
 				{
 					var history = EntityManager.AddBuffer<HealthModifyingHistory>(entity);
-					
+
 					history.Reserve(history.Capacity + 1);
 					history.Clear();
 				});
 			}
 
 			World.GetExistingSystem<BeforeGathering>().Process();
-
-			s_LastInstance = this;
 
 			m_ModifyEventList.Clear();
 
@@ -279,21 +273,21 @@ namespace StormiumTeam.GameBase.Components
 
 			job.Complete();
 
-			Entities.WithAll<HealthDescription>().ForEach((Entity e, ref HealthContainerParent container) =>
+			Entities.WithAll<HealthDescription>().ForEach((Entity e, ref Owner owner) =>
 			{
-				if (container.Parent == default || !EntityManager.Exists(container.Parent))
+				if (owner.Target == default || !EntityManager.Exists(owner.Target))
 				{
-					Debug.LogWarning($"No health container found for {e} (target: {container.Parent})");
+					Debug.LogWarning($"No health container found for {e} (target: {owner.Target})");
 					return;
 				}
 
-				if (!EntityManager.HasComponent(container.Parent, typeof(HealthContainer)))
+				if (!EntityManager.HasComponent(owner.Target, typeof(HealthContainer)))
 				{
-					EntityManager.AddComponent(container.Parent, typeof(HealthContainer));
-					Debug.LogWarning("Added 'HealthContainer' to " + container.Parent);
+					EntityManager.AddComponent(owner.Target, typeof(HealthContainer));
+					Debug.LogWarning("Added 'HealthContainer' to " + owner.Target);
 				}
 
-				var buffer = s_LastInstance.EntityManager.GetBuffer<HealthContainer>(container.Parent);
+				var buffer = EntityManager.GetBuffer<HealthContainer>(owner.Target);
 				buffer.Add(new HealthContainer(e));
 			});
 
@@ -301,7 +295,7 @@ namespace StormiumTeam.GameBase.Components
 			{
 				if (livableHealth.IsDead)
 					history.Clear();
-				
+
 				while (history.Length > 32)
 					history.RemoveAt(0);
 			});
@@ -311,7 +305,7 @@ namespace StormiumTeam.GameBase.Components
 		}
 	}
 
-	public abstract class HealthProcessSystem : ComponentSystem
+	public abstract class HealthProcessSystem : GameBaseSystem
 	{
 		protected override void OnUpdate()
 		{

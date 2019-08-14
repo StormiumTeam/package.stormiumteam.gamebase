@@ -21,7 +21,7 @@ namespace StormiumTeam.GameBase
         Forced = 1
     }
 
-    public struct CameraState : IComponentData
+    public struct CameraState
     {
         public CameraMode Mode;
 

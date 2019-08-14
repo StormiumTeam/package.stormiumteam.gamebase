@@ -33,6 +33,15 @@ namespace StormiumTeam.GameBase
     public abstract class BaseProviderBatch<TCreateData> : BaseProvider<TCreateData>
         where TCreateData : struct
     {
+        private NativeList<Entity> m_TemporaryEntity;
+
+        protected override void OnCreate()
+        {
+            base.OnCreate();
+            
+            m_TemporaryEntity = new NativeList<Entity>(1, Allocator.Persistent);
+        }
+
         public override void SpawnBatchEntitiesWithArguments(UnsafeAllocationLength<TCreateData> array, NativeList<Entity> outputEntities, NativeList<int> indices)
         {
             var naArray = new NativeArray<Entity>(array.Length, Allocator.Temp);
@@ -58,6 +67,13 @@ namespace StormiumTeam.GameBase
             SetEntityData(entity, data);
 
             outputEntities.Add(entity);
+        }
+
+        public Entity SpawnLocalEntityWithArguments(TCreateData data)
+        {
+            m_TemporaryEntity.Clear();
+            SpawnLocalEntityWithArguments(data, m_TemporaryEntity);
+            return m_TemporaryEntity[0];
         }
 
         public abstract void SetEntityData(Entity entity, TCreateData data);
