@@ -147,6 +147,7 @@ namespace Runtime.Systems
 
 			for (int s = 0, length = scenes.Length; s != length; s++)
 			{
+				Debug.Log($"Loading game map: {mapFormat.addrPrefix + scenes[s]}");
 				m_LoadOperations.Add(Addressables.LoadSceneAsync(mapFormat.addrPrefix + scenes[s], LoadSceneMode.Additive));
 			}
 

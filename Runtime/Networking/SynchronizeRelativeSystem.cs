@@ -562,6 +562,7 @@ namespace StormiumTeam.GameBase
 				UpdateList       = UpdateList,
 				EntityToRelative = EntityToRelative
 			}.ScheduleSingle(m_GhostQuery, inputDeps);
+			
 			if (Entities.Length > 0)
 			{
 				inputDeps = new SeekAndDestroyJob
@@ -575,33 +576,51 @@ namespace StormiumTeam.GameBase
 				}.Schedule(inputDeps);
 			}
 
-			inputDeps = new SendFullRpcJob
+			var relativeFromEntity = GetComponentDataFromEntity<Relative<TRelative>>(true);
+			var ghostStateFromEntity = GetComponentDataFromEntity<GhostSystemStateComponent>(true);
+			if (m_SendDataWithoutSyncQuery.CalculateEntityCount() > 0)
 			{
-				CommandBuffer           = m_EndBarrier.CreateCommandBuffer().ToConcurrent(),
-				Entities                = Entities,
-				GhostIds                = GhostIds,
-				RelativeFromEntity      = GetComponentDataFromEntity<Relative<TRelative>>(true),
-				GhostStateFromEntity    = GetComponentDataFromEntity<GhostSystemStateComponent>(true),
-				SendAllRpcQueue         = m_SendAllRpcQueueSystem.GetRpcQueue(),
-				NetworkCompressionModel = m_NetworkCompressionModel,
-			}.ScheduleSingle(m_SendDataWithoutSyncQuery, inputDeps);
-			inputDeps = new SendDeltaRpcJob
+				inputDeps = new SendFullRpcJob
+				{
+					CommandBuffer           = m_EndBarrier.CreateCommandBuffer().ToConcurrent(),
+					Entities                = Entities,
+					GhostIds                = GhostIds,
+					RelativeFromEntity      = relativeFromEntity,
+					GhostStateFromEntity    = ghostStateFromEntity,
+					SendAllRpcQueue         = m_SendAllRpcQueueSystem.GetRpcQueue(),
+					NetworkCompressionModel = m_NetworkCompressionModel,
+				}.ScheduleSingle(m_SendDataWithoutSyncQuery, inputDeps);
+			}
+
+			if (m_SendDataQuery.CalculateEntityCount() > 0)
 			{
-				DestroyList             = DestroyList,
-				AddList                 = AddList,
-				RelativeFromEntity      = GetComponentDataFromEntity<Relative<TRelative>>(true),
-				GhostStateFromEntity    = GetComponentDataFromEntity<GhostSystemStateComponent>(true),
-				SendDeltaRpcQueue       = m_SendDeltaRpcQueueSystem.GetRpcQueue(),
-				NetworkCompressionModel = m_NetworkCompressionModel,
-			}.ScheduleSingle(m_SendDataQuery, inputDeps);
-			inputDeps = new SendUpdateRpcJob
-			{
-				UpdateList              = UpdateList,
-				RelativeFromEntity      = GetComponentDataFromEntity<Relative<TRelative>>(true),
-				GhostStateFromEntity    = GetComponentDataFromEntity<GhostSystemStateComponent>(true),
-				SendUpdateRpcQueue      = m_SendUpdateRpcQueueSystem.GetRpcQueue(),
-				NetworkCompressionModel = m_NetworkCompressionModel,
-			}.ScheduleSingle(m_SendDataQuery, inputDeps);
+				inputDeps.Complete();
+
+				if (DestroyList.Length > 0 || AddList.Length > 0)
+				{
+					inputDeps = new SendDeltaRpcJob
+					{
+						DestroyList             = DestroyList,
+						AddList                 = AddList,
+						RelativeFromEntity      = relativeFromEntity,
+						GhostStateFromEntity    = ghostStateFromEntity,
+						SendDeltaRpcQueue       = m_SendDeltaRpcQueueSystem.GetRpcQueue(),
+						NetworkCompressionModel = m_NetworkCompressionModel,
+					}.ScheduleSingle(m_SendDataQuery, inputDeps);
+				}
+
+				if (UpdateList.Length > 0)
+				{
+					inputDeps = new SendUpdateRpcJob
+					{
+						UpdateList              = UpdateList,
+						RelativeFromEntity      = relativeFromEntity,
+						GhostStateFromEntity    = ghostStateFromEntity,
+						SendUpdateRpcQueue      = m_SendUpdateRpcQueueSystem.GetRpcQueue(),
+						NetworkCompressionModel = m_NetworkCompressionModel,
+					}.ScheduleSingle(m_SendDataQuery, inputDeps);
+				}
+			}
 
 			m_EndBarrier.AddJobHandleForProducer(inputDeps);
 
@@ -691,11 +710,14 @@ namespace StormiumTeam.GameBase
 
 			var convertGhostEntityMapSystem = World.GetExistingSystem<ConvertGhostEntityMap>();
 
-			m_ClearAllRelativeQuery.SetFilter(new RelativeComponent {ComponentId = m_TypeIndex});
-			m_ReceiveRelativeQuery.SetFilter(new RelativeComponent {ComponentId  = m_TypeIndex});
-			m_DeleteRelativeQuery.SetFilter(new RelativeComponent {ComponentId   = m_TypeIndex});
+			if (!m_ClearAllRelativeQuery.IsEmptyIgnoreFilter)
+				m_ClearAllRelativeQuery.SetFilter(new RelativeComponent {ComponentId = m_TypeIndex});
+			if (!m_ReceiveRelativeQuery.IsEmptyIgnoreFilter)
+				m_ReceiveRelativeQuery.SetFilter(new RelativeComponent {ComponentId = m_TypeIndex});
+			if (!m_DeleteRelativeQuery.IsEmptyIgnoreFilter)
+				m_DeleteRelativeQuery.SetFilter(new RelativeComponent {ComponentId = m_TypeIndex});
 
-			if (m_ClearAllRelativeQuery.CalculateEntityCount() > 0)
+			if (!m_ClearAllRelativeQuery.IsEmptyIgnoreFilter)
 			{
 				EntityManager.RemoveComponent(m_GhostWithRelativeQuery, typeof(Relative<TRelative>));
 			}

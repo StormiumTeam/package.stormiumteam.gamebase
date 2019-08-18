@@ -1,15 +1,15 @@
 using DefaultNamespace;
 using Unity.Entities;
 using UnityEngine;
-#if UNITY_EDITOR
 using Unity.Collections.LowLevel.Unsafe;
+#if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.SceneManagement;
 #endif
 
 namespace Runtime.Authoring
 {
-	public class ReplicatedSceneIdProxy : ComponentDataProxy<ReplSceneId>
+	public class ReplicatedSceneIdProxy : ComponentDataProxy<AssetGuid>
 	{
 		public byte[]                  NetId;
 		public ReplicatedSceneIdHolder Parent;
@@ -33,8 +33,8 @@ namespace Runtime.Authoring
 			{
 				fixed (byte* ptr = Parent?.NetId ?? NetId)
 				{
-					var v = new ReplSceneId();
-					UnsafeUtility.MemCpy(&v, ptr, sizeof(ReplSceneId));
+					var v = new AssetGuid();
+					UnsafeUtility.MemCpy(&v, ptr, sizeof(AssetGuid));
 
 					Value = v;
 				}

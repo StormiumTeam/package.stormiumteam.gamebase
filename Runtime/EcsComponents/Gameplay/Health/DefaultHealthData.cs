@@ -2,6 +2,7 @@ using System;
 using DefaultNamespace;
 using StormiumTeam.GameBase.Data;
 using StormiumTeam.Networking.Utilities;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
@@ -35,7 +36,7 @@ namespace StormiumTeam.GameBase.Components
 		[UpdateInGroup(typeof(HealthProcessGroup))]
 		public class System : HealthProcessSystem
 		{
-			//[BurstCompile]
+			[BurstCompile]
 			private unsafe struct Job : IJobForEach<Owner, DefaultHealthData, HealthConcreteValue>
 			{
 				[NativeDisableParallelForRestriction]

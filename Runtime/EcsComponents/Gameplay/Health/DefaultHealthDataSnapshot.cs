@@ -1,5 +1,6 @@
 using DefaultNamespace;
 using StormiumTeam.Networking.Utilities;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
@@ -122,6 +123,7 @@ namespace StormiumTeam.GameBase.Components
 	
 	public class DefaultHealthSynchronizeFromSnapshot : BaseUpdateFromSnapshotSystem<DefaultHealthSnapshotData, DefaultHealthData>
 	{
+		[BurstCompile]
 		private struct SetOwner : IJobForEach_BC<DefaultHealthSnapshotData, Owner>
 		{
 			public            uint                       ServerTick;

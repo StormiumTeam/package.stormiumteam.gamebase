@@ -222,7 +222,7 @@ namespace StormiumTeam.GameBase.Components
 		{
 			base.OnUpdate();
 
-			if (m_LivableWithoutHistory.CalculateEntityCount() > 0)
+			if (!m_LivableWithoutHistory.IsEmptyIgnoreFilter)
 			{
 				Entities.With(m_LivableWithoutHistory).ForEach((Entity entity) =>
 				{

@@ -1,8 +1,8 @@
 
 using DefaultNamespace;
 using UnityEngine;
-#if UNITY_EDITOR
 using Unity.Collections.LowLevel.Unsafe;
+#if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.SceneManagement;
 #endif
@@ -15,12 +15,18 @@ namespace Runtime.Authoring
 
 		private unsafe void Awake()
 		{
+			if (NetId == null || NetId.Length == 0)
+			{
+				Debug.LogError("Null NetId!");
+				return;
+			}
+			
 			fixed (byte* ptr = NetId)
 			{
-				var v = new ReplSceneId();
-				UnsafeUtility.MemCpy(&v, ptr, sizeof(ReplSceneId));
+				var v = new ReplicatedGuid();
+				UnsafeUtility.MemCpy(&v, ptr, sizeof(ReplicatedGuid));
 				
-				Debug.Log($"HOLDER;\nB0: {v.B0}\nB1: {v.B1}\nB2: {v.B2}\nB3: {v.B3}");
+				Debug.Log($"HOLDER;\nB0: {v.b0}\nB1: {v.b1}\nB2: {v.b2}\nB3: {v.b3}");
 			}
 		}
 		

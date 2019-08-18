@@ -36,41 +36,8 @@ namespace StormiumTeam.GameBase.Components
 
 		public unsafe void Serialize(ref ClubSnapshotData baseline, DataStreamWriter writer, NetworkCompressionModel compressionModel)
 		{
-			var nameAddr = (uint*) UnsafeUtility.AddressOf(ref Name) + sizeof(uint);
-			var baseAddr = (uint*) UnsafeUtility.AddressOf(ref baseline.Name) + sizeof(uint);
+			writer.WriteDelta(Name, baseline.Name, compressionModel);
 			
-			var charCount = Name.Length;
-			var same = Name.Length == baseline.Name.Length && UnsafeUtility.MemCmp(nameAddr, baseAddr, sizeof(uint) * NativeString64.MaxLength) == 0;
-			if (!same)
-			{
-				var namePtr     = stackalloc uint[NativeString64.MaxLength];
-				var baselinePtr = stackalloc uint[NativeString64.MaxLength];
-				
-				UnsafeUtility.MemCpy(namePtr, nameAddr, sizeof(uint) * NativeString64.MaxLength);
-				UnsafeUtility.MemCpy(baselinePtr, baseAddr, sizeof(uint) * NativeString64.MaxLength);
-
-				writer.WritePackedUInt(1, compressionModel);
-				writer.WritePackedUIntDelta((uint) charCount, (uint) baseline.Name.Length, compressionModel);
-				if (baseline.Name.Length == charCount)
-				{
-					for (var i = 0; i != charCount; i++)
-					{
-						writer.WritePackedUIntDelta(namePtr[i], baselinePtr[i], compressionModel);
-					}
-				}
-				else
-				{
-					for (var i = 0; i != charCount; i++)
-					{
-						writer.WritePackedUInt(namePtr[i], compressionModel);
-					}
-				}
-			}
-			else
-			{
-				writer.WritePackedUInt(0, compressionModel);
-			}
-
 			writer.WritePackedUIntDelta(new PackedColor {Color = PrimaryColor}.UInt, new PackedColor {Color   = baseline.PrimaryColor}.UInt, compressionModel);
 			writer.WritePackedUIntDelta(new PackedColor {Color = SecondaryColor}.UInt, new PackedColor {Color = baseline.SecondaryColor}.UInt, compressionModel);
 		}
@@ -79,29 +46,7 @@ namespace StormiumTeam.GameBase.Components
 		{
 			Tick = tick;
 
-			var same = reader.ReadPackedUInt(ref ctx, compressionModel) == 0;
-			if (!same)
-			{
-				var charCount = reader.ReadPackedUIntDelta(ref ctx, (uint) baseline.Name.Length, compressionModel);
-				if (baseline.Name.Length == charCount)
-				{
-					for (var i = 0; i != charCount; i++)
-					{
-						Name[i] = (char) reader.ReadPackedUIntDelta(ref ctx, baseline.Name[i], compressionModel);
-					}
-				}
-				else
-				{
-					for (var i = 0; i != charCount; i++)
-					{
-						reader.ReadPackedUInt(ref ctx, compressionModel);
-					}
-				}
-			}
-			else
-			{
-				
-			}
+			Name = reader.ReadDelta(ref ctx, baseline.Name, compressionModel);
 
 			var packedPrimary = reader.ReadPackedUIntDelta(ref ctx, new PackedColor {Color = baseline.PrimaryColor}.UInt, compressionModel);
 			PrimaryColor = new PackedColor {UInt = packedPrimary}.Color;

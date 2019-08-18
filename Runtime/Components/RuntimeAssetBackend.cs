@@ -70,9 +70,11 @@ namespace StormiumTeam.GameBase
 	public class AsyncAssetPool<T>
 		where T : Object
 	{
+		// Is the pool still valid?
+		public bool IsValid;
+		
 		public string AssetId;
-
-		private T Asset;
+		public T LoadedAsset;
 		
 		private Queue<T> m_ObjectPool;
 
@@ -83,20 +85,32 @@ namespace StormiumTeam.GameBase
 		public AsyncAssetPool(string id)
 		{
 			AssetId = id;
-			
+			IsValid = true;
+
 			m_ObjectPool = new Queue<T>();
 			m_EventQueue = new List<OnLoad>();
 
 			InternalAddAsset().Completed += handle =>
 			{
-				Asset = handle.Result;
+				LoadedAsset = handle.Result;
 				foreach (var onLoad in m_EventQueue)
 				{
-					onLoad(Object.Instantiate(Asset));
+					onLoad(Object.Instantiate(LoadedAsset));
 				}
 
 				m_EventQueue.Clear();
 			};
+		}
+
+		public AsyncAssetPool(T origin, string id = null)
+		{
+			AssetId = id;
+			IsValid = true;
+
+			m_ObjectPool = new Queue<T>();
+			m_EventQueue = new List<OnLoad>();
+
+			LoadedAsset = origin;
 		}
 
 		public void Enqueue(T obj)
@@ -108,13 +122,13 @@ namespace StormiumTeam.GameBase
 		{
 			if (m_ObjectPool.Count == 0)
 			{
-				if (Asset == null)
+				if (LoadedAsset == null)
 				{
 					m_EventQueue.Add(complete);
 				}
 				else
 				{
-					complete(Object.Instantiate(Asset));
+					complete(Object.Instantiate(LoadedAsset));
 				}
 
 				return;
@@ -123,7 +137,7 @@ namespace StormiumTeam.GameBase
 			var obj = m_ObjectPool.Dequeue();
 			if (obj == null || true)
 			{
-				complete(Object.Instantiate(Asset));
+				complete(Object.Instantiate(LoadedAsset));
 				return;
 			}
 
@@ -137,12 +151,13 @@ namespace StormiumTeam.GameBase
 				Object.Destroy(obj);
 			}
 
+			IsValid = false;
 			m_ObjectPool.Clear();
 		}
 
 		private AsyncOperationHandle<T> InternalAddAsset()
 		{
-			if (Asset == null)
+			if (LoadedAsset == null)
 			{
 				return Addressables.LoadAsset<T>(AssetId);
 			}
@@ -324,13 +339,21 @@ namespace StormiumTeam.GameBase
 			OnTargetUpdate();
 		}
 
-		public void SetPresentation(AsyncAssetPool<GameObject> pool)
+		public void SetPresentationFromPool(AsyncAssetPool<GameObject> pool)
 		{
 			presentationPool = pool;
 
 			OnPresentationPoolUpdate();
 
 			pool.Dequeue(OnCompletePoolDequeue);	
+		}
+
+		public void SetPresentationSingle(GameObject go)
+		{
+			presentationPool = null;
+			OnPresentationPoolUpdate();
+			
+			OnCompletePoolDequeue(go);
 		}
 
 		public void SetRootPool(AssetPool<GameObject> rootPool)
@@ -437,10 +460,6 @@ namespace StormiumTeam.GameBase
 		public override void ReturnPresentation()
 		{
 			ReturnPresentationToPool();
-			return;
-
-			if (Presentation != null)
-				presentationPool.Enqueue(Presentation.gameObject);
 		}
 
 		internal override void OnCompletePoolDequeue(GameObject result)
@@ -528,17 +547,24 @@ namespace StormiumTeam.GameBase
 
 			return true;
 		}
-		
+
 		public void ReturnPresentationToPool()
 		{
 			if (Presentation != null)
 			{
 				var tr = Presentation.transform;
 				tr.parent = null;
-				
+
 				Presentation.gameObject.SetActive(false);
-				
-				presentationPool.Enqueue(Presentation.gameObject);
+
+				if (presentationPool != null && presentationPool.IsValid)
+				{
+					presentationPool.Enqueue(Presentation.gameObject);
+				}
+				else
+				{
+					Destroy(Presentation.gameObject);
+				}
 			}
 
 			Presentation = null;

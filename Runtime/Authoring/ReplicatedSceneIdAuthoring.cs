@@ -20,19 +20,22 @@ namespace Runtime.Authoring
 
 		public unsafe void Convert(Entity entity, EntityManager dstManager, GameObjectConversionSystem conversionSystem)
 		{
-			if ((Parent?.NetId ?? NetId) == null)
+			dstManager.AddComponent(entity, typeof(GhostComponent));
+			dstManager.AddComponent(entity, typeof(AssetGuid));
+			
+			var result = Parent != null ? Parent.NetId ?? NetId : NetId;
+			if (result == null || result.Length == 0)
 			{
 				Debug.LogError("[IMPORTANT] Null 'NetID' on " + gameObject.name);
 				return;
 			}
 
-			fixed (byte* ptr = Parent?.NetId ?? NetId)
+			fixed (byte* ptr = result)
 			{
-				var v = new ReplSceneId();
-				UnsafeUtility.MemCpy(&v, ptr, sizeof(ReplSceneId));
+				var v = new AssetGuid();
+				UnsafeUtility.MemCpy(&v, ptr, sizeof(AssetGuid));
 
-				dstManager.AddComponentData(entity, v);
-				dstManager.AddComponent(entity, typeof(GhostComponent));
+				dstManager.SetComponentData(entity, v);
 			}
 		}
 
