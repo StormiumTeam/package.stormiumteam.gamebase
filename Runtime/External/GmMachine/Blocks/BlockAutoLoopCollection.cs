@@ -2,9 +2,9 @@ using System.Collections.Generic;
 
 namespace GmMachine.Blocks
 {
-	public class BlockAutoLoopCollection : BlockCollection
+	public class BlockAutoLoopCollection : BlockCollection, IResetCollectionOnBeginning
 	{
-		public bool DoResetOnLoopEnd;
+		public bool ResetOnBeginning { get; set; }
 		
 		public BlockAutoLoopCollection(string name) : base(name)
 		{
@@ -23,7 +23,7 @@ namespace GmMachine.Blocks
 			if (Index + 1 >= collections.Count)
 			{
 				// If we automatically reset the loop, there is no need to further instructions as they're basically the same
-				if (DoResetOnLoopEnd)
+				if (ResetOnBeginning)
 					Reset();
 				else
 				{

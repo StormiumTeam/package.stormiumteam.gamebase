@@ -1,5 +1,4 @@
 using package.stormiumteam.shared.ecs;
-using StormiumTeam.GameBase;
 using StormiumTeam.GameBase.Components;
 using Unity.Entities;
 using Unity.NetCode;

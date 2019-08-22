@@ -1,5 +1,4 @@
-﻿using package.StormiumTeam.GameBase;
-using StormiumTeam.GameBase.Data;
+﻿using StormiumTeam.GameBase.Data;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;

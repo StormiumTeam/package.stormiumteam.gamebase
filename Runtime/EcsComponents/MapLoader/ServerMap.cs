@@ -1,5 +1,5 @@
-using Runtime.EcsComponents;
-using Runtime.Systems;
+using StormiumTeam.GameBase.EcsComponents;
+using StormiumTeam.GameBase.Systems;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.NetCode;

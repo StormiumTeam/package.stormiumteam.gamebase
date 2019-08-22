@@ -1,9 +1,6 @@
 using System.Collections.Generic;
-using StormiumTeam.GameBase;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.NetCode;
-using UnityEngine;
 
 namespace StormiumTeam.GameBase.Systems
 {

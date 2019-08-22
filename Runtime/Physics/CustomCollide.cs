@@ -8,7 +8,6 @@ using Unity.Physics;
 using Unity.Transforms;
 using Collider = Unity.Physics.Collider;
 using Math = Unity.Physics.Math;
-using Ray = Unity.Physics.Ray;
 using RaycastHit = Unity.Physics.RaycastHit;
 
 namespace StormiumTeam.GameBase

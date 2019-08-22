@@ -1,5 +1,4 @@
-using Runtime.EcsComponents;
-using StormiumTeam.GameBase;
+using StormiumTeam.GameBase.EcsComponents;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;

@@ -7,7 +7,6 @@ using Unity.Entities;
 using Unity.Jobs;
 using Unity.NetCode;
 using Unity.Networking.Transport;
-using UnityEngine;
 
 [assembly: RegisterGenericComponentType(typeof(Relative<TeamDescription>))]
 

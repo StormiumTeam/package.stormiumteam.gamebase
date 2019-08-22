@@ -4,7 +4,6 @@ using DefaultNamespace;
 using StormiumTeam.Networking.Utilities;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
-using Unity.Mathematics;
 using Unity.NetCode;
 using Unity.Networking.Transport;
 using UnityEngine;

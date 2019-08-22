@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
 using package.stormiumteam.shared.ecs;
-using Runtime.Misc;
-using StormiumTeam.GameBase;
+using StormiumTeam.GameBase.Misc;
 using Unity.Entities;
 using UnityEngine;
 using UnityEngine.AddressableAssets;

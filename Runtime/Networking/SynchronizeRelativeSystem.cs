@@ -1,14 +1,11 @@
 using package.stormiumteam.shared.ecs;
-using Runtime.Systems;
+using StormiumTeam.GameBase.Systems;
 using Unity.Burst;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.NetCode;
 using Unity.Networking.Transport;
-using Unity.Networking.Transport.LowLevel.Unsafe;
-using UnityEngine;
 
 namespace StormiumTeam.GameBase
 {

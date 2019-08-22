@@ -1,8 +1,6 @@
-using System;
 using System.Collections.Generic;
 using DefaultNamespace;
 using MonoComponents;
-using Unity.Entities;
 using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.AddressableAssets;

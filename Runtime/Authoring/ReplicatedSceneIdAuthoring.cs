@@ -1,7 +1,5 @@
 using System.Collections.Generic;
 using DefaultNamespace;
-using package.stormiumteam.shared.ecs;
-using Scripts.Utilities;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.NetCode;

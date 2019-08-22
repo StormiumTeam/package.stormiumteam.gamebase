@@ -5,7 +5,6 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.NetCode;
 using Unity.Networking.Transport;
-using UnityEngine;
 
 namespace StormiumTeam.GameBase.Components
 {

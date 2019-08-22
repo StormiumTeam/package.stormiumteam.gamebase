@@ -1,4 +1,4 @@
-using StormiumTeam.GameBase;
+using StormiumTeam.GameBase.Filters;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;

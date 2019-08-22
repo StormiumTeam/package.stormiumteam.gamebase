@@ -1,6 +1,5 @@
 using DefaultNamespace;
 using Unity.Entities;
-using UnityEngine;
 using Unity.Collections.LowLevel.Unsafe;
 #if UNITY_EDITOR
 using UnityEditor;
