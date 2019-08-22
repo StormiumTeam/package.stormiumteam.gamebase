@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Runtime.Misc
+namespace StormiumTeam.GameBase.Misc
 {
 	[CreateAssetMenu(fileName = "MaterialPropertyOverrideAsset", menuName = "Assets/MaterialPropertyOverrideAsset")]
 	public class MaterialPropertyOverrideAsset : ScriptableObject

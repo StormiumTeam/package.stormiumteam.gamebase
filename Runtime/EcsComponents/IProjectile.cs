@@ -1,6 +1,6 @@
 using Unity.Entities;
 
-namespace package.StormiumTeam.GameBase
+namespace StormiumTeam.GameBase
 {
     public interface IProjectile
     {

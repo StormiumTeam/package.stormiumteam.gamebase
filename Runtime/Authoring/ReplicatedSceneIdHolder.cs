@@ -7,7 +7,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 #endif
 
-namespace Runtime.Authoring
+namespace StormiumTeam.GameBase.Authoring
 {
 	public class ReplicatedSceneIdHolder : MonoBehaviour
 	{

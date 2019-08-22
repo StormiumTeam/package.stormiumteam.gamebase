@@ -21,6 +21,11 @@ namespace StormiumTeam.GameBase.Components
 		// > This value should be set by the gamemode.
 		// > If it's true, no entities will be added to 
 		public bool IsDead;
+
+		public bool ShouldBeDead()
+		{
+			return Value <= 0 && Max > 0;
+		}
 	}
 
 	public struct HealthModifyingHistory : IBufferElementData

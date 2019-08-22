@@ -44,6 +44,16 @@ namespace StormiumTeam.GameBase
 				using (new SetTemporaryActiveWorld(m_SpawnWorld ?? World.Active))
 				{
 					obj = m_CreateFunction(this);
+
+					if (obj is GameObject go)
+					{
+						foreach (var component1 in go.GetComponents(typeof(RuntimeAssetBackendBase)))
+						{
+							var component = (RuntimeAssetBackendBase) component1;
+							if (component.rootPool == null)
+								component.SetRootPool(this as AssetPool<GameObject>);
+						}
+					}
 				}
 
 				m_Objects.Add(obj);
@@ -135,7 +145,7 @@ namespace StormiumTeam.GameBase
 			}
 
 			var obj = m_ObjectPool.Dequeue();
-			if (obj == null || true)
+			if (obj == null)
 			{
 				complete(Object.Instantiate(LoadedAsset));
 				return;
@@ -241,7 +251,8 @@ namespace StormiumTeam.GameBase
 		public AssetPool<GameObject>      rootPool;
 
 		private bool m_Enabled;
-
+		protected bool m_IncomingPresentation;
+		
 		public int  DestroyFlags;
 		public bool DisableNextUpdate, ReturnToPoolOnDisable, ReturnPresentationToPoolNextFrame;
 
@@ -345,6 +356,7 @@ namespace StormiumTeam.GameBase
 
 			OnPresentationPoolUpdate();
 
+			m_IncomingPresentation = true;
 			pool.Dequeue(OnCompletePoolDequeue);	
 		}
 
@@ -352,7 +364,8 @@ namespace StormiumTeam.GameBase
 		{
 			presentationPool = null;
 			OnPresentationPoolUpdate();
-			
+
+			m_IncomingPresentation = false;
 			OnCompletePoolDequeue(go);
 		}
 
@@ -451,6 +464,7 @@ namespace StormiumTeam.GameBase
 		where TMonoPresentation : RuntimeAssetPresentation<TMonoPresentation>
 	{
 		public TMonoPresentation Presentation { get; protected set; }
+		public bool HasIncomingPresentation => m_IncomingPresentation || Presentation != null;
 
 		public override object GetPresentationBoxed()
 		{
@@ -477,6 +491,8 @@ namespace StormiumTeam.GameBase
 			var opResult = result;
 			opResult.transform.SetParent(transform, true);
 			opResult.SetActive(true);
+
+			m_IncomingPresentation = false;
 			
 			if (DstEntityManager == null)
 			{
@@ -543,6 +559,8 @@ namespace StormiumTeam.GameBase
 			Presentation.OnReset();
 			Presentation.SetBackend(this);
 
+			m_IncomingPresentation = false;
+			
 			OnPresentationSet();
 
 			return true;
@@ -559,10 +577,12 @@ namespace StormiumTeam.GameBase
 
 				if (presentationPool != null && presentationPool.IsValid)
 				{
+					Debug.Log("Enqueue " + Presentation.name);
 					presentationPool.Enqueue(Presentation.gameObject);
 				}
 				else
 				{
+					Debug.Log($"Null pool or not valid for " + Presentation.name);
 					Destroy(Presentation.gameObject);
 				}
 			}

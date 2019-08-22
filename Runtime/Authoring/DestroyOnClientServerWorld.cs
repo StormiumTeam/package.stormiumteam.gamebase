@@ -4,7 +4,7 @@ using Unity.Entities;
 using Unity.NetCode;
 using UnityEngine;
 
-namespace Runtime.Authoring
+namespace StormiumTeam.GameBase.Authoring
 {
 	public class DestroyOnClientServerWorld : MonoBehaviour
 	{

@@ -2,7 +2,7 @@ using System;
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace package.StormiumTeam.GameBase
+namespace StormiumTeam.GameBase
 {
     public struct ActionContainer : IBufferElementData
     {

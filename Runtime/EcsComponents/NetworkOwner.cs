@@ -1,6 +1,6 @@
 using Unity.Entities;
 
-namespace Runtime.EcsComponents
+namespace StormiumTeam.GameBase.EcsComponents
 {
 	/// <summary>
 	/// Should only be present in Server world. Used to link between GamePlayers and connection entities

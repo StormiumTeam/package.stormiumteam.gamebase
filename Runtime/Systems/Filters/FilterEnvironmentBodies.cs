@@ -6,7 +6,7 @@ using Unity.Jobs;
 using Unity.Physics;
 using Unity.Physics.Extensions;
 
-namespace Runtime.Systems.Filters
+namespace StormiumTeam.GameBase.Systems.Filters
 {
 	public class FilterEnvironmentBodies : CollisionFilterSystemBase
 	{

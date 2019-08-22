@@ -1,7 +1,7 @@
 using System;
 using Unity.Entities;
 
-namespace Runtime.Misc
+namespace StormiumTeam.GameBase.Misc
 {
 	public struct SetTemporaryActiveWorld : IDisposable
 	{

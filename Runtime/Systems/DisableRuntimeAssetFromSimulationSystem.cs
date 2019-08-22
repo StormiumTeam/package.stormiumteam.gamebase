@@ -5,7 +5,7 @@ using Unity.Entities;
 using Unity.NetCode;
 using UnityEngine;
 
-namespace Runtime.Systems
+namespace StormiumTeam.GameBase.Systems
 {
 	[UpdateInGroup(typeof(PresentationSystemGroup))]
 	public class DisableRuntimeAssetFromSimulationSystem : ComponentSystem

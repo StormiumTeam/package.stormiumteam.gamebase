@@ -6,7 +6,7 @@ using Unity.NetCode;
 using Unity.Transforms;
 using UnityEngine;
 
-namespace Runtime.Misc
+namespace StormiumTeam.GameBase.Misc
 {
 	[UpdateInGroup(typeof(ClientPresentationSystemGroup))]
 	public class ClientCreateCameraSystem : GameBaseSystem

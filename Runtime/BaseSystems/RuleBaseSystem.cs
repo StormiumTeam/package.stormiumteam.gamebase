@@ -7,7 +7,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
 
-namespace Runtime.BaseSystems
+namespace StormiumTeam.GameBase.BaseSystems
 {
 	public abstract class RulePropertiesBase : IDisposable
 	{

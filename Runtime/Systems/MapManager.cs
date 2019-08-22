@@ -12,7 +12,7 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.SceneManagement;
 
-namespace Runtime.Systems
+namespace StormiumTeam.GameBase.Systems
 {
 	[UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
 	[AlwaysUpdateSystem]

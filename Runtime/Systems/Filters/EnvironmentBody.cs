@@ -1,7 +1,7 @@
 using Unity.Entities;
 using UnityEngine;
 
-namespace Runtime.Systems.Filters
+namespace StormiumTeam.GameBase.Filters
 {
 	public struct EnvironmentTag : IComponentData
 	{}

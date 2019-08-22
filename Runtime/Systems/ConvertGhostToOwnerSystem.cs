@@ -7,7 +7,7 @@ using Unity.Jobs;
 using Unity.NetCode;
 using UnityEngine;
 
-namespace Runtime.Systems
+namespace StormiumTeam.GameBase.Systems
 {
 	[UpdateInGroup(typeof(ClientSimulationSystemGroup))]
 	[UpdateAfter(typeof(GhostSpawnSystemGroup))]

@@ -11,7 +11,7 @@ using Unity.NetCode;
 using Unity.Physics;
 using Unity.Physics.Systems;
 
-namespace Runtime.Systems
+namespace StormiumTeam.GameBase.Systems
 {
 	[UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
 	public class CollisionFilterSystemGroup : RuleSystemGroupBase

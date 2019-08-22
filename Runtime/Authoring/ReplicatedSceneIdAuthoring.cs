@@ -11,7 +11,7 @@ using UnityEditor.SceneManagement;
 #endif
 using UnityEngine;
 
-namespace Runtime.Authoring
+namespace StormiumTeam.GameBase.Authoring
 {
 	public class ReplicatedSceneIdAuthoring : MonoBehaviour, IConvertGameObjectToEntity
 	{

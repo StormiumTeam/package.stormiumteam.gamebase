@@ -8,7 +8,7 @@ using Unity.Physics;
 using Unity.Physics.Extensions;
 using UnityEngine;
 
-namespace Runtime.Systems.Filters
+namespace StormiumTeam.GameBase.Systems.Filters
 {
 	public class FilterLivables : CollisionFilterSystemBase
 	{
