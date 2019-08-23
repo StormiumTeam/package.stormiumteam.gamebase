@@ -83,24 +83,4 @@ namespace GmMachine
 			return Machine.GetContext<TContext>();
 		}
 	}
-
-	public class Variables
-	{
-		private Dictionary<object, object> m_Data;
-
-		public Variables()
-		{
-			m_Data = new Dictionary<object, object>();
-		}
-		
-		public T GetData<T>(object key)
-		{
-			return (T) m_Data[key];
-		}
-
-		public bool HasData(object key)
-		{
-			return m_Data.ContainsKey(key);
-		}
-	}
 }
