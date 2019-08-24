@@ -226,6 +226,25 @@ namespace StormiumTeam.GameBase.Components
 		protected override void OnUpdate()
 		{
 			base.OnUpdate();
+			
+			// Add the health entity to the health container before doing something.
+			Entities.WithAll<HealthDescription>().ForEach((Entity e, ref Owner owner) =>
+			{
+				if (owner.Target == default || !EntityManager.Exists(owner.Target))
+				{
+					Debug.LogWarning($"No health container found for {e} (target: {owner.Target})");
+					return;
+				}
+
+				if (!EntityManager.HasComponent(owner.Target, typeof(HealthContainer)))
+				{
+					EntityManager.AddComponent(owner.Target, typeof(HealthContainer));
+					Debug.LogWarning("Added 'HealthContainer' to " + owner.Target);
+				}
+
+				var buffer = EntityManager.GetBuffer<HealthContainer>(owner.Target);
+				buffer.Add(new HealthContainer(e));
+			});
 
 			if (!m_LivableWithoutHistory.IsEmptyIgnoreFilter)
 			{
@@ -277,24 +296,6 @@ namespace StormiumTeam.GameBase.Components
 			}.Schedule(this, job);
 
 			job.Complete();
-
-			Entities.WithAll<HealthDescription>().ForEach((Entity e, ref Owner owner) =>
-			{
-				if (owner.Target == default || !EntityManager.Exists(owner.Target))
-				{
-					Debug.LogWarning($"No health container found for {e} (target: {owner.Target})");
-					return;
-				}
-
-				if (!EntityManager.HasComponent(owner.Target, typeof(HealthContainer)))
-				{
-					EntityManager.AddComponent(owner.Target, typeof(HealthContainer));
-					Debug.LogWarning("Added 'HealthContainer' to " + owner.Target);
-				}
-
-				var buffer = EntityManager.GetBuffer<HealthContainer>(owner.Target);
-				buffer.Add(new HealthContainer(e));
-			});
 
 			Entities.ForEach((Entity entity, ref LivableHealth livableHealth, DynamicBuffer<HealthModifyingHistory> history) =>
 			{
