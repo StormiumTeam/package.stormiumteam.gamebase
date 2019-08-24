@@ -305,6 +305,8 @@ namespace StormiumTeam.GameBase
         where TDescription : struct, IEntityDescription
     {
         public Entity Target;
+
+        public Relative(Entity target) => Target = target;
     }
 
     [InternalBufferCapacity(8)]
