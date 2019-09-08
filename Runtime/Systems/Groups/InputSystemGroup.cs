@@ -1,5 +1,5 @@
+using Revolution.NetCode;
 using Unity.Entities;
-using Unity.NetCode;
 
 namespace StormiumTeam.GameBase
 {

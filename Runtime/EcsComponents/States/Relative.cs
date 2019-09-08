@@ -1,12 +1,12 @@
 using System.Linq;
 using package.stormiumteam.shared;
 using package.stormiumteam.shared.ecs;
+using Revolution.NetCode;
 using StormiumTeam.GameBase;
 using StormiumTeam.GameBase.Data;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
-using Unity.NetCode;
 
 [assembly: RegisterGenericComponentType(typeof(Relative<HitShapeDescription>))]
 [assembly: RegisterGenericComponentType(typeof(Relative<MovableDescription>))]
@@ -172,7 +172,8 @@ namespace StormiumTeam.GameBase
         {
             World.GetOrCreateSystem<AppEventSystem>().SubscribeToAll(this);
 
-            if (World.GetExistingSystem<ClientSimulationSystemGroup>() != null)
+            // TODO: Add ways to synchronize relative snapshots
+            /*if (World.GetExistingSystem<ClientSimulationSystemGroup>() != null)
             {
                 ComponentSystemGroup topGroup;
                 
@@ -187,7 +188,7 @@ namespace StormiumTeam.GameBase
                 var system   = World.GetOrCreateSystem<SynchronizeRelativeSystem<T>>();
 
                 topGroup.AddSystemToUpdateList(system);
-            }
+            }*/
         }
 
         protected override JobHandle OnUpdate(JobHandle _)

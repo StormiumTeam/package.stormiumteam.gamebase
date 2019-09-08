@@ -1,5 +1,6 @@
 using System;
-using DefaultNamespace;
+using Revolution;
+using Revolution.NetCode;
 using StormiumTeam.GameBase.Data;
 using Unity.Burst;
 using Unity.Collections;
@@ -7,11 +8,11 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
-using Unity.NetCode;
+using Unity.Networking.Transport;
 
 namespace StormiumTeam.GameBase.Components
 {
-	public struct DefaultHealthData : IComponentFromSnapshot<DefaultHealthSnapshotData>
+	public struct DefaultHealthData : IComponentData
 	{
 		[Serializable]
 		public struct CreateInstance
@@ -20,14 +21,58 @@ namespace StormiumTeam.GameBase.Components
 			public Entity owner;
 		}
 
+		public struct Exclude : IComponentData
+		{
+		}
+
 		public int Value;
 		public int Max;
 
-		public void Set(DefaultHealthSnapshotData snapshot, NativeHashMap<int, GhostEntity> ghostMap)
+		public struct Snapshot : IReadWriteSnapshot<Snapshot>, ISnapshotDelta<Snapshot>, ISynchronizeImpl<DefaultHealthData>
 		{
-			Value = snapshot.Value;
-			Max   = snapshot.Max;
+			public uint Tick { get; set; }
 
+			public int Value;
+			public int Max;
+
+			public void WriteTo(DataStreamWriter writer, ref Snapshot baseline, NetworkCompressionModel compressionModel)
+			{
+				writer.WritePackedInt(Value, compressionModel);
+				writer.WritePackedInt(Max, compressionModel);
+			}
+
+			public void ReadFrom(ref DataStreamReader.Context ctx, DataStreamReader reader, ref Snapshot baseline, NetworkCompressionModel compressionModel)
+			{
+				Value = reader.ReadPackedInt(ref ctx, compressionModel);
+				Max   = reader.ReadPackedInt(ref ctx, compressionModel);
+			}
+
+			public bool DidChange(Snapshot baseline)
+			{
+				return !(Value == baseline.Value
+				         && Max == baseline.Max);
+			}
+
+			public void SynchronizeFrom(in DefaultHealthData component, in DefaultSetup setup, in SerializeClientData serializeData)
+			{
+				Value = component.Value;
+				Max   = component.Max;
+			}
+
+			public void SynchronizeTo(ref DefaultHealthData component, in DeserializeClientData deserializeData)
+			{
+				component.Value = Value;
+				component.Max   = Max;
+			}
+		}
+
+		public class SynchronizeSnapshot : ComponentSnapshotSystem_Delta<DefaultHealthData, Snapshot>
+		{
+			public override ComponentType ExcludeComponent => typeof(Exclude);
+		}
+
+		public class Update : ComponentUpdateSystem<DefaultHealthData, Snapshot>
+		{
 		}
 
 		[UpdateInGroup(typeof(HealthProcessGroup))]

@@ -1,17 +1,17 @@
 using System;
-using DefaultNamespace;
+using Revolution;
+using Revolution.NetCode;
 using StormiumTeam.GameBase.Data;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
-using Unity.NetCode;
 using Unity.Networking.Transport;
 
 namespace StormiumTeam.GameBase.Components
 {
-	public struct RegenerativeHealthData : IComponentFromSnapshot<RegenerativeHealthData.SnapshotData>
+	public struct RegenerativeHealthData : IComponentData
 	{
 		[Serializable]
 		public struct CreateInstance
@@ -22,70 +22,8 @@ namespace StormiumTeam.GameBase.Components
 			public Entity owner;
 		}
 
-		public struct SnapshotData : ISnapshotFromComponent<SnapshotData, RegenerativeHealthData>
+		public struct Exclude : IComponentData
 		{
-			public uint Tick { get; private set; }
-
-			public int Value;
-			public int Max;
-
-			public int Rate;                // float * 1000
-			public int CurrentRegeneration; // float * 1000
-
-			public int  Cooldown;
-			public uint StartTick;
-
-			public void PredictDelta(uint tick, ref SnapshotData baseline1, ref SnapshotData baseline2)
-			{
-			}
-
-			public void Serialize(ref SnapshotData baseline, DataStreamWriter writer, NetworkCompressionModel compressionModel)
-			{
-				writer.WritePackedInt(Value, compressionModel);
-				writer.WritePackedInt(Max, compressionModel);
-
-				writer.WritePackedInt(Rate, compressionModel);
-				writer.WritePackedInt(CurrentRegeneration, compressionModel);
-
-				writer.WritePackedInt(Cooldown, compressionModel);
-				writer.WritePackedUInt(StartTick, compressionModel);
-			}
-
-			public void Deserialize(uint tick, ref SnapshotData baseline, DataStreamReader reader, ref DataStreamReader.Context ctx, NetworkCompressionModel compressionModel)
-			{
-				Tick = tick;
-
-				Value = reader.ReadPackedInt(ref ctx, compressionModel);
-				Max   = reader.ReadPackedInt(ref ctx, compressionModel);
-
-				Rate                = reader.ReadPackedInt(ref ctx, compressionModel);
-				CurrentRegeneration = reader.ReadPackedInt(ref ctx, compressionModel);
-
-				Cooldown  = reader.ReadPackedInt(ref ctx, compressionModel);
-				StartTick = reader.ReadPackedUInt(ref ctx, compressionModel);
-			}
-
-			public void Interpolate(ref SnapshotData target, float factor)
-			{
-				Value               = (int) math.lerp(Value, target.Value, factor);
-				Max                 = (int) math.lerp(Max, target.Max, factor);
-				Rate                = (int) math.lerp(Rate, target.Rate, factor);
-				CurrentRegeneration = (int) math.lerp(CurrentRegeneration, target.CurrentRegeneration, factor);
-				Cooldown            = (int) math.lerp(Cooldown, target.Cooldown, factor);
-				StartTick           = (uint) math.lerp(StartTick, target.StartTick, factor);
-			}
-
-			public void Set(RegenerativeHealthData component)
-			{
-				Value = component.Value;
-				Max   = component.Max;
-
-				Rate                = (int) (component.Rate * 1000);
-				CurrentRegeneration = (int) (component.CurrentRegeneration * 1000);
-
-				Cooldown  = component.Cooldown;
-				StartTick = component.StartTick;
-			}
 		}
 
 		public int Value;
@@ -97,20 +35,79 @@ namespace StormiumTeam.GameBase.Components
 		public int  Cooldown;
 		public uint StartTick;
 
-
-		public void Set(SnapshotData snapshotData, NativeHashMap<int, GhostEntity> ghostMap)
+		public struct Snapshot : IReadWriteSnapshot<Snapshot>, ISnapshotDelta<Snapshot>, ISynchronizeImpl<RegenerativeHealthData>
 		{
-			Value = snapshotData.Value;
-			Max   = snapshotData.Max;
+			public uint Tick { get; set; }
 
-			Rate                = snapshotData.Rate * 0.001f;
-			CurrentRegeneration = snapshotData.CurrentRegeneration * 0.001f;
+			public int Value;
+			public int Max;
 
-			Cooldown  = snapshotData.Cooldown;
-			StartTick = snapshotData.StartTick;
+			public int Rate;                // float * 1000
+			public int CurrentRegeneration; // float * 1000
+
+			public int  Cooldown;
+			public uint StartTick;
+
+			public void WriteTo(DataStreamWriter writer, ref Snapshot baseline, NetworkCompressionModel compressionModel)
+			{
+				writer.WritePackedInt(Value, compressionModel);
+				writer.WritePackedInt(Max, compressionModel);
+
+				writer.WritePackedInt(Rate, compressionModel);
+				writer.WritePackedInt(CurrentRegeneration, compressionModel);
+
+				writer.WritePackedInt(Cooldown, compressionModel);
+				writer.WritePackedUInt(StartTick, compressionModel);
+			}
+
+			public void ReadFrom(ref DataStreamReader.Context ctx, DataStreamReader reader, ref Snapshot baseline, NetworkCompressionModel compressionModel)
+			{
+				Value = reader.ReadPackedInt(ref ctx, compressionModel);
+				Max   = reader.ReadPackedInt(ref ctx, compressionModel);
+
+				Rate                = reader.ReadPackedInt(ref ctx, compressionModel);
+				CurrentRegeneration = reader.ReadPackedInt(ref ctx, compressionModel);
+
+				Cooldown  = reader.ReadPackedInt(ref ctx, compressionModel);
+				StartTick = reader.ReadPackedUInt(ref ctx, compressionModel);
+			}
+
+			public bool DidChange(Snapshot baseline)
+			{
+				throw new NotImplementedException();
+			}
+
+			public void SynchronizeFrom(in RegenerativeHealthData component, in DefaultSetup setup, in SerializeClientData serializeData)
+			{
+				Value = component.Value;
+				Max   = component.Max;
+
+				Rate                = (int) (component.Rate * 1000);
+				CurrentRegeneration = (int) (component.CurrentRegeneration * 1000);
+
+				Cooldown  = component.Cooldown;
+				StartTick = component.StartTick;
+			}
+
+			public void SynchronizeTo(ref RegenerativeHealthData component, in DeserializeClientData deserializeData)
+			{
+				component.Value = Value;
+				component.Max   = Max;
+
+				component.Rate                = Rate * 0.001f;
+				component.CurrentRegeneration = CurrentRegeneration * 0.001f;
+
+				component.Cooldown  = Cooldown;
+				component.StartTick = StartTick;
+			}
 		}
 
-		public class UpdateFromSnapshot : BaseUpdateFromSnapshotSystem<SnapshotData, RegenerativeHealthData>
+		public class SynchronizeSnapshot : ComponentSnapshotSystem_Delta<RegenerativeHealthData, Snapshot>
+		{
+			public override ComponentType ExcludeComponent => typeof(Exclude);
+		}
+
+		public class Update : ComponentUpdateSystem<RegenerativeHealthData, Snapshot>
 		{
 		}
 

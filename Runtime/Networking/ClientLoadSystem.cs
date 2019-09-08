@@ -1,7 +1,7 @@
+using Revolution.NetCode;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
-using Unity.NetCode;
 
 namespace StormiumTeam.GameBase
 {
@@ -44,7 +44,7 @@ namespace StormiumTeam.GameBase
 				
 				CommandBuffer          = m_Barrier.CreateCommandBuffer().ToConcurrent(),
 				OutgoingDataFromEntity = GetBufferFromEntity<OutgoingRpcDataStreamBufferComponent>(),
-				RpcQueue               = World.GetExistingSystem<RpcQueueSystem<ClientLoadedRpc>>().GetRpcQueue()
+				RpcQueue               = World.GetExistingSystem<DefaultRpcProcessSystem<ClientLoadedRpc>>().RpcQueue
 			}.Schedule(this);
 			m_Barrier.AddJobHandleForProducer(inputDeps);
 

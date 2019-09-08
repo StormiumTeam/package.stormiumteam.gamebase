@@ -1,6 +1,6 @@
 using System;
+using Revolution.NetCode;
 using Unity.Mathematics;
-using Unity.NetCode;
 
 namespace StormiumTeam.GameBase
 {

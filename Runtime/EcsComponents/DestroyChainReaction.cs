@@ -1,7 +1,8 @@
+using Revolution;
+using Revolution.NetCode;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
-using Unity.NetCode;
 
 namespace StormiumTeam.GameBase.Data
 {
@@ -26,8 +27,8 @@ namespace StormiumTeam.GameBase.Data
 		}
 
 		private EntityQueryBuilder.F_ED<DestroyChainReaction> m_ForEachDelegate;
-		private EntityQuery m_Query;
-		
+		private EntityQuery                                   m_Query;
+
 		protected override void OnCreate()
 		{
 			base.OnCreate();
@@ -35,13 +36,13 @@ namespace StormiumTeam.GameBase.Data
 			m_ToDestroy       = new NativeList<Entity>(Allocator.Persistent);
 			m_ForEachDelegate = ForEach;
 
-			m_Query = GetEntityQuery(typeof(DestroyChainReaction), ComponentType.Exclude<ReplicatedEntityComponent>());
+			m_Query = GetEntityQuery(typeof(DestroyChainReaction), ComponentType.Exclude<ReplicatedEntity>());
 		}
 
 		protected override unsafe void OnUpdate()
 		{
 			m_ToDestroy.Clear();
-			
+
 			var entityType          = GetArchetypeChunkEntityType();
 			var chunkComponentType0 = GetArchetypeChunkComponentType<DestroyChainReaction>(true);
 			using (var chunks = m_Query.CreateArchetypeChunkArray(Allocator.TempJob))

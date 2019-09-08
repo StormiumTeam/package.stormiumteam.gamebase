@@ -1,8 +1,9 @@
+using Revolution;
+using Revolution.NetCode;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
-using Unity.NetCode;
 using Unity.Networking.Transport;
 using UnityEngine;
 
@@ -12,18 +13,19 @@ namespace StormiumTeam.GameBase
 	{
 		public int ServerId;
 
-		public void Execute(Entity connection, EntityCommandBuffer.Concurrent commandBuffer, int jobIndex)
+		public void Execute(Entity connection, World world)
 		{
-			var delayed = commandBuffer.CreateEntity(jobIndex);
-			commandBuffer.AddComponent(jobIndex, delayed, new DelayedPlayerConnection {Connection = connection, ServerId = ServerId});
+			var entityMgr = world.EntityManager;
+			var delayed   = entityMgr.CreateEntity(typeof(DelayedPlayerConnection));
+			entityMgr.SetComponentData(delayed, new DelayedPlayerConnection {Connection = connection, ServerId = ServerId});
 		}
 
-		public void Serialize(DataStreamWriter writer)
+		public void WriteTo(DataStreamWriter writer)
 		{
 			writer.Write(ServerId);
 		}
 
-		public void Deserialize(DataStreamReader reader, ref DataStreamReader.Context ctx)
+		public void ReadFrom(DataStreamReader reader, ref DataStreamReader.Context ctx)
 		{
 			ServerId = reader.ReadInt(ref ctx);
 		}
@@ -55,8 +57,7 @@ namespace StormiumTeam.GameBase
 	{
 	}
 
-	[UpdateInGroup(typeof(GhostSpawnSystemGroup))]
-	[UpdateAfter(typeof(GamePlayerGhostSpawnSystem))]
+	[UpdateAfter(typeof(SnapshotReceiveSystem))]
 	public class PlayerConnectedEventCreationSystem : JobComponentSystem
 	{
 		[BurstCompile]
@@ -83,7 +84,7 @@ namespace StormiumTeam.GameBase
 			}
 		}
 
-		[RequireComponentTag(typeof(ReplicatedEntityComponent))]
+		[RequireComponentTag(typeof(ReplicatedEntity))]
 		public struct FindPlayerJob : IJobForEachWithEntity<GamePlayer>
 		{
 			[ReadOnly]
@@ -121,11 +122,6 @@ namespace StormiumTeam.GameBase
 						if (PlayerIds.Length > 0 && PlayerIds[0].Value == gamePlayer.ServerId)
 						{
 							CommandBuffer.AddComponent(jobIndex, entity, default(GamePlayerLocalTag));
-							gamePlayer.IsSelf = true;
-						}
-						else
-						{
-							gamePlayer.IsSelf = false;
 						}
 
 						CommandBuffer.DestroyEntity(jobIndex, DelayedEntities[ent]);
@@ -160,7 +156,7 @@ namespace StormiumTeam.GameBase
 			{
 				PlayerIds = playerIds
 			}.Schedule(this, inputDeps);
-			
+
 			m_DelayedQuery.AddDependency(inputDeps);
 			var findPlayerJob = new FindPlayerJob
 			{
@@ -171,12 +167,12 @@ namespace StormiumTeam.GameBase
 				DelayedData     = m_DelayedQuery.ToComponentDataArray<DelayedPlayerConnection>(Allocator.TempJob, out var dep2),
 				PlayerIds       = playerIds
 			};
-			
+
 			inputDeps = findPlayerJob.Schedule(this, JobHandle.CombineDependencies(inputDeps, dep1, dep2));
 
 			m_Barrier.AddJobHandleForProducer(inputDeps);
 			m_DelayedQuery.CompleteDependency();
-			
+
 			//inputDeps.Complete();
 
 			return inputDeps;

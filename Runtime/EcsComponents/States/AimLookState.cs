@@ -1,53 +1,56 @@
-using DefaultNamespace;
+using Revolution;
 using Unity.Collections;
+using Unity.Entities;
 using Unity.Mathematics;
-using Unity.NetCode;
 using Unity.Networking.Transport;
+using Revolution.NetCode;
 
 namespace StormiumTeam.GameBase
 {
-    public struct AimLookState : IComponentFromSnapshot<AimLookState.SnapshotData>
+    public struct AimLookState : IComponentData
     {
+        public struct Exclude : IComponentData
+        {
+        }
+
         public float2 Aim;
 
-        public struct SnapshotData : ISnapshotFromComponent<SnapshotData, AimLookState>
+        public struct Snapshot : IReadWriteSnapshot<Snapshot>, ISynchronizeImpl<AimLookState>
         {
-            public uint Tick { get; private set; }
+            public uint Tick { get; set; }
 
-            public int2 Aim; // float * 1000
+            public int2 Aim;
 
-            public void PredictDelta(uint tick, ref SnapshotData baseline1, ref SnapshotData baseline2)
+            public void WriteTo(DataStreamWriter writer, ref Snapshot baseline, NetworkCompressionModel compressionModel)
             {
+                writer.WritePackedIntDelta(Aim.x, baseline.Aim.x, compressionModel);
+                writer.WritePackedIntDelta(Aim.y, baseline.Aim.y, compressionModel);
             }
 
-            public void Serialize(ref SnapshotData baseline, DataStreamWriter writer, NetworkCompressionModel compressionModel)
+            public void ReadFrom(ref DataStreamReader.Context ctx, DataStreamReader reader, ref Snapshot baseline, NetworkCompressionModel compressionModel)
             {
-                writer.WritePackedInt(Aim.x, compressionModel);
-                writer.WritePackedInt(Aim.y, compressionModel);
+                Aim.x = reader.ReadPackedIntDelta(ref ctx, baseline.Aim.x, compressionModel);
+                Aim.y = reader.ReadPackedIntDelta(ref ctx, baseline.Aim.y, compressionModel);
             }
 
-            public void Deserialize(uint tick, ref SnapshotData baseline, DataStreamReader reader, ref DataStreamReader.Context ctx, NetworkCompressionModel compressionModel)
-            {
-                Tick = tick;
-                
-                Aim.x = reader.ReadPackedInt(ref ctx, compressionModel);
-                Aim.y = reader.ReadPackedInt(ref ctx, compressionModel);
-            }
-
-            public void Interpolate(ref SnapshotData target, float factor)
-            {
-                Aim = (int2) math.lerp(Aim, target.Aim, factor);
-            }
-
-            public void Set(AimLookState component)
+            public void SynchronizeFrom(in AimLookState component, in DefaultSetup setup, in SerializeClientData serializeData)
             {
                 Aim = (int2) (component.Aim * 1000);
             }
+
+            public void SynchronizeTo(ref AimLookState component, in DeserializeClientData deserializeData)
+            {
+                component.Aim = (float2) (component.Aim * 0.001f);
+            }
         }
 
-        public void Set(SnapshotData snapshot, NativeHashMap<int, GhostEntity> ghostMap)
+        public class SynchronizeSnapshot : ComponentSnapshotSystem_Basic<AimLookState, Snapshot>
         {
-            Aim = ((float2) snapshot.Aim) * 0.001f;
+            public override ComponentType ExcludeComponent => typeof(Exclude);
+        }
+
+        public class Update : ComponentUpdateSystem<AimLookState, Snapshot>
+        {
         }
     }
 }

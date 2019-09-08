@@ -1,10 +1,10 @@
 using GmMachine;
 using Misc.GmMachine.Contexts;
 using package.stormiumteam.shared.ecs;
+using Revolution;
 using StormiumTeam.GameBase.Data;
 using StormiumTeam.GameBase.Systems;
 using Unity.Entities;
-using Unity.NetCode;
 
 namespace StormiumTeam.GameBase
 {
@@ -55,7 +55,7 @@ namespace StormiumTeam.GameBase
 #if UNITY_EDITOR
 			EntityManager.SetName(entity, $"GameMode: {name ?? typeof(T).Name}");
 #endif
-			EntityManager.AddComponent(entity, typeof(GhostComponent));
+			EntityManager.AddComponent(entity, typeof(GhostEntity));
 		}
 
 		public void SetGameMode<T>(Entity entity, string name = null, bool serialize = true)
@@ -69,7 +69,7 @@ namespace StormiumTeam.GameBase
 				TypeIndex = ComponentType.ReadWrite<T>().TypeIndex,
 				Name      = new NativeString64(name ?? typeof(T).Name)
 			});
-			EntityManager.AddComponent(entity, typeof(GhostComponent));
+			EntityManager.AddComponent(entity, typeof(GhostEntity));
 		}
 	}
 

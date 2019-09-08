@@ -1,44 +1,48 @@
-using DefaultNamespace;
+using Revolution;
+using Revolution.NetCode;
+using Revolution.Utils;
 using Unity.Collections;
+using Unity.Entities;
 using Unity.Mathematics;
-using Unity.NetCode;
 using Unity.Networking.Transport;
 
 namespace StormiumTeam.GameBase
 {
-    public struct Velocity : IComponentFromSnapshot<Velocity.SnapshotData>
+    public struct Velocity : IComponentData
     {
-        public struct SnapshotData : ISnapshotFromComponent<SnapshotData, Velocity>
+        public struct Exclude : IComponentData
         {
-            public uint Tick { get; private set; }
+        }
 
-            public int3 Velocity; // float * 1000
+        public struct SnapshotData : IReadWriteSnapshot<SnapshotData>, ISynchronizeImpl<Velocity>
+        {
+            public const int   Quantization   = 100;
+            public const float DeQuantization = 1 / 100f;
 
-            public void PredictDelta(uint tick, ref SnapshotData baseline1, ref SnapshotData baseline2)
+            public uint Tick { get; set; }
+
+            public QuantizedFloat3 Velocity; // float * 1000
+
+            public void WriteTo(DataStreamWriter writer, ref SnapshotData baseline, NetworkCompressionModel compressionModel)
             {
-            }
-
-            public void Serialize(ref SnapshotData baseline, DataStreamWriter writer, NetworkCompressionModel compressionModel)
-            {
-                for (var i = 0; i != 2; i++)
+                for (var i = 0; i != 3; i++)
                     writer.WritePackedIntDelta(Velocity[i], baseline.Velocity[i], compressionModel);
             }
 
-            public void Deserialize(uint tick, ref SnapshotData baseline, DataStreamReader reader, ref DataStreamReader.Context ctx, NetworkCompressionModel compressionModel)
+            public void ReadFrom(ref DataStreamReader.Context ctx, DataStreamReader reader, ref SnapshotData baseline, NetworkCompressionModel compressionModel)
             {
-                Tick = tick;
-                for (var i = 0; i != 2; i++)
+                for (var i = 0; i != 3; i++)
                     Velocity[i] = reader.ReadPackedIntDelta(ref ctx, baseline.Velocity[i], compressionModel);
             }
 
-            public void Interpolate(ref SnapshotData target, float factor)
+            public void SynchronizeFrom(in Velocity component, in DefaultSetup setup, in SerializeClientData serializeData)
             {
-                Velocity = new int3(math.lerp(Velocity, target.Velocity, factor));
+                Velocity.Set(Quantization, component.Value);
             }
 
-            public void Set(Velocity component)
+            public void SynchronizeTo(ref Velocity component, in DeserializeClientData deserializeData)
             {
-                Velocity = new int3(component.Value * 1000);
+                component.Value = Velocity.Get(DeQuantization);
             }
         }
 
@@ -53,12 +57,12 @@ namespace StormiumTeam.GameBase
             Value = value;
         }
 
-        public void Set(SnapshotData snapshot, NativeHashMap<int, GhostEntity> ghostMap)
+        public class System : ComponentSnapshotSystem_Basic<Velocity, SnapshotData>
         {
-            Value = new float3(snapshot.Velocity) * 0.001f;
+            public override ComponentType ExcludeComponent => typeof(Exclude);
         }
 
-        public class UpdateFromSnapshot : BaseUpdateFromSnapshotSystem<Velocity.SnapshotData, Velocity>
+        public class Synchronize : ComponentUpdateSystem<Velocity, SnapshotData>
         {
         }
     }

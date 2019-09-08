@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using package.stormiumteam.networking.runtime.lowlevel;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
+using Unity.Networking.Transport;
 
 namespace StormiumTeam.GameBase.BaseSystems
 {
@@ -13,22 +13,21 @@ namespace StormiumTeam.GameBase.BaseSystems
 		{
 		}
 	}
-	
+
 	public class RuleProperties<TData> : RulePropertiesBase
 		where TData : struct, IComponentData
 	{
 		public abstract class Property
 		{
 			protected internal RuleProperties<TData> Base;
-			
+
 			public abstract Type Type { get; }
 
 			public string Name;
 			public int    WriteOffset;
 
 			public abstract object GetValue();
-			public abstract void   SetValue(object                v);
-			public abstract void   WriteToBuffer(DataBufferWriter dataBuffer);
+			public abstract void   SetValue(object v);
 		}
 
 		public class Property<T> : Property
@@ -67,13 +66,6 @@ namespace StormiumTeam.GameBase.BaseSystems
 			{
 				Value = (T) v;
 			}
-
-			public override void WriteToBuffer(DataBufferWriter dataBuffer)
-			{
-				var marker = new DataBufferMarker(WriteOffset);
-
-				dataBuffer.WriteValue(Value, marker);
-			}
 		}
 
 		public List<Property>      Properties = new List<Property>();
@@ -83,18 +75,18 @@ namespace StormiumTeam.GameBase.BaseSystems
 		public unsafe Property<TValue> Add<TValue>(string name, ref TData data, ref TValue value)
 			where TValue : struct
 		{
-			var dataPtr = new IntPtr(UnsafeUtility.AddressOf(ref data));
+			var dataPtr  = new IntPtr(UnsafeUtility.AddressOf(ref data));
 			var valuePtr = new IntPtr(UnsafeUtility.AddressOf(ref value));
-			
+
 			var writeOffset = IntPtr.Subtract(valuePtr, dataPtr.ToInt32()).ToInt32();
 			if (writeOffset < 0)
 				throw new IndexOutOfRangeException($"[{System}] AddProperty: WriteOffset is not positive (wo: {writeOffset}, dataPtr: {dataPtr}, valuePtr: {valuePtr})");
-			
+
 			var property = new Property<TValue> {Name = name, WriteOffset = writeOffset, Base = this};
 			Properties.Add(property);
 
 			Size += UnsafeUtility.SizeOf<TValue>();
-			
+
 			if (Size > UnsafeUtility.SizeOf<TData>())
 				throw new IndexOutOfRangeException($"[{System}] AddProperty: We reached TData size (currSize: {Size}, TData size: {UnsafeUtility.SizeOf<TData>()}, TValue size: {UnsafeUtility.SizeOf<TValue>()})");
 
@@ -144,9 +136,9 @@ namespace StormiumTeam.GameBase.BaseSystems
 
 				ruleSystem.Barrier = m_Barrier;
 			}
-			
+
 			base.OnUpdate();
-			
+
 			m_Barrier.Update();
 		}
 	}
@@ -181,7 +173,7 @@ namespace StormiumTeam.GameBase.BaseSystems
 		protected override void OnCreate()
 		{
 			base.OnCreate();
-			
+
 			PropertiesCollection = new List<RulePropertiesBase>();
 		}
 
@@ -196,7 +188,7 @@ namespace StormiumTeam.GameBase.BaseSystems
 			where TData : struct, IComponentData
 		{
 			var properties = new RuleProperties<TData> {System = this};
-			
+
 			PropertiesCollection.Add(properties);
 
 			if (!HasSingleton<TData>())

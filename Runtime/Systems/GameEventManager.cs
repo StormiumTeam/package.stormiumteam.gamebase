@@ -1,7 +1,7 @@
+using Revolution.NetCode;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
-using Unity.NetCode;
 
 namespace StormiumTeam.GameBase
 {
@@ -25,8 +25,7 @@ namespace StormiumTeam.GameBase
 		int SimulationTick { get; set; }
 	}
 
-	public interface IEventRpcCommand<TEvent, TReplication> : IRpcCommand
-		where TEvent : struct, IEventData
+	public interface IEventRpcCommand<TEvent, TReplication> : IRpcCommand where TEvent : struct, IEventData
 		where TReplication : struct, IReplicatedEvent
 	{
 		void Init(JobComponentSystem system);
@@ -64,7 +63,7 @@ namespace StormiumTeam.GameBase
 
 		private EntityQuery          m_EventQuery;
 		private EntityQuery          m_ClientQuery;
-		private RpcQueueSystem<TRpc> m_RpcQueueSystem;
+		private DefaultRpcProcessSystem<TRpc> m_RpcQueueSystem;
 
 		private EndInitializationEntityCommandBufferSystem m_EndInitializationEntityCommandBufferSystem;
 
@@ -74,7 +73,7 @@ namespace StormiumTeam.GameBase
 
 			m_EventQuery     = GetEntityQuery(typeof(GameEvent), typeof(TEvent), ComponentType.Exclude<ReplicatedEventTag>());
 			m_ClientQuery    = GetEntityQuery(typeof(NetworkStreamInGame), typeof(OutgoingRpcDataStreamBufferComponent));
-			m_RpcQueueSystem = World.GetOrCreateSystem<RpcQueueSystem<TRpc>>();
+			m_RpcQueueSystem = World.GetOrCreateSystem<DefaultRpcProcessSystem<TRpc>>();
 			
 			m_EndInitializationEntityCommandBufferSystem = World.GetOrCreateSystem<EndInitializationEntityCommandBufferSystem>();
 		}
@@ -90,7 +89,7 @@ namespace StormiumTeam.GameBase
 			inputDeps = new JobSend
 			{
 				Events         = m_EventQuery.ToComponentDataArray<TEvent>(Allocator.TempJob, out var dep1),
-				RpcQueue       = m_RpcQueueSystem.GetRpcQueue(),
+				RpcQueue       = m_RpcQueueSystem.RpcQueue,
 				RpcData        = rpcData,
 				Clients        = m_ClientQuery.ToEntityArray(Allocator.TempJob, out var dep2),
 				OutgoingBuffer = GetBufferFromEntity<OutgoingRpcDataStreamBufferComponent>()

@@ -1,8 +1,9 @@
+using Revolution;
+using Revolution.NetCode;
 using StormiumTeam.GameBase.EcsComponents;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
-using Unity.NetCode;
 using Unity.Networking.Transport;
 using UnityEngine;
 
@@ -11,25 +12,27 @@ namespace StormiumTeam.GameBase
 	public struct ClientLoadedRpc : IRpcCommand
 	{
 		public int GameVersion;
-		
-		public void Execute(Entity connection, EntityCommandBuffer.Concurrent commandBuffer, int jobIndex)
-		{
-			commandBuffer.AddComponent(jobIndex, connection, new NetworkStreamInGame());
 
-			var gamePlayerCreate = commandBuffer.CreateEntity(jobIndex);
-			commandBuffer.AddComponent(jobIndex, gamePlayerCreate, new CreateGamePlayer
+		public void Execute(Entity connection, World world)
+		{
+			var entMgr = world.EntityManager;
+
+			entMgr.AddComponent(connection, typeof(NetworkStreamInGame));
+
+			var gamePlayerCreate = entMgr.CreateEntity(typeof(CreateGamePlayer));
+			entMgr.SetComponentData(gamePlayerCreate, new CreateGamePlayer
 			{
-				Connection = connection,
+				Connection  = connection,
 				GameVersion = GameVersion,
 			});
 		}
 
-		public void Serialize(DataStreamWriter writer)
+		public void WriteTo(DataStreamWriter writer)
 		{
 			writer.Write(GameVersion);
 		}
 
-		public void Deserialize(DataStreamReader reader, ref DataStreamReader.Context ctx)
+		public void ReadFrom(DataStreamReader reader, ref DataStreamReader.Context ctx)
 		{
 			var byteRead = reader.GetBytesRead(ref ctx);
 			if (reader.Length - byteRead < sizeof(int))
@@ -37,7 +40,7 @@ namespace StormiumTeam.GameBase
 				GameVersion = -1;
 				return;
 			}
-			
+
 			GameVersion = reader.ReadInt(ref ctx);
 		}
 	}
@@ -45,7 +48,7 @@ namespace StormiumTeam.GameBase
 	public struct CreateGamePlayer : IComponentData
 	{
 		public Entity Connection;
-		public int GameVersion;
+		public int    GameVersion;
 	}
 
 	[UpdateInGroup(typeof(ServerSimulationSystemGroup))]
@@ -80,14 +83,14 @@ namespace StormiumTeam.GameBase
 					NetworkStreamConnectionFromEntity[create.Connection].Value.Disconnect(Driver);
 					return;
 				}
-				
+
 				var networkId = NetworkIdFromEntity[create.Connection];
 
 				var geEnt = CommandBuffer.CreateEntity(jobIndex, PlayerArchetype);
-				CommandBuffer.SetComponent(jobIndex, geEnt, new GamePlayer(0, false) {ServerId = networkId.Value});
-				CommandBuffer.AddComponent(jobIndex, geEnt, new NetworkOwner {Value            = create.Connection});
+				CommandBuffer.SetComponent(jobIndex, geEnt, new GamePlayer(0) {ServerId = networkId.Value});
+				CommandBuffer.AddComponent(jobIndex, geEnt, new NetworkOwner {Value     = create.Connection});
 				CommandBuffer.AddComponent(jobIndex, geEnt, new GamePlayerReadyTag());
-				CommandBuffer.AddComponent(jobIndex, geEnt, new GhostComponent());
+				CommandBuffer.AddComponent(jobIndex, geEnt, new GhostEntity());
 
 				PreMadeEvents.Add(new PlayerConnectedRpc
 				{
@@ -144,21 +147,21 @@ namespace StormiumTeam.GameBase
 			var preMadeEvents = new NativeList<PlayerConnectedRpc>(Allocator.TempJob);
 			inputDeps = new CreateJob
 			{
-				PreMadeEvents = preMadeEvents,
+				PreMadeEvents  = preMadeEvents,
 				CurrentVersion = GameStatic.Version,
-				
-				Driver = World.GetExistingSystem<NetworkStreamReceiveSystem>().Driver,
+
+				Driver                            = World.GetExistingSystem<NetworkStreamReceiveSystem>().Driver,
 				NetworkStreamConnectionFromEntity = GetComponentDataFromEntity<NetworkStreamConnection>(true),
 
 				CommandBuffer       = m_Barrier.CreateCommandBuffer().ToConcurrent(),
-				PlayerArchetype = World.GetOrCreateSystem<GamePlayerProvider>().EntityArchetype,
+				PlayerArchetype     = World.GetOrCreateSystem<GamePlayerProvider>().EntityArchetype,
 				NetworkIdFromEntity = GetComponentDataFromEntity<NetworkIdComponent>()
 			}.ScheduleSingle(this, inputDeps);
 			inputDeps = new SendRpcToConnectionsJob
 			{
 				PreMadeEvents          = preMadeEvents,
 				OutgoingDataFromEntity = GetBufferFromEntity<OutgoingRpcDataStreamBufferComponent>(),
-				RpcQueue               = World.GetExistingSystem<RpcQueueSystem<PlayerConnectedRpc>>().GetRpcQueue()
+				RpcQueue               = World.GetExistingSystem<DefaultRpcProcessSystem<PlayerConnectedRpc>>().RpcQueue
 			}.Schedule(this, inputDeps);
 			inputDeps = preMadeEvents.Dispose(inputDeps); // dispose list after the end of jobs
 

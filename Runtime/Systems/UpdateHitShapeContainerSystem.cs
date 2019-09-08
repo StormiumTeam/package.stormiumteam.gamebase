@@ -1,9 +1,9 @@
-﻿using StormiumTeam.GameBase.Data;
+﻿using Revolution.NetCode;
+using StormiumTeam.GameBase.Data;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
-using Unity.NetCode;
 using UnityEngine;
 
 namespace StormiumTeam.GameBase
@@ -26,7 +26,6 @@ namespace StormiumTeam.GameBase
 
 	[UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
 	[UpdateAfter(typeof(DestroyChainReactionSystemClientServerWorld))]
-	[UpdateAfter(typeof(GhostUpdateSystemGroup))]
 	public class UpdateHitShapeContainerSystem : JobGameBaseSystem
 	{
 		[BurstCompile]

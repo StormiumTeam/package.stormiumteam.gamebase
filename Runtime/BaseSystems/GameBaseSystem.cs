@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Revolution.NetCode;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
-using Unity.NetCode;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace StormiumTeam.GameBase
@@ -12,10 +12,11 @@ namespace StormiumTeam.GameBase
 	public abstract class GameBaseSystem : BaseComponentSystem
 	{
 		private ServerSimulationSystemGroup m_ServerComponentGroup;
-		private ComponentSystemGroup m_ClientPresentationGroup;
-		private NetworkTimeSystem m_NetworkTimeSystem;
+		private ComponentSystemGroup        m_ClientPresentationGroup;
+		private NetworkTimeSystem           m_NetworkTimeSystem;
 
 		public UTick ServerTick => GetTick(false);
+
 		public UTick GetTick(bool predicted)
 		{
 			var isClient = m_NetworkTimeSystem != null;
@@ -28,7 +29,7 @@ namespace StormiumTeam.GameBase
 				: m_ServerComponentGroup.GetTick();
 		}
 
-		public bool IsServer => m_ServerComponentGroup != null;
+		public bool IsServer             => m_ServerComponentGroup != null;
 		public bool IsPresentationActive => m_ClientPresentationGroup != null && m_ClientPresentationGroup.Enabled;
 
 		protected override void OnCreate()
@@ -58,7 +59,7 @@ namespace StormiumTeam.GameBase
 				m_NetworkTimeSystem = World.GetOrCreateSystem<NetworkTimeSystem>();
 			}
 		}
-		
+
 		private EntityQuery m_PlayerGroup;
 		private EntityQuery m_LocalPlayerGroup;
 
@@ -115,13 +116,14 @@ namespace StormiumTeam.GameBase
 		}
 
 		private GameJobHiddenSystem m_JobHiddenSystem;
+
 		public BufferFromEntity<T> GetBufferFromEntity<T>()
 			where T : struct, IBufferElementData
 		{
 			return m_JobHiddenSystem.GetBufferFromEntity<T>();
 		}
 	}
-	
+
 	[DisableAutoCreation]
 	internal class GameJobHiddenSystem : JobComponentSystem
 	{
@@ -140,37 +142,23 @@ namespace StormiumTeam.GameBase
 
 		protected override void OnCreate()
 		{
-			m_PlayerGroup = GetEntityQuery
+			m_LocalPlayerGroup = GetEntityQuery
 			(
-				typeof(GamePlayer)
+				typeof(GamePlayer), typeof(GamePlayerLocalTag)
 			);
+
 
 #if !UNITY_CLIENT
 			m_ServerComponentGroup = World.GetExistingSystem<ServerSimulationSystemGroup>();
 #endif
 		}
-		
-		private EntityQuery m_PlayerGroup;
+
+		private EntityQuery m_LocalPlayerGroup;
 
 		public Entity GetFirstSelfGamePlayer()
 		{
-			var entityType = GetArchetypeChunkEntityType();
-			var playerType = GetArchetypeChunkComponentType<GamePlayer>();
-
-			using (var chunks = m_PlayerGroup.CreateArchetypeChunkArray(Allocator.TempJob))
-			{
-				foreach (var chunk in chunks)
-				{
-					var length = chunk.Count;
-
-					var playerArray = chunk.GetNativeArray(playerType);
-					var entityArray = chunk.GetNativeArray(entityType);
-					for (var i = 0; i < length; i++)
-					{
-						if (playerArray[i].IsSelf) return entityArray[i];
-					}
-				}
-			}
+			if (m_LocalPlayerGroup.CalculateEntityCount() > 0)
+				return m_LocalPlayerGroup.GetSingletonEntity();
 
 			return default;
 		}

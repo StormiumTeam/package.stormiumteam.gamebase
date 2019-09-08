@@ -1,8 +1,8 @@
+using Revolution.NetCode;
 using StormiumTeam.GameBase.EcsComponents;
 using StormiumTeam.GameBase.Systems;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.NetCode;
 using Unity.Networking.Transport;
 
 namespace StormiumTeam.GameBase.Data
@@ -21,13 +21,13 @@ namespace StormiumTeam.GameBase.Data
 	{
 		public NativeString512 Key;
 
-		public void Execute(Entity connection, EntityCommandBuffer.Concurrent commandBuffer, int jobIndex)
+		public void Execute(Entity connection, World world)
 		{
-			var ent = commandBuffer.CreateEntity(jobIndex);
-			commandBuffer.AddComponent(jobIndex, ent, new CommandSetServerMap {Key = Key});
+			var ent = world.EntityManager.CreateEntity();
+			world.EntityManager.AddComponentData(ent, new CommandSetServerMap {Key = Key});
 		}
 
-		public void Serialize(DataStreamWriter writer)
+		public void WriteTo(DataStreamWriter writer)
 		{
 			using (var compression = new NetworkCompressionModel(Allocator.Temp))
 			{
@@ -37,10 +37,11 @@ namespace StormiumTeam.GameBase.Data
 					writer.WritePackedUInt((uint) Key[i], compression);
 				}
 			}
+
 			writer.Flush();
 		}
 
-		public void Deserialize(DataStreamReader reader, ref DataStreamReader.Context ctx)
+		public void ReadFrom(DataStreamReader reader, ref DataStreamReader.Context ctx)
 		{
 			using (var compression = new NetworkCompressionModel(Allocator.Temp))
 			{
@@ -65,8 +66,8 @@ namespace StormiumTeam.GameBase.Data
 		private EntityQuery m_ClientQuery;
 		private EntityQuery m_ClientWithoutMapQuery;
 
-		private RpcQueueSystem<UpdateServerMapRpc> m_UpdateServerMapRpcSystem;
-		private MapManager                         m_MapManager;
+		private DefaultRpcProcessSystem<UpdateServerMapRpc> m_UpdateServerMapRpcSystem;
+		private MapManager                                  m_MapManager;
 
 		private Entity m_PreviousMapEntity;
 
@@ -74,7 +75,7 @@ namespace StormiumTeam.GameBase.Data
 		{
 			base.OnCreate();
 
-			m_UpdateServerMapRpcSystem = World.GetOrCreateSystem<RpcQueueSystem<UpdateServerMapRpc>>();
+			m_UpdateServerMapRpcSystem = World.GetOrCreateSystem<DefaultRpcProcessSystem<UpdateServerMapRpc>>();
 			m_MapManager               = World.GetOrCreateSystem<MapManager>();
 
 			m_ExecutingMapQuery     = GetEntityQuery(typeof(ExecutingMapData));
@@ -95,7 +96,7 @@ namespace StormiumTeam.GameBase.Data
 						Key = m_ExecutingMapQuery.GetSingleton<ExecutingMapData>().Key
 					};
 
-					var rpcQueue = m_UpdateServerMapRpcSystem.GetRpcQueue();
+					var rpcQueue = m_UpdateServerMapRpcSystem.RpcQueue;
 					rpcQueue.Schedule(outgoingRpcData, rpc);
 
 					// We don't directly add the component here... we delay it for next update
@@ -125,7 +126,7 @@ namespace StormiumTeam.GameBase.Data
 					Key = m_ExecutingMapQuery.GetSingleton<ExecutingMapData>().Key
 				};
 
-				var rpcQueue = m_UpdateServerMapRpcSystem.GetRpcQueue();
+				var rpcQueue = m_UpdateServerMapRpcSystem.RpcQueue;
 				rpcQueue.Schedule(outgoingRpcData, rpc);
 
 				EntityManager.AddComponent(entity, typeof(ClientSynchronized));
@@ -155,7 +156,7 @@ namespace StormiumTeam.GameBase.Data
 			// Destroy previous one...
 			EntityManager.DestroyEntity(m_ServerMapQuery);
 			EntityManager.CreateEntity(typeof(ExecutingServerMap));
-			
+
 			Entities.With(m_RpcQuery).ForEach((ref CommandSetServerMap cmdData) => { SetSingleton(new ExecutingServerMap {Key = cmdData.Key}); });
 
 			// Destroy current query

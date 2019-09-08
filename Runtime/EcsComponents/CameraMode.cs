@@ -1,8 +1,9 @@
-using DefaultNamespace;
+using Grpc.Core;
+using Revolution;
+using Revolution.NetCode;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.NetCode;
 using Unity.Networking.Transport;
 
 namespace StormiumTeam.GameBase
@@ -38,22 +39,65 @@ namespace StormiumTeam.GameBase
         public RigidTransform Offset => Data.Offset;
     }
 
-    public struct ServerCameraState : IComponentData, IComponentFromSnapshot<GamePlayerSnapshot>
+    public struct ServerCameraState : IComponentData
     {
+        public struct Exclude : IComponentData
+        {
+        }
+
         public CameraState Data;
 
         public CameraMode     Mode   => Data.Mode;
         public Entity         Target => Data.Target;
         public RigidTransform Offset => Data.Offset;
 
-        public void Set(GamePlayerSnapshot snapshot, NativeHashMap<int, GhostEntity> ghostMap)
+        public struct Snapshot : IReadWriteSnapshot<Snapshot>, ISnapshotDelta<Snapshot>,
+                                 ISynchronizeImpl<ServerCameraState, GhostSetup>
         {
-            if (ghostMap.TryGetValue((int) snapshot.CameraSnapshotFormat.TargetGhostId, out var target) && target.valid)
-                Data.Target = target.entity;
-            else
-                Data.Target = default;
+            public uint Tick { get; set; }
 
-            Data.Mode = snapshot.CameraSnapshotFormat.CameraMode;
+            public CameraStateSnapshotFormat SnapshotFormat;
+
+            public void WriteTo(DataStreamWriter writer, ref Snapshot baseline, NetworkCompressionModel compressionModel)
+            {
+                SnapshotFormat.Write(writer, baseline.SnapshotFormat, compressionModel);
+            }
+
+            public void ReadFrom(ref DataStreamReader.Context ctx, DataStreamReader reader, ref Snapshot baseline, NetworkCompressionModel compressionModel)
+            {
+                SnapshotFormat.Read(reader, baseline.SnapshotFormat, compressionModel, ref ctx);
+            }
+
+            public void SynchronizeFrom(in ServerCameraState component, in GhostSetup setup, in SerializeClientData jobData)
+            {
+                SnapshotFormat.TargetGhostId = setup[component.Target];
+                SnapshotFormat.CameraMode    = component.Mode;
+                SnapshotFormat.SetTransform(component.Offset);
+            }
+
+            public void SynchronizeTo(ref ServerCameraState component, in DeserializeClientData jobData)
+            {
+                jobData.GhostToEntityMap.TryGetValue(SnapshotFormat.TargetGhostId, out component.Data.Target);
+                component.Data.Mode   = SnapshotFormat.CameraMode;
+                component.Data.Offset = SnapshotFormat.GetTransform();
+            }
+
+            public bool DidChange(Snapshot baseline)
+            {
+                return !(SnapshotFormat.CameraMode == baseline.SnapshotFormat.CameraMode
+                         && SnapshotFormat.TargetGhostId == baseline.SnapshotFormat.TargetGhostId
+                         && math.all(SnapshotFormat.Position == baseline.SnapshotFormat.Position)
+                         && math.all(SnapshotFormat.Rotation == baseline.SnapshotFormat.Rotation));
+            }
+        }
+
+        public class System : ComponentSnapshotSystem_Delta<ServerCameraState, Snapshot, GhostSetup>
+        {
+            public override ComponentType ExcludeComponent => typeof(Exclude);
+        }
+
+        public class Synchronize : ComponentUpdateSystem<ServerCameraState, Snapshot, GhostSetup>
+        {
         }
     }
 

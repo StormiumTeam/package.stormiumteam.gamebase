@@ -1,8 +1,8 @@
+using Revolution.NetCode;
 using StormiumTeam.GameBase.EcsComponents;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
-using Unity.NetCode;
 
 namespace StormiumTeam.GameBase
 {

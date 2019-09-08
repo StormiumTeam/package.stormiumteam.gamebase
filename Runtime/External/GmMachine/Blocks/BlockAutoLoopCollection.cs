@@ -5,7 +5,8 @@ namespace GmMachine.Blocks
 	public class BlockAutoLoopCollection : BlockCollection, IResetCollectionOnBeginning
 	{
 		public bool ResetOnBeginning { get; set; }
-		
+		public bool SkipWhenEnded;
+
 		public BlockAutoLoopCollection(string name) : base(name)
 		{
 		}
@@ -20,7 +21,7 @@ namespace GmMachine.Blocks
 			if (collections.Count == 0)
 				return true;
 
-			if (Index + 1 >= collections.Count)
+			if (Index >= collections.Count)
 			{
 				// If we automatically reset the loop, there is no need to further instructions as they're basically the same
 				if (ResetOnBeginning)
@@ -30,6 +31,9 @@ namespace GmMachine.Blocks
 					Index = 0;
 					NextChildBlock(collections[0]);
 				}
+
+				if (SkipWhenEnded)
+					return true;
 			}
 
 			RunNext(CurrentRunningChild);

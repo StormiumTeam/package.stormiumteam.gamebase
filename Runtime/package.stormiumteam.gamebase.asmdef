@@ -2,11 +2,11 @@
     "name": "package.stormiumteam.gamebase",
     "references": [
         "package.guerro.shared",
-        "package.stormiumteam.networking",
+        "Revolution.NetCode",
+        "Revolution.Snapshot", 
         "Unity.TextMeshPro",
         "Unity.ugui",
         "Unity.Networking.Transport",
-        "Unity.NetCode",
         "Unity.InputSystem",
         "Unity.Addressables",
         "Unity.ResourceManager",

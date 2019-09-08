@@ -1,7 +1,7 @@
 using package.stormiumteam.shared.ecs;
+using Revolution.NetCode;
 using StormiumTeam.GameBase.Components;
 using Unity.Entities;
-using Unity.NetCode;
 using Unity.Transforms;
 using UnityEngine;
 
@@ -12,6 +12,8 @@ namespace StormiumTeam.GameBase.Misc
 	{
 		private Camera m_Camera;
 		private bool   m_PreviousState;
+
+		public Camera Camera => m_Camera;
 
 		protected override void OnCreate()
 		{
