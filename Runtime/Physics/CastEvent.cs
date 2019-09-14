@@ -7,10 +7,10 @@ namespace StormiumTeam.GameBase
 	public struct ColliderCastEventInput : IComponentData
 	{
 		public ColliderCastInput Value;
-		public Entity Entity;
+		public Entity            Entity;
 
-		public float3 Origin    => Value.Start;
-		public float3 Direction => Value.Direction;
+		public float3 Start => Value.Start;
+		public float3 End   => Value.End;
 	}
 
 	public struct ColliderCastEventHit : IComponentData
@@ -29,7 +29,7 @@ namespace StormiumTeam.GameBase
 		public struct Create
 		{
 			public ColliderCastInput Value;
-			public Entity Source;
+			public Entity            Source;
 		}
 
 		public override void GetComponents(out ComponentType[] entityComponents)

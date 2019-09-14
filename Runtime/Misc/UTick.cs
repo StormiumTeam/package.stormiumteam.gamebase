@@ -12,6 +12,22 @@ namespace StormiumTeam.GameBase
 		}
 
 		#region Operators
+		
+		public static UTick operator +(UTick left, UTick right)
+		{
+			UTick newTick;
+			newTick.Value = left.Value + right.Value;
+			newTick.Delta = left.Delta;
+			return newTick;
+		}
+
+		public static UTick operator -(UTick left, UTick right)
+		{
+			UTick newTick;
+			newTick.Value = left.Value - right.Value;
+			newTick.Delta = left.Delta;
+			return newTick;
+		}
 
 		public static bool operator ==(UTick left, UTick right)
 		{
@@ -137,6 +153,8 @@ namespace StormiumTeam.GameBase
 
 		public long   Value;
 		public float Delta;
+
+		public int DeltaMs => (int)(Delta * 1000);
 
 		public double Seconds => Value * (double) Delta;
 		public int    Ms      => (int) (Seconds * 1000);

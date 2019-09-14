@@ -1,3 +1,4 @@
+using System;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -146,23 +147,23 @@ namespace StormiumTeam.GameBase
 
     public struct ActionCooldown : IComponentData
     {
-        public int StartTick;
-        public int Cooldown;
+        public UTick StartTick;
+        public uint Cooldown;
 
-        public ActionCooldown(int startTick)
+        public ActionCooldown(UTick startTick)
         {
             StartTick = startTick;
-            Cooldown = -1;
+            Cooldown = 0;
         }
 
-        public ActionCooldown(int startTick, int cooldown) : this(startTick)
+        public ActionCooldown(UTick startTick, uint cooldown) : this(startTick)
         {
             Cooldown = cooldown;
         }
 
-        public bool CooldownFinished(int tick)
+        public bool CooldownFinished(UTick tick)
         {
-            return StartTick <= 0 || tick > StartTick + Cooldown;
+            return StartTick <= 0 || tick > StartTick + UTick.MsToTickNextFrame(tick, Cooldown);
         }
     }
 
