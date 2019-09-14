@@ -197,9 +197,10 @@ namespace StormiumTeam.GameBase
 			return tick;
 		}
 
-		public void AddMs(uint arg)
+		public UTick AddMs(uint arg)
 		{
 			Value += (int) (arg * Delta);
+			return this;
 		}
 
 		/// <summary>
@@ -255,7 +256,7 @@ namespace StormiumTeam.GameBase
 		public static UTick GetTick(this ServerSimulationSystemGroup system)
 		{
 			UTick tick;
-			tick.Value = (int) system.ServerTick;
+			tick.Value = system.ServerTick;
 			tick.Delta = FixedTimeLoop.fixedTimeStep;
 			return tick;
 		}
@@ -263,7 +264,7 @@ namespace StormiumTeam.GameBase
 		public static UTick GetTickInterpolated(this NetworkTimeSystem system)
 		{
 			UTick tick;
-			tick.Value = (int) system.interpolateTargetTick;
+			tick.Value = system.interpolateTargetTick;
 			tick.Delta = FixedTimeLoop.fixedTimeStep;
 			return tick;
 		}
@@ -271,7 +272,7 @@ namespace StormiumTeam.GameBase
 		public static UTick GetTickPredicted(this NetworkTimeSystem system)
 		{
 			UTick tick;
-			tick.Value = (int) system.predictTargetTick;
+			tick.Value = system.predictTargetTick;
 			tick.Delta = FixedTimeLoop.fixedTimeStep;
 			return tick;
 		}

@@ -75,7 +75,7 @@ namespace StormiumTeam.GameBase
     }
     
     [AlwaysUpdateSystem]
-    public abstract class BaseProvider<TCreateData> : ComponentSystem
+    public abstract class BaseProvider<TCreateData> : GameBaseSystem
         where TCreateData : struct
     {
         private EntityModelManager m_ModelManager;
@@ -101,6 +101,8 @@ namespace StormiumTeam.GameBase
 
         protected override void OnCreate()
         {
+            base.OnCreate();
+            
             if ((m_CanHaveDelayedEntities = typeof(TCreateData) != typeof(BaseProvider.NoData)) == true)
             {
                 CreateEntityDelayed = new NativeList<TCreateData>(32, Allocator.Persistent);
