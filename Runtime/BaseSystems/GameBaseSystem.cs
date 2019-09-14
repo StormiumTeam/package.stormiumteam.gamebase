@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Grpc.Core;
 using Revolution.NetCode;
 using Unity.Collections;
 using Unity.Entities;
@@ -83,8 +84,15 @@ namespace StormiumTeam.GameBase
 			if (gamePlayer == default)
 				return default;
 
+			var comps = EntityManager.GetChunk(gamePlayer).Archetype.GetComponentTypes();
+			if (!comps.Contains(ComponentType.ReadWrite<ServerCameraState>()))
+				return default;
+
 			var serverCamera = EntityManager.GetComponentData<ServerCameraState>(gamePlayer);
 			if (serverCamera.Mode == CameraMode.Forced)
+				return serverCamera.Data;
+
+			if (!comps.Contains(ComponentType.ReadWrite<LocalCameraState>()))
 				return serverCamera.Data;
 
 			var localCamera = EntityManager.GetComponentData<LocalCameraState>(gamePlayer);

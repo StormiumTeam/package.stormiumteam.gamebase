@@ -15,6 +15,8 @@ namespace StormiumTeam.GameBase
 
 		public void Execute(Entity connection, World world)
 		{
+			Debug.Log($"{GameVersion}");
+			
 			var entMgr = world.EntityManager;
 
 			entMgr.AddComponent(connection, typeof(NetworkStreamInGame));
