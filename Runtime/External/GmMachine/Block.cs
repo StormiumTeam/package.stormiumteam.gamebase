@@ -11,6 +11,11 @@ namespace GmMachine
 		public Guid Guid;
 		public string Name;
 
+		public Block()
+		{
+			Name = "Empty Block";
+		}
+		
 		public Block(string name)
 		{
 			Name = name;

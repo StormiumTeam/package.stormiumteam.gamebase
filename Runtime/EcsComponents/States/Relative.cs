@@ -184,14 +184,6 @@ namespace StormiumTeam.GameBase
                 AddChildrenOwner(entityManager, entity, owner);
             }
         }
-
-        public static void ReplaceOwnerData(this EntityCommandBuffer entityCommandBuffer, Entity source, Entity owner)
-        {
-            foreach (var obj in AppEvent<ISyncEvent>.GetObjEvents())
-            {
-                obj.SyncRelativeToEntity(entityCommandBuffer, source, owner);
-            }
-        }
     }
 
     public class RelativeGroup : ComponentSystemGroup

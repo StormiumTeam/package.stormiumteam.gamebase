@@ -45,7 +45,7 @@ namespace StormiumTeam.GameBase
 				CommandBuffer          = m_Barrier.CreateCommandBuffer().ToConcurrent(),
 				OutgoingDataFromEntity = GetBufferFromEntity<OutgoingRpcDataStreamBufferComponent>(),
 				RpcQueue               = World.GetExistingSystem<DefaultRpcProcessSystem<ClientLoadedRpc>>().RpcQueue
-			}.Schedule(this);
+			}.Schedule(this, inputDeps);
 			m_Barrier.AddJobHandleForProducer(inputDeps);
 
 			return inputDeps;

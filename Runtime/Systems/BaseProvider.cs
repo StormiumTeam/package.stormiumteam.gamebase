@@ -37,6 +37,13 @@ namespace StormiumTeam.GameBase
             m_TemporaryEntity = new NativeList<Entity>(1, Allocator.Persistent);
         }
 
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
+
+            m_TemporaryEntity.Dispose();
+        }
+
         public override void SpawnBatchEntitiesWithArguments(UnsafeAllocationLength<TCreateData> array, NativeList<Entity> outputEntities, NativeList<int> indices)
         {
             var naArray = new NativeArray<Entity>(array.Length, Allocator.Temp);

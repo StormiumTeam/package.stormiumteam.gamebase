@@ -106,7 +106,7 @@ namespace StormiumTeam.GameBase.Misc
 
 				return;
 			}
-
+			
 			foreach (var clientWorld in ClientServerBootstrap.clientWorld)
 			{
 				var presentationSystemGroup = clientWorld.GetExistingSystem<ClientPresentationSystemGroup>();

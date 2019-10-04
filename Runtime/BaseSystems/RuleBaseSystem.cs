@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
@@ -180,6 +181,7 @@ namespace StormiumTeam.GameBase.BaseSystems
 		{
 			base.OnDestroy();
 
+			Parallel.For(0, 4, (i) => { });
 			PropertiesCollection.ForEach(r => r.Dispose());
 		}
 
