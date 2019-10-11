@@ -28,8 +28,8 @@ namespace GmMachine.Blocks
 					Reset();
 				else
 				{
-					Index = 0;
-					NextChildBlock(collections[0]);
+					Index               = 0;
+					CurrentRunningChild = collections[0];
 				}
 			}
 

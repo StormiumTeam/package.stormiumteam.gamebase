@@ -6,7 +6,7 @@ namespace GmMachine.Blocks
 {
 	public abstract class BlockCollection : Block
 	{
-		public Block CurrentRunningChild { get; protected set; }
+		public Block CurrentRunningChild { get; set; }
 
 		public int Index { get; set; }
 		
@@ -70,17 +70,13 @@ namespace GmMachine.Blocks
 			return CurrentRunningChild == childTarget;
 		}
 
-		protected virtual void NextChildBlock(Block target = null)
+		protected virtual void NextChildBlock()
 		{
-			var nextBlock = target;
-
-			if (nextBlock == null && m_Collections.Count >= Index + 2)
-			{
-				Index++;
-				nextBlock = m_Collections[Index];
-			}
-
-			CurrentRunningChild = nextBlock;
+			Index++;
+			if (m_Collections.Count > Index)
+				CurrentRunningChild = m_Collections[Index];
+			else
+				CurrentRunningChild = null;
 		}
 
 		protected override void OnFinished()

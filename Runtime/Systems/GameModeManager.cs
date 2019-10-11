@@ -5,6 +5,8 @@ using Revolution;
 using StormiumTeam.GameBase.Data;
 using StormiumTeam.GameBase.Systems;
 using Unity.Entities;
+using Unity.Networking.Transport;
+using Utilities;
 
 namespace StormiumTeam.GameBase
 {
@@ -12,6 +14,38 @@ namespace StormiumTeam.GameBase
 	{
 		public int            TypeIndex;
 		public NativeString64 Name;
+
+		public struct Snapshot : IReadWriteSnapshot<Snapshot>, ISnapshotDelta<Snapshot>, ISynchronizeImpl<ExecutingGameMode>
+		{
+			public uint Tick { get; set; }
+
+			public NativeString64 Name;
+
+			public void WriteTo(DataStreamWriter writer, ref Snapshot baseline, NetworkCompressionModel compressionModel)
+			{
+				writer.WritePackedStringDelta(Name, baseline.Name, compressionModel);
+			}
+
+			public void ReadFrom(ref DataStreamReader.Context ctx, DataStreamReader reader, ref Snapshot baseline, NetworkCompressionModel compressionModel)
+			{
+				Name = reader.ReadPackedStringDelta(ref ctx, baseline.Name, compressionModel);
+			}
+
+			public bool DidChange(Snapshot baseline)
+			{
+				return !Name.Equals(baseline.Name);
+			}
+
+			public void SynchronizeFrom(in ExecutingGameMode component, in DefaultSetup setup, in SerializeClientData serializeData)
+			{
+				Name = component.Name;
+			}
+
+			public void SynchronizeTo(ref ExecutingGameMode component, in DeserializeClientData deserializeData)
+			{
+				component.Name = Name;
+			}
+		}
 	}
 
 	public struct GameModeOnFirstInit : IComponentData
