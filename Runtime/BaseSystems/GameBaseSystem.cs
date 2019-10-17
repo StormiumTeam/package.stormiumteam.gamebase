@@ -143,9 +143,25 @@ namespace StormiumTeam.GameBase
 	public abstract class JobGameBaseSystem : JobComponentSystem
 	{
 		private ServerSimulationSystemGroup m_ServerComponentGroup;
+		private ComponentSystemGroup        m_ClientPresentationGroup;
+		private NetworkTimeSystem           m_NetworkTimeSystem;
 
-		public bool                        IsServer                    => m_ServerComponentGroup != null;
-		public ServerSimulationSystemGroup ServerSimulationSystemGroup => m_ServerComponentGroup;
+		public UTick ServerTick => GetTick(false);
+
+		public UTick GetTick(bool predicted)
+		{
+			var isClient = m_NetworkTimeSystem != null;
+			var isServer = m_ServerComponentGroup != null;
+			if (!isClient && !isServer)
+				throw new InvalidOperationException("Can only be called on client or server world.");
+
+			return isClient
+				? predicted ? m_NetworkTimeSystem.GetTickPredicted() : m_NetworkTimeSystem.GetTickInterpolated()
+				: m_ServerComponentGroup.GetTick();
+		}
+
+		public bool IsServer             => m_ServerComponentGroup != null;
+		public bool IsPresentationActive => m_ClientPresentationGroup != null && m_ClientPresentationGroup.Enabled;
 
 		protected override void OnCreate()
 		{
@@ -154,13 +170,33 @@ namespace StormiumTeam.GameBase
 				typeof(GamePlayer), typeof(GamePlayerLocalTag)
 			);
 
+			m_PlayerGroup = GetEntityQuery
+			(
+				typeof(GamePlayer)
+			);
 
 #if !UNITY_CLIENT
 			m_ServerComponentGroup = World.GetExistingSystem<ServerSimulationSystemGroup>();
 #endif
+#if !UNITY_SERVER
+			m_ClientPresentationGroup = World.GetExistingSystem<ClientPresentationSystemGroup>();
+#endif
+
+			if (m_ClientPresentationGroup != null)
+			{
+				m_NetworkTimeSystem = World.GetOrCreateSystem<NetworkTimeSystem>();
+			}
 		}
 
+		private EntityQuery m_PlayerGroup;
 		private EntityQuery m_LocalPlayerGroup;
+
+		public void GetModule<TModule>(out TModule module)
+			where TModule : BaseSystemModule, new()
+		{
+			module = new TModule();
+			module.Enable(this);
+		}
 
 		public Entity GetFirstSelfGamePlayer()
 		{
@@ -170,14 +206,27 @@ namespace StormiumTeam.GameBase
 			return default;
 		}
 
-		protected bool RemoveFromServerWorld()
+		public CameraState GetCurrentCameraState(Entity gamePlayer)
 		{
-			if (m_ServerComponentGroup == null)
-				return false;
+			if (gamePlayer == default)
+				return default;
 
-			if (m_ServerComponentGroup.Systems.Contains(this))
-				m_ServerComponentGroup.RemoveSystemFromUpdateList(this);
-			return true;
+			var comps = EntityManager.GetChunk(gamePlayer).Archetype.GetComponentTypes();
+			if (!comps.Contains(ComponentType.ReadWrite<ServerCameraState>()))
+				return default;
+
+			var serverCamera = EntityManager.GetComponentData<ServerCameraState>(gamePlayer);
+			if (serverCamera.Mode == CameraMode.Forced)
+				return serverCamera.Data;
+
+			if (!comps.Contains(ComponentType.ReadWrite<LocalCameraState>()))
+				return serverCamera.Data;
+
+			var localCamera = EntityManager.GetComponentData<LocalCameraState>(gamePlayer);
+			if (localCamera.Mode == CameraMode.Forced)
+				return localCamera.Data;
+
+			return serverCamera.Data;
 		}
 
 		public World GetActiveClientWorld()

@@ -56,6 +56,8 @@ namespace package.StormiumTeam.GameBase
 
         protected override void OnUpdate()
         {
+            return;
+            
             m_Timer += Time.deltaTime;
 
             foreach (var manager in AppEvent<IPhysicPreSimulate>.GetObjEvents())

@@ -28,6 +28,9 @@ namespace GmMachine
 
 		public bool Update()
 		{
+			if (m_Collection == null)
+				return true;
+			
 			m_Collection.Context.Machine = this;
 
 			var state = m_Collection.Run(null);

@@ -94,6 +94,8 @@ namespace StormiumTeam.GameBase
 				CommandBuffer.AddComponent(jobIndex, geEnt, new GamePlayerReadyTag());
 				CommandBuffer.AddComponent(jobIndex, geEnt, new GhostEntity());
 
+				CommandBuffer.SetComponent(jobIndex, create.Connection, new CommandTargetComponent {targetEntity = geEnt});
+				
 				PreMadeEvents.Add(new PlayerConnectedRpc
 				{
 					ServerId = networkId.Value

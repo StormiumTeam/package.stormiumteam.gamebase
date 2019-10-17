@@ -9,6 +9,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Networking.Transport;
+using UnityEngine;
 
 [assembly: RegisterGenericComponentType(typeof(Relative<HitShapeDescription>))]
 [assembly: RegisterGenericComponentType(typeof(Relative<MovableDescription>))]
@@ -336,26 +337,22 @@ namespace StormiumTeam.GameBase
     public struct Relative<TDescription> : IComponentData, IReadWriteComponentSnapshot<Relative<TDescription>, GhostSetup>
         where TDescription : struct, IEntityDescription
     {
-        private uint m_InternalPreviousGhostId;
-        
         public Entity Target;
 
         public Relative(Entity target)
         {
-            m_InternalPreviousGhostId = 0;
             Target = target;
         }
 
         public void WriteTo(DataStreamWriter writer, ref Relative<TDescription> baseline, GhostSetup setup, SerializeClientData jobData)
         {
-            writer.WritePackedUIntDelta(setup[Target], setup[baseline.Target], jobData.NetworkCompressionModel);
+            writer.WritePackedUInt(setup[Target], jobData.NetworkCompressionModel);
         }
 
         public void ReadFrom(ref DataStreamReader.Context ctx, DataStreamReader reader, ref Relative<TDescription> baseline, DeserializeClientData jobData)
         {
-            var ghostId = reader.ReadPackedUIntDelta(ref ctx, m_InternalPreviousGhostId, jobData.NetworkCompressionModel);
+            var ghostId = reader.ReadPackedUInt(ref ctx, jobData.NetworkCompressionModel);
             jobData.GhostToEntityMap.TryGetValue(ghostId, out Target);
-            m_InternalPreviousGhostId = ghostId;
         }
     }
 

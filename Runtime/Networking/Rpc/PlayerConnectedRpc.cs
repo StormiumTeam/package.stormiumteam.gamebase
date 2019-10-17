@@ -90,13 +90,13 @@ namespace StormiumTeam.GameBase
 			[ReadOnly]
 			public ComponentDataFromEntity<GamePlayerReadyTag> PlayerReadyTag;
 
-			[ReadOnly, DeallocateOnJobCompletion]
+			[ReadOnly]
 			public NativeArray<NetworkIdComponent> PlayerIds;
 
 			public EntityCommandBuffer.Concurrent CommandBuffer;
 
-			[DeallocateOnJobCompletion, ReadOnly] public NativeArray<Entity>                  DelayedEntities;
-			[DeallocateOnJobCompletion, ReadOnly] public NativeArray<DelayedPlayerConnection> DelayedData;
+			[ReadOnly] public NativeArray<Entity>                  DelayedEntities;
+			[ReadOnly] public NativeArray<DelayedPlayerConnection> DelayedData;
 
 			public void Execute(Entity entity, int jobIndex, ref GamePlayer gamePlayer)
 			{
@@ -122,11 +122,24 @@ namespace StormiumTeam.GameBase
 						if (PlayerIds.Length > 0 && PlayerIds[0].Value == gamePlayer.ServerId)
 						{
 							CommandBuffer.AddComponent(jobIndex, entity, default(GamePlayerLocalTag));
+							CommandBuffer.SetComponent(jobIndex, DelayedData[ent].Connection, new CommandTargetComponent {targetEntity = entity});
 						}
 
 						CommandBuffer.DestroyEntity(jobIndex, DelayedEntities[ent]);
 					}
 				}
+			}
+		}
+
+		private struct DisposeJob : IJob
+		{
+			[DeallocateOnJobCompletion] public NativeArray<NetworkIdComponent>      PlayerIds;
+			[DeallocateOnJobCompletion] public NativeArray<Entity>                  DelayedEntities;
+			[DeallocateOnJobCompletion] public NativeArray<DelayedPlayerConnection> DelayedData;
+
+			public void Execute()
+			{
+
 			}
 		}
 
@@ -169,6 +182,12 @@ namespace StormiumTeam.GameBase
 			};
 
 			inputDeps = findPlayerJob.Schedule(this, JobHandle.CombineDependencies(inputDeps, dep1, dep2));
+			inputDeps = new DisposeJob
+			{
+				PlayerIds = playerIds,
+				DelayedEntities = findPlayerJob.DelayedEntities,
+				DelayedData = findPlayerJob.DelayedData
+			}.Schedule(inputDeps);
 
 			m_Barrier.AddJobHandleForProducer(inputDeps);
 			m_DelayedQuery.CompleteDependency();

@@ -148,6 +148,9 @@ namespace StormiumTeam.GameBase
         public void FlushDelayedEntities()
         {
             m_ProducerHandle.Complete();
+
+            if (CreateEntityDelayed.Length == 0)
+                return;
             
             var output  = new NativeList<Entity>(CreateEntityDelayed.Length, Allocator.Temp);
             var indices = new NativeList<int>(CreateEntityDelayed.Length, Allocator.Temp);
