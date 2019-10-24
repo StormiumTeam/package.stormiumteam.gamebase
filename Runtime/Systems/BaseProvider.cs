@@ -9,10 +9,6 @@ using Unity.Jobs;
 
 namespace StormiumTeam.GameBase
 {
-    public class ProviderGroup : ComponentSystemGroup
-    {
-    }
-
     public abstract class BaseProvider : BaseProvider<BaseProvider.NoData>
     {
         public struct NoData

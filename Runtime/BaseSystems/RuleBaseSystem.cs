@@ -99,19 +99,12 @@ namespace StormiumTeam.GameBase.BaseSystems
 		}
 	}
 
-	public class RuleSystemGroup : ComponentSystemGroup
-	{
-		protected override void OnUpdate()
-		{
-		}
-	}
-
 	[DisableAutoCreation]
 	public class RuleSystemBarrier : EntityCommandBufferSystem
 	{
 	}
 
-	[UpdateInGroup(typeof(RuleSystemGroup))]
+	[UpdateInGroup(typeof(OrderGroup.PreFrame.Rules))]
 	public abstract class RuleSystemGroupBase : ComponentSystemGroup
 	{
 		private RuleSystemBarrier m_Barrier;
@@ -150,7 +143,7 @@ namespace StormiumTeam.GameBase.BaseSystems
 	public class PhysicsFilterRuleSystemGroup : RuleSystemGroupBase
 	{
 	}
-
+	
 	public abstract class RuleBaseSystem : JobGameBaseSystem
 	{
 		public List<RulePropertiesBase> PropertiesCollection;

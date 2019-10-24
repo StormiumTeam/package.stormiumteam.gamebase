@@ -1,5 +1,6 @@
 using Unity.Entities;
 using Unity.Mathematics;
+using UnityEngine;
 
 namespace StormiumTeam.GameBase.Components
 {
@@ -23,7 +24,8 @@ namespace StormiumTeam.GameBase.Components
 		/// How much velocity from the destination should we keep? (range: [0-1], where 0 is no velocity kept)
 		/// </summary>
 		public float3 Momentum;
-
+		
+		[UpdateInGroup(typeof(OrderGroup.Simulation.SpawnEntities.SpawnEvent))]
 		public class Provider : BaseProviderBatch<TargetImpulseEvent>
 		{
 			public override void GetComponents(out ComponentType[] entityComponents)

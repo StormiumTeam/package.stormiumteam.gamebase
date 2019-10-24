@@ -78,27 +78,32 @@ namespace StormiumTeam.GameBase
 			return default;
 		}
 
-		public CameraState GetCurrentCameraState(Entity gamePlayer)
+		public bool TryGetCurrentCameraState(Entity gamePlayer, out CameraState cameraState)
 		{
+			cameraState = default;
 			if (gamePlayer == default)
-				return default;
+				return false;
 
 			var comps = EntityManager.GetChunk(gamePlayer).Archetype.GetComponentTypes();
 			if (!comps.Contains(ComponentType.ReadWrite<ServerCameraState>()))
-				return default;
+				return false;
 
 			var serverCamera = EntityManager.GetComponentData<ServerCameraState>(gamePlayer);
-			if (serverCamera.Mode == CameraMode.Forced)
-				return serverCamera.Data;
-
-			if (!comps.Contains(ComponentType.ReadWrite<LocalCameraState>()))
-				return serverCamera.Data;
+			if (serverCamera.Mode == CameraMode.Forced || !comps.Contains(ComponentType.ReadWrite<LocalCameraState>()))
+			{
+				cameraState = serverCamera.Data;
+				return true;
+			}
 
 			var localCamera = EntityManager.GetComponentData<LocalCameraState>(gamePlayer);
 			if (localCamera.Mode == CameraMode.Forced)
-				return localCamera.Data;
+			{
+				cameraState = localCamera.Data;
+				return true;
+			}
 
-			return serverCamera.Data;
+			cameraState = serverCamera.Data;
+			return true;
 		}
 
 		public World GetActiveClientWorld()

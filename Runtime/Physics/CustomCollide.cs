@@ -30,7 +30,7 @@ namespace StormiumTeam.GameBase
 			Count   = cc.Length;
 			DataPtr = new IntPtr(cc.Data);
 		}
-		
+
 		public CustomCollideCollection(NativeArray<CustomCollide> cc)
 		{
 			Count   = cc.Length;
@@ -85,7 +85,7 @@ namespace StormiumTeam.GameBase
 			RigidBodyIndex = -1;
 			Target         = default;
 		}
-		
+
 		public CustomCollide(PhysicsCollider collider, LocalToWorld localToWorld)
 		{
 			Collider        = collider.ColliderPtr;
@@ -216,10 +216,18 @@ namespace StormiumTeam.GameBase
 			return hadHit;
 		}
 
-		public static bool CalculateDistance<T>(this CustomCollideCollection buffer, ColliderDistanceInput input, ref T collector) where T : struct, ICollector<DistanceHit>
+		public static bool CalculateDistance<T>(this CustomCollideCollection buffer, ColliderDistanceInput input, ref T collector, bool setSameGroup = false)
+			where T : struct, ICollector<DistanceHit>
 		{
 			if (!buffer.Valid())
 				throw new InvalidOperationException();
+
+			var previousColliderInputFilter = input.Collider->Filter;
+			var newFilter                   = previousColliderInputFilter;
+			{
+				newFilter.GroupIndex = 1;
+			}
+			CollideWith.UpdateFilterRecursion(input.Collider, newFilter);
 
 			var ptr    = (CustomCollide*) buffer.DataPtr;
 			var length = buffer.Count;
@@ -245,6 +253,8 @@ namespace StormiumTeam.GameBase
 				var fraction = collector.MaxFraction;
 				var numHits  = collector.NumHits;
 
+				var previousFilter = cw.Collider->Filter;
+				CollideWith.UpdateFilterRecursion(cw.Collider, newFilter);
 				if (cw.Collider->CalculateDistance(inputLs, ref collector))
 				{
 					// Transform results back into world space
@@ -252,9 +262,17 @@ namespace StormiumTeam.GameBase
 					hadHit = true;
 
 					if (collector.EarlyOutOnFirstHit)
+					{
+						CollideWith.UpdateFilterRecursion(cw.Collider, previousFilter);
+						CollideWith.UpdateFilterRecursion(input.Collider, previousColliderInputFilter);
 						return true;
+					}
 				}
+
+				CollideWith.UpdateFilterRecursion(cw.Collider, previousFilter);
 			}
+
+			CollideWith.UpdateFilterRecursion(input.Collider, previousColliderInputFilter);
 
 			return hadHit;
 		}

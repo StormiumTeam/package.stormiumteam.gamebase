@@ -36,7 +36,7 @@ namespace StormiumTeam.GameBase
 			return array;
 		}
 		
-		private static void UpdateFilterRecursion(Collider* collider, CollisionFilter filter)
+		public static void UpdateFilterRecursion(Collider* collider, CollisionFilter filter)
 		{
 			while (true)
 			{

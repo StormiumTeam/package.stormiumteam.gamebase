@@ -8,6 +8,7 @@ namespace StormiumTeam.GameBase.Components
 		public Entity Destination;
 		public int    Damage;
 
+		[UpdateInGroup(typeof(OrderGroup.Simulation.SpawnEntities.SpawnEvent))]
 		public class Provider : BaseProviderBatch<TargetDamageEvent>
 		{
 			public override void GetComponents(out ComponentType[] entityComponents)

@@ -61,7 +61,7 @@ namespace StormiumTeam.GameBase
             public override ComponentType ExcludeComponent => typeof(Exclude);
         }
 
-        public class Synchronize : ComponentUpdateSystem<Velocity, SnapshotData>
+        public class Synchronize : ComponentUpdateSystemDirect<Velocity, SnapshotData>
         {
         }
     }

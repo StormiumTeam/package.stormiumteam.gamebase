@@ -73,10 +73,11 @@ namespace StormiumTeam.GameBase
             public override ComponentType ExcludeComponent => typeof(Exclude);
         }
         
-        public class Synchronize : ComponentUpdateSystem<GamePlayer, GamePlayerSnapshot>
+        public class Synchronize : ComponentUpdateSystemDirect<GamePlayer, GamePlayerSnapshot>
         {}
     }
 
+    [UpdateInGroup(typeof(OrderGroup.Simulation.SpawnEntities))]
     public class GamePlayerProvider : BaseProvider
     {
         public override void GetComponents(out ComponentType[] entityComponents)

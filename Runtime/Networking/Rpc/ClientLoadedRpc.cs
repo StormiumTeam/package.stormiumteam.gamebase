@@ -53,7 +53,7 @@ namespace StormiumTeam.GameBase
 		public int    GameVersion;
 	}
 
-	[UpdateInGroup(typeof(ServerSimulationSystemGroup))]
+	[UpdateInGroup(typeof(OrderGroup.Simulation.SpawnEntities))]
 	public class CreateGamePlayerSystem : JobComponentSystem
 	{
 		private struct CreateJob : IJobForEachWithEntity<CreateGamePlayer>
@@ -93,6 +93,7 @@ namespace StormiumTeam.GameBase
 				CommandBuffer.AddComponent(jobIndex, geEnt, new NetworkOwner {Value     = create.Connection});
 				CommandBuffer.AddComponent(jobIndex, geEnt, new GamePlayerReadyTag());
 				CommandBuffer.AddComponent(jobIndex, geEnt, new GhostEntity());
+				CommandBuffer.AddComponent(jobIndex, geEnt, new WorldOwnedTag());
 
 				CommandBuffer.SetComponent(jobIndex, create.Connection, new CommandTargetComponent {targetEntity = geEnt});
 				

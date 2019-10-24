@@ -8,8 +8,7 @@ using UnityEngine;
 
 namespace StormiumTeam.GameBase
 {
-	[UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
-	[UpdateAfter(typeof(DestroyChainReactionSystemClientServerWorld))]
+	[UpdateInGroup(typeof(OrderGroup.Simulation.ConfigureSpawnedEntities))]
 	public class UpdateActionContainerSystem : JobGameBaseSystem
 	{
 		[BurstCompile]

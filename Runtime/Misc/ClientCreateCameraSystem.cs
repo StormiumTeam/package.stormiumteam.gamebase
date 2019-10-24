@@ -30,6 +30,7 @@ namespace StormiumTeam.GameBase.Misc
 				m_Camera                  = gameObject.GetComponent<Camera>();
 				m_Camera.orthographicSize = 10;
 				m_Camera.fieldOfView      = 60;
+				m_Camera.nearClipPlane    = 0.025f;
 
 				gameObject.transform.position = new Vector3(0, 0, -100);
 			}

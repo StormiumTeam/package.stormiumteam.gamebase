@@ -48,7 +48,7 @@ namespace StormiumTeam.GameBase
             public override ComponentType ExcludeComponent => typeof(Exclude);
         }
 
-        public class Update : ComponentUpdateSystem<AimLookState, Snapshot>
+        public class Update : ComponentUpdateSystemDirect<AimLookState, Snapshot>
         {
         }
     }

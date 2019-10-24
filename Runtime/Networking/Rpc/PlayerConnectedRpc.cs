@@ -53,6 +53,10 @@ namespace StormiumTeam.GameBase
 	{
 	}
 
+	public struct WorldOwnedTag : IComponentData
+	{
+	}
+
 	public struct GamePlayerLocalTag : IComponentData
 	{
 	}
@@ -122,6 +126,7 @@ namespace StormiumTeam.GameBase
 						if (PlayerIds.Length > 0 && PlayerIds[0].Value == gamePlayer.ServerId)
 						{
 							CommandBuffer.AddComponent(jobIndex, entity, default(GamePlayerLocalTag));
+							CommandBuffer.AddComponent(jobIndex, entity, default(WorldOwnedTag));
 							CommandBuffer.SetComponent(jobIndex, DelayedData[ent].Connection, new CommandTargetComponent {targetEntity = entity});
 						}
 

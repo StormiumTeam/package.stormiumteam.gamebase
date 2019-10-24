@@ -12,7 +12,7 @@ namespace StormiumTeam.GameBase
 		}
 
 		#region Operators
-		
+
 		public static UTick operator +(UTick left, UTick right)
 		{
 			UTick newTick;
@@ -151,10 +151,10 @@ namespace StormiumTeam.GameBase
 
 		#endregion
 
-		public long   Value;
+		public long  Value;
 		public float Delta;
 
-		public int DeltaMs => (int)(Delta * 1000);
+		public int DeltaMs => (int) (Delta * 1000);
 
 		public double Seconds => Value * (double) Delta;
 		public int    Ms      => (int) (Seconds * 1000);
@@ -163,10 +163,10 @@ namespace StormiumTeam.GameBase
 		{
 			get
 			{
-				#if ENABLE_UNITY_COLLECTIONS_CHECKS
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
 				if (Value > uint.MaxValue)
 					throw new ArgumentOutOfRangeException($"<getAsUInt> Current Tick Value ({Value}) is bigger than {uint.MaxValue}");
-				#endif
+#endif
 
 				return (uint) Value;
 			}
@@ -190,7 +190,7 @@ namespace StormiumTeam.GameBase
 			tick.Value += value;
 			return tick;
 		}
-		
+
 		public static UTick AddTick(UTick tick, UTick other)
 		{
 			tick.Value += other.Value;
@@ -199,8 +199,7 @@ namespace StormiumTeam.GameBase
 
 		public UTick AddMs(uint arg)
 		{
-			Value += (int) (arg * Delta);
-			return this;
+			return this = AddMs(this, arg);
 		}
 
 		/// <summary>
@@ -209,21 +208,22 @@ namespace StormiumTeam.GameBase
 		/// <param name="arg"></param>
 		public void AddMsNextFrame(long arg)
 		{
-			var val = (int) (arg * Delta);
+			var val = GetIteration(Delta, arg);
 			Value = math.select(Value + 1, Value + val, val > 0);
 		}
 
 		public static UTick MsToTick(in UTick reference, long ms)
 		{
 			UTick tick;
-			tick.Value = (int) (ms * reference.Delta);
+			tick.Value = GetIteration(reference.Delta, ms);
 			tick.Delta = reference.Delta;
 			return tick;
 		}
 
 		public static UTick MsToTickNextFrame(in UTick reference, long ms)
 		{
-			var   val = (int) (ms * reference.Delta);
+			var val = GetIteration(reference.Delta, ms);
+
 			UTick tick;
 			tick.Value = math.select(1, val, val > 0);
 			tick.Delta = reference.Delta;
@@ -233,21 +233,27 @@ namespace StormiumTeam.GameBase
 
 		public static UTick AddMs(UTick tick, long arg)
 		{
-			tick.Value += (int) (arg * tick.Delta);
+			tick.Value += GetIteration(tick.Delta, arg);
 			return tick;
 		}
-		
+
 		public static UTick AddMsNextFrame(UTick tick, long arg)
 		{
-			var val = (int) (arg * tick.Delta);
+			var val = GetIteration(tick.Delta, arg);
 			tick.Value = math.select(tick.Value + 1, tick.Value + val, val > 0);
 			return tick;
 		}
-		
+
 		public static UTick CopyDelta(UTick reference, long newTick)
 		{
 			reference.Value = (int) newTick;
 			return reference;
+		}
+
+		private static int GetIteration(float delta, long ms)
+		{
+			//return (int) math.round(ms / delta);
+			return (int) (ms / (delta * 1000));
 		}
 	}
 

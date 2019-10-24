@@ -299,7 +299,8 @@ namespace StormiumTeam.GameBase
         }
     }
 
-    public abstract class FindRelativeComponentBase : ComponentSystem
+    [UpdateInGroup(typeof(InitializationSystemGroup))]
+    public abstract class FindRelativeComponent : ComponentSystem
     {
         protected override void OnCreate()
         {
@@ -321,16 +322,6 @@ namespace StormiumTeam.GameBase
         {
 
         }
-    }
-
-    [UpdateInGroup(typeof(InitializationSystemGroup))]
-    public class MainWorldFindRelativeComponent : FindRelativeComponentBase
-    {
-    }
-
-    [UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
-    public class ClientServerWorldFindRelativeComponent : FindRelativeComponentBase
-    {
     }
 
     // Todo: find a way to synchronize it nicely.

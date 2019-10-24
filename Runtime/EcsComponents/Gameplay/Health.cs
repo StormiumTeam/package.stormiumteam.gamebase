@@ -1,9 +1,11 @@
+using Revolution;
 using Revolution.NetCode;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.Networking.Transport;
 using UnityEngine;
 
 namespace StormiumTeam.GameBase.Components
@@ -13,7 +15,7 @@ namespace StormiumTeam.GameBase.Components
 		public int Value, Max;
 	}
 
-	public struct LivableHealth : IComponentData
+	public struct LivableHealth : IReadWriteComponentSnapshot<LivableHealth>
 	{
 		public int Value, Max;
 
@@ -25,6 +27,26 @@ namespace StormiumTeam.GameBase.Components
 		public bool ShouldBeDead()
 		{
 			return Value <= 0 && Max > 0;
+		}
+
+		public void WriteTo(DataStreamWriter writer, ref LivableHealth baseline, DefaultSetup setup, SerializeClientData jobData)
+		{
+			writer.WritePackedUInt(IsDead ? 1u : 0u, jobData.NetworkCompressionModel);
+		}
+
+		public void ReadFrom(ref DataStreamReader.Context ctx, DataStreamReader reader, ref LivableHealth baseline, DeserializeClientData jobData)
+		{
+			IsDead = reader.ReadPackedUInt(ref ctx, jobData.NetworkCompressionModel) == 1u;
+		}
+
+		public struct ExcludeDefaultSynchronization : IComponentData
+		{
+			
+		}
+
+		public class Synchronize : MixedComponentSnapshotSystem<LivableHealth, DefaultSetup>
+		{
+			public override ComponentType ExcludeComponent => typeof(ExcludeDefaultSynchronization);
 		}
 	}
 

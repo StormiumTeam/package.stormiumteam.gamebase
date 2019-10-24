@@ -89,12 +89,12 @@ namespace StormiumTeam.GameBase
             }
         }
 
-        public class System : ComponentSnapshotSystem_Delta<ServerCameraState, Snapshot, GhostSetup>
+        public class System : ComponentSnapshotSystem_Basic<ServerCameraState, Snapshot, GhostSetup>
         {
             public override ComponentType ExcludeComponent => typeof(Exclude);
         }
 
-        public class Synchronize : ComponentUpdateSystem<ServerCameraState, Snapshot, GhostSetup>
+        public class Synchronize : ComponentUpdateSystemDirect<ServerCameraState, Snapshot, GhostSetup>
         {
         }
     }

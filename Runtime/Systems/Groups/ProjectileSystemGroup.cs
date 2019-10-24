@@ -4,7 +4,7 @@ using Unity.Physics.Systems;
 
 namespace StormiumTeam.GameBase
 {
-	[UpdateInGroup(typeof(ServerSimulationSystemGroup))]
+	[UpdateInGroup(typeof(OrderGroup.Simulation.UpdateEntities))]
 	[UpdateAfter(typeof(ActionSystemGroup))]
 	public class ProjectileSystemGroup : ComponentSystemGroup
 	{

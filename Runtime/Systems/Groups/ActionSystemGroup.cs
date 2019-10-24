@@ -3,7 +3,7 @@ using Unity.Entities;
 
 namespace StormiumTeam.GameBase
 {
-	[UpdateInGroup(typeof(ServerSimulationSystemGroup))]
+	[UpdateInGroup(typeof(OrderGroup.Simulation.UpdateEntities))]
 	[UpdateBefore(typeof(GameModeSystemGroup))]
 	public class ActionSystemGroup : ComponentSystemGroup
 	{

@@ -101,11 +101,12 @@ namespace StormiumTeam.GameBase.Components
 			public override DeltaChangeType DeltaType        => DeltaChangeType.Both;
 		}
 
-		public class Update : ComponentUpdateSystem<ClubInformation, Snapshot>
+		public class Update : ComponentUpdateSystemDirect<ClubInformation, Snapshot>
 		{
 		}
 	}
 
+	[UpdateInGroup(typeof(OrderGroup.Simulation.SpawnEntities))]
 	public class ClubProvider : BaseProviderBatch<ClubProvider.Create>
 	{
 		[Serializable]

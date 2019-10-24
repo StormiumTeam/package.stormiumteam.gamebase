@@ -71,7 +71,7 @@ namespace StormiumTeam.GameBase.Components
 			public override ComponentType ExcludeComponent => typeof(Exclude);
 		}
 
-		public class Update : ComponentUpdateSystem<DefaultHealthData, Snapshot>
+		public class Update : ComponentUpdateSystemDirect<DefaultHealthData, Snapshot>
 		{
 		}
 
@@ -130,6 +130,7 @@ namespace StormiumTeam.GameBase.Components
 			}
 		}
 
+		[UpdateInGroup(typeof(OrderGroup.Simulation.SpawnEntities))]
 		public class InstanceProvider : BaseProviderBatch<CreateInstance>
 		{
 			public override void GetComponents(out ComponentType[] entityComponents)

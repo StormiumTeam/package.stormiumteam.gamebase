@@ -80,7 +80,7 @@ namespace StormiumTeam.GameBase.Data
 	{
 	}
 
-	[UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
+	[UpdateInGroup(typeof(OrderGroup.Simulation.DeleteEntities))]
 	public class DestroyChainReactionSystemClientServerWorld : DestroyChainReactionSystemBase
 	{
 	}

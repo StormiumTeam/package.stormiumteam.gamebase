@@ -68,7 +68,12 @@ namespace StormiumTeam.GameBase.Systems
 			m_OperationQuery = GetEntityQuery(typeof(AsyncMapOperation));
 			m_ForceDataQuery     = GetEntityQuery(typeof(ForceMapData));
 
-			foreach (var file in Directory.GetFiles(Application.streamingAssetsPath + "/maps/", "*.json"))
+			var mapDirectory = Application.streamingAssetsPath + "/maps/";
+			if (!Directory.Exists(mapDirectory))
+			{
+				Directory.CreateDirectory(mapDirectory);
+			}
+			foreach (var file in Directory.GetFiles(mapDirectory, "*.json"))
 			{
 				var txt = File.ReadAllText(file);
 				var id = new FileInfo(file).Name.Replace(".json", string.Empty);

@@ -24,6 +24,7 @@ namespace StormiumTeam.GameBase
 		public float3 RigidBodyIndex => Value.RigidBodyIndex;
 	}
 
+	[UpdateInGroup(typeof(OrderGroup.Simulation.SpawnEntities.SpawnEvent))]
 	public class ColliderCastEventProvider : BaseProviderBatch<ColliderCastEventProvider.Create>
 	{
 		public struct Create
