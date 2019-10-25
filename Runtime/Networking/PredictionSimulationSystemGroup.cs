@@ -56,7 +56,7 @@ namespace StormiumTeam.GameBase
 				return;
 			}
 
-			if (end > start + 25)
+			if (end > start + 50 && true == false)
 			{
 				Debug.LogWarning("Excessing frames...");
 			}

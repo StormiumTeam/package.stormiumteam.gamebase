@@ -50,6 +50,8 @@ namespace StormiumTeam.GameBase
         public float3 normalized => math.normalizesafe(Value);
         public float  speed      => math.length(Value);
         public float  speedSqr   => math.lengthsq(Value);
+        
+        public float3 xfz => new float3(Value.x, 0, Value.z); 
 
         public Velocity(float3 value)
         {
