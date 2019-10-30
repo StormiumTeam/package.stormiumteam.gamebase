@@ -23,7 +23,10 @@ namespace StormiumTeam.GameBase
 			{
 				CommandBuffer.AddComponent(jobIndex, connection, default(NetworkStreamInGame));
 
-				RpcQueue.Schedule(OutgoingDataFromEntity[connection], new ClientLoadedRpc {GameVersion = GameVersion});
+				//RpcQueue.Schedule(OutgoingDataFromEntity[connection], new ClientLoadedRpc {GameVersion = GameVersion});
+				var reqEnt = CommandBuffer.CreateEntity(jobIndex);
+				CommandBuffer.AddComponent(jobIndex, reqEnt, new ClientLoadedRpc {GameVersion = GameVersion});
+				CommandBuffer.AddComponent(jobIndex, reqEnt, new SendRpcCommandRequestComponent {TargetConnection = connection});
 			}
 		}
 
@@ -44,7 +47,7 @@ namespace StormiumTeam.GameBase
 				
 				CommandBuffer          = m_Barrier.CreateCommandBuffer().ToConcurrent(),
 				OutgoingDataFromEntity = GetBufferFromEntity<OutgoingRpcDataStreamBufferComponent>(),
-				RpcQueue               = World.GetExistingSystem<DefaultRpcProcessSystem<ClientLoadedRpc>>().RpcQueue
+				RpcQueue               = World.GetExistingSystem<RpcCommandRequest<ClientLoadedRpc>>().Queue
 			}.Schedule(this, inputDeps);
 			m_Barrier.AddJobHandleForProducer(inputDeps);
 

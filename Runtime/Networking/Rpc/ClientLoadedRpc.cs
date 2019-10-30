@@ -9,32 +9,16 @@ using UnityEngine;
 
 namespace StormiumTeam.GameBase
 {
-	public struct ClientLoadedRpc : IRpcCommand
+	public struct ClientLoadedRpc : IRpcCommandRequestComponentData
 	{
 		public int GameVersion;
 
-		public void Execute(Entity connection, World world)
-		{
-			Debug.Log($"{GameVersion}");
-			
-			var entMgr = world.EntityManager;
-
-			entMgr.AddComponent(connection, typeof(NetworkStreamInGame));
-
-			var gamePlayerCreate = entMgr.CreateEntity(typeof(CreateGamePlayer));
-			entMgr.SetComponentData(gamePlayerCreate, new CreateGamePlayer
-			{
-				Connection  = connection,
-				GameVersion = GameVersion,
-			});
-		}
-
-		public void WriteTo(DataStreamWriter writer)
+		public void Serialize(DataStreamWriter writer)
 		{
 			writer.Write(GameVersion);
 		}
 
-		public void ReadFrom(DataStreamReader reader, ref DataStreamReader.Context ctx)
+		public void Deserialize(DataStreamReader reader, ref DataStreamReader.Context ctx)
 		{
 			var byteRead = reader.GetBytesRead(ref ctx);
 			if (reader.Length - byteRead < sizeof(int))
@@ -45,22 +29,15 @@ namespace StormiumTeam.GameBase
 
 			GameVersion = reader.ReadInt(ref ctx);
 		}
-	}
 
-	public struct CreateGamePlayer : IComponentData
-	{
-		public Entity Connection;
-		public int    GameVersion;
+		public Entity SourceConnection { get; set; }
 	}
 
 	[UpdateInGroup(typeof(OrderGroup.Simulation.SpawnEntities))]
 	public class CreateGamePlayerSystem : JobComponentSystem
 	{
-		private struct CreateJob : IJobForEachWithEntity<CreateGamePlayer>
+		private struct CreateJob : IJobForEachWithEntity<ClientLoadedRpc>
 		{
-			[NativeDisableParallelForRestriction]
-			public NativeList<PlayerConnectedRpc> PreMadeEvents;
-
 			public EntityCommandBuffer.Concurrent CommandBuffer;
 
 			public EntityArchetype PlayerArchetype;
@@ -75,56 +52,37 @@ namespace StormiumTeam.GameBase
 			[ReadOnly]
 			public ComponentDataFromEntity<NetworkStreamConnection> NetworkStreamConnectionFromEntity;
 
-			public void Execute(Entity entity, int jobIndex, ref CreateGamePlayer create)
+			public void Execute(Entity entity, int jobIndex, ref ClientLoadedRpc create)
 			{
 				CommandBuffer.DestroyEntity(jobIndex, entity);
 
 				if (create.GameVersion != CurrentVersion)
 				{
 					Debug.Log($"bye bye [player version:{create.GameVersion}, current: {CurrentVersion}]");
-					NetworkStreamConnectionFromEntity[create.Connection].Value.Disconnect(Driver);
+					NetworkStreamConnectionFromEntity[create.SourceConnection].Value.Disconnect(Driver);
 					return;
 				}
 
-				var networkId = NetworkIdFromEntity[create.Connection];
+				var networkId = NetworkIdFromEntity[create.SourceConnection];
 
 				var geEnt = CommandBuffer.CreateEntity(jobIndex, PlayerArchetype);
 				CommandBuffer.SetComponent(jobIndex, geEnt, new GamePlayer(0) {ServerId = networkId.Value});
-				CommandBuffer.AddComponent(jobIndex, geEnt, new NetworkOwner {Value     = create.Connection});
+				CommandBuffer.AddComponent(jobIndex, geEnt, new NetworkOwner {Value     = create.SourceConnection});
 				CommandBuffer.AddComponent(jobIndex, geEnt, new GamePlayerReadyTag());
 				CommandBuffer.AddComponent(jobIndex, geEnt, new GhostEntity());
 				CommandBuffer.AddComponent(jobIndex, geEnt, new WorldOwnedTag());
 
-				CommandBuffer.SetComponent(jobIndex, create.Connection, new CommandTargetComponent {targetEntity = geEnt});
+				Debug.Log($"Create GamePlayer {geEnt}; source={create.SourceConnection}");
 				
-				PreMadeEvents.Add(new PlayerConnectedRpc
-				{
-					ServerId = networkId.Value
-				});
-
+				CommandBuffer.SetComponent(jobIndex, create.SourceConnection, new CommandTargetComponent {targetEntity = geEnt});
+				
 				// Create event
 				var evEnt = CommandBuffer.CreateEntity(jobIndex);
-				CommandBuffer.AddComponent(jobIndex, evEnt, new PlayerConnectedEvent {Player = geEnt, Connection = create.Connection, ServerId = networkId.Value});
-			}
-		}
+				CommandBuffer.AddComponent(jobIndex, evEnt, new PlayerConnectedEvent {Player = geEnt, Connection = create.SourceConnection, ServerId = networkId.Value});
 
-		[RequireComponentTag(typeof(NetworkStreamInGame))]
-		private struct SendRpcToConnectionsJob : IJobForEachWithEntity<NetworkStreamConnection>
-		{
-			[NativeDisableParallelForRestriction]
-			public NativeList<PlayerConnectedRpc> PreMadeEvents;
-
-			[NativeDisableParallelForRestriction]
-			public BufferFromEntity<OutgoingRpcDataStreamBufferComponent> OutgoingDataFromEntity;
-
-			public RpcQueue<PlayerConnectedRpc> RpcQueue;
-
-			public void Execute(Entity entity, int jobIndex, ref NetworkStreamConnection connection)
-			{
-				for (var ev = 0; ev != PreMadeEvents.Length; ev++)
-				{
-					RpcQueue.Schedule(OutgoingDataFromEntity[entity], PreMadeEvents[ev]);
-				}
+				var reqEnt = CommandBuffer.CreateEntity(jobIndex);
+				CommandBuffer.AddComponent(jobIndex, reqEnt, new PlayerConnectedRpc {ServerId = networkId.Value});
+				CommandBuffer.AddComponent(jobIndex, reqEnt, new SendRpcCommandRequestComponent()); // send to everyone
 			}
 		}
 
@@ -138,7 +96,7 @@ namespace StormiumTeam.GameBase
 			m_Barrier            = World.GetOrCreateSystem<BeginSimulationEntityCommandBufferSystem>();
 			m_PreviousEventQuery = GetEntityQuery(typeof(PlayerConnectedEvent));
 
-			GetEntityQuery(typeof(CreateGamePlayer));
+			GetEntityQuery(typeof(ClientLoadedRpc));
 		}
 
 		protected override JobHandle OnUpdate(JobHandle inputDeps)
@@ -148,11 +106,9 @@ namespace StormiumTeam.GameBase
 			{
 				EntityManager.DestroyEntity(m_PreviousEventQuery);
 			}
-
-			var preMadeEvents = new NativeList<PlayerConnectedRpc>(Allocator.TempJob);
+			
 			inputDeps = new CreateJob
 			{
-				PreMadeEvents  = preMadeEvents,
 				CurrentVersion = GameStatic.Version,
 
 				Driver                            = World.GetExistingSystem<NetworkStreamReceiveSystem>().Driver,
@@ -162,13 +118,6 @@ namespace StormiumTeam.GameBase
 				PlayerArchetype     = World.GetOrCreateSystem<GamePlayerProvider>().EntityArchetype,
 				NetworkIdFromEntity = GetComponentDataFromEntity<NetworkIdComponent>()
 			}.ScheduleSingle(this, inputDeps);
-			inputDeps = new SendRpcToConnectionsJob
-			{
-				PreMadeEvents          = preMadeEvents,
-				OutgoingDataFromEntity = GetBufferFromEntity<OutgoingRpcDataStreamBufferComponent>(),
-				RpcQueue               = World.GetExistingSystem<DefaultRpcProcessSystem<PlayerConnectedRpc>>().RpcQueue
-			}.Schedule(this, inputDeps);
-			inputDeps = preMadeEvents.Dispose(inputDeps); // dispose list after the end of jobs
 
 			m_Barrier.AddJobHandleForProducer(inputDeps);
 

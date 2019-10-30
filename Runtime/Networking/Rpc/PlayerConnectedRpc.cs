@@ -9,26 +9,27 @@ using UnityEngine;
 
 namespace StormiumTeam.GameBase
 {
-	public struct PlayerConnectedRpc : IRpcCommand
+	public struct PlayerConnectedRpc : IRpcCommandRequestExecuteNow
 	{
 		public int ServerId;
 
-		public void Execute(Entity connection, World world)
+		public void Execute(EntityManager em)
 		{
-			var entityMgr = world.EntityManager;
-			var delayed   = entityMgr.CreateEntity(typeof(DelayedPlayerConnection));
-			entityMgr.SetComponentData(delayed, new DelayedPlayerConnection {Connection = connection, ServerId = ServerId});
+			var delayed = em.CreateEntity(typeof(DelayedPlayerConnection));
+			em.SetComponentData(delayed, new DelayedPlayerConnection {Connection = SourceConnection, ServerId = ServerId});
 		}
 
-		public void WriteTo(DataStreamWriter writer)
+		public void Serialize(DataStreamWriter writer)
 		{
 			writer.Write(ServerId);
 		}
 
-		public void ReadFrom(DataStreamReader reader, ref DataStreamReader.Context ctx)
+		public void Deserialize(DataStreamReader reader, ref DataStreamReader.Context ctx)
 		{
 			ServerId = reader.ReadInt(ref ctx);
 		}
+
+		public Entity SourceConnection { get; set; }
 	}
 
 	/* --------------------------------------------------------- *
@@ -189,9 +190,9 @@ namespace StormiumTeam.GameBase
 			inputDeps = findPlayerJob.Schedule(this, JobHandle.CombineDependencies(inputDeps, dep1, dep2));
 			inputDeps = new DisposeJob
 			{
-				PlayerIds = playerIds,
+				PlayerIds       = playerIds,
 				DelayedEntities = findPlayerJob.DelayedEntities,
-				DelayedData = findPlayerJob.DelayedData
+				DelayedData     = findPlayerJob.DelayedData
 			}.Schedule(inputDeps);
 
 			m_Barrier.AddJobHandleForProducer(inputDeps);

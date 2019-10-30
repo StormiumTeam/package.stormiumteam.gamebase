@@ -8,28 +8,28 @@ namespace StormiumTeam.GameBase
 	public struct GameEvent : IComponentData
 	{
 		public uint SnapshotTick;
-		public int SimulationTick;
+		public int  SimulationTick;
 	}
 
 	public struct ReplicatedEventTag : IComponentData
 	{
 	}
-	
+
 	public interface IEventData : IComponentData
 	{
 	}
 
 	public interface IReplicatedEvent : IComponentData
 	{
-		uint SnapshotTick { get; set; }
-		int SimulationTick { get; set; }
+		uint SnapshotTick   { get; set; }
+		int  SimulationTick { get; set; }
 	}
 
-	public interface IEventRpcCommand<TEvent, TReplication> : IRpcCommand where TEvent : struct, IEventData
-		where TReplication : struct, IReplicatedEvent
+	public interface IEventRpcCommand<TEvent, TReplication> : IRpcCommandRequestComponentData where TEvent : struct, IEventData
+	                                                                                          where TReplication : struct, IReplicatedEvent
 	{
 		void Init(JobComponentSystem system);
-		void SetData(Entity connection, NativeArray<TEvent> events);
+		void SetData(Entity          connection, NativeArray<TEvent> events);
 	}
 
 	[UpdateInGroup(typeof(ServerInitializationSystemGroup))]
@@ -61,9 +61,9 @@ namespace StormiumTeam.GameBase
 			}
 		}
 
-		private EntityQuery          m_EventQuery;
-		private EntityQuery          m_ClientQuery;
-		private DefaultRpcProcessSystem<TRpc> m_RpcQueueSystem;
+		private EntityQuery             m_EventQuery;
+		private EntityQuery             m_ClientQuery;
+		private RpcCommandRequest<TRpc> m_RpcQueueSystem;
 
 		private EndInitializationEntityCommandBufferSystem m_EndInitializationEntityCommandBufferSystem;
 
@@ -73,8 +73,8 @@ namespace StormiumTeam.GameBase
 
 			m_EventQuery     = GetEntityQuery(typeof(GameEvent), typeof(TEvent), ComponentType.Exclude<ReplicatedEventTag>());
 			m_ClientQuery    = GetEntityQuery(typeof(NetworkStreamInGame), typeof(OutgoingRpcDataStreamBufferComponent));
-			m_RpcQueueSystem = World.GetOrCreateSystem<DefaultRpcProcessSystem<TRpc>>();
-			
+			m_RpcQueueSystem = World.GetOrCreateSystem<RpcCommandRequest<TRpc>>();
+
 			m_EndInitializationEntityCommandBufferSystem = World.GetOrCreateSystem<EndInitializationEntityCommandBufferSystem>();
 		}
 
@@ -89,7 +89,7 @@ namespace StormiumTeam.GameBase
 			inputDeps = new JobSend
 			{
 				Events         = m_EventQuery.ToComponentDataArray<TEvent>(Allocator.TempJob, out var dep1),
-				RpcQueue       = m_RpcQueueSystem.RpcQueue,
+				RpcQueue       = m_RpcQueueSystem.Queue,
 				RpcData        = rpcData,
 				Clients        = m_ClientQuery.ToEntityArray(Allocator.TempJob, out var dep2),
 				OutgoingBuffer = GetBufferFromEntity<OutgoingRpcDataStreamBufferComponent>()
@@ -97,7 +97,7 @@ namespace StormiumTeam.GameBase
 
 			m_EndInitializationEntityCommandBufferSystem.CreateCommandBuffer().AddComponent(m_EventQuery, typeof(ReplicatedEventTag));
 			m_EndInitializationEntityCommandBufferSystem.AddJobHandleForProducer(inputDeps);
-			
+
 			return inputDeps;
 		}
 	}
@@ -109,7 +109,7 @@ namespace StormiumTeam.GameBase
 		where TEvent : struct, IEventData
 	{
 		private EntityArchetype m_EventArchetype;
-		
+
 		private EntityQuery m_ReplicatedQuery;
 		private EntityQuery m_EventQuery;
 
