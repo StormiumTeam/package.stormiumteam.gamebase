@@ -1,15 +1,34 @@
 using System;
+using Unity.Profiling;
+using UnityEngine;
 
 namespace GmMachine
 {
 	public class Block
 	{
+		private string m_Name;
+		
 		public Context Context;
 		
 		public Block Executor => Context.Parent;
 
 		public Guid Guid;
-		public string Name;
+
+		public string Name
+		{
+			get => m_Name;
+			set
+			{
+				if (m_Name != value)
+				{
+					Debug.Log($"Update New Marker {m_Name}");
+					m_Marker = new ProfilerMarker(value);
+				}
+				m_Name = value;
+			}
+		}
+
+		private ProfilerMarker m_Marker;
 
 		public Block()
 		{
@@ -23,21 +42,24 @@ namespace GmMachine
 
 		public bool Run(Block executor)
 		{
-			if (executor != null)
+			using (m_Marker.Auto())
 			{
-				Context.Machine = executor.Context.Machine;
-				Context.Parent  = executor;
-			}
-			// The executor may be null if this method is directly called from the machine
-			else
-			{
-				// We don't set Machine to null as it's important.
-				Context.Parent = null;
-			}
+				if (executor != null)
+				{
+					Context.Machine = executor.Context.Machine;
+					Context.Parent  = executor;
+				}
+				// The executor may be null if this method is directly called from the machine
+				else
+				{
+					// We don't set Machine to null as it's important.
+					Context.Parent = null;
+				}
 
-			var r = OnRun();
-			OnAfterRun();
-			return r;
+				var r = OnRun();
+				OnAfterRun();
+				return r;
+			}
 		}
 
 		public void Reset()
