@@ -62,18 +62,6 @@ namespace StormiumTeam.GameBase
         /// </example>
         public bool IsEnergyBased;
 
-        /// <summary>
-        /// (Usable if it's not energy based) If enabled, instead of waiting for the weapon to be reloaded fully,
-        /// you are able to reload per each ammo.
-        /// </summary>
-        public bool ReloadPerRound;
-
-        /// <summary>
-        /// Are we currently reloading? Automatically set to false if the weapon is energy based (<see cref="IsEnergyBased"/>)
-        /// </summary>
-        public bool IsReloading;
-        public int TimeToReload;
-        
         public int Value;
         public int Usage;
         public int Max;
@@ -85,9 +73,6 @@ namespace StormiumTeam.GameBase
             Max   = max;
             
             IsEnergyBased  = true;
-            ReloadPerRound = false;
-            IsReloading    = false;
-            TimeToReload   = 0;
         }
 
         public ActionAmmo(int usage, int max) : this(usage, max, 0)
@@ -101,7 +86,7 @@ namespace StormiumTeam.GameBase
             if (left < 0)
                 return false;
 
-            if (!IsEnergyBased && ReloadPerRound && IsReloading && Usage != Max)
+            if (!IsEnergyBased && Usage != Max)
                 return false;
 
             return true;
@@ -147,24 +132,12 @@ namespace StormiumTeam.GameBase
 
     public struct ActionCooldown : IComponentData
     {
-        public UTick StartTick;
-        public uint Cooldown;
+        public bool Active;
+        
+        public UTimeProgression Progress;
+        public int              Cooldown;
 
-        public ActionCooldown(UTick startTick)
-        {
-            StartTick = startTick;
-            Cooldown = 0;
-        }
-
-        public ActionCooldown(UTick startTick, uint cooldown) : this(startTick)
-        {
-            Cooldown = cooldown;
-        }
-
-        public bool CooldownFinished(UTick tick)
-        {
-            return StartTick <= 0 || tick > StartTick + UTick.MsToTickNextFrame(tick, Cooldown);
-        }
+        public bool ShouldBeFinished => Progress.Value >= Cooldown;
     }
 
     public struct ActionSimpleFire : IComponentData

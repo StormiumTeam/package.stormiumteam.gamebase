@@ -50,8 +50,11 @@ namespace StormiumTeam.GameBase
                 var entity = naArray[i];
                 var data   = array[i];
 
+                #if UNITY_EDITOR
+                EntityManager.SetName(entity, $"{GetTypeName(GetType())} #{entity.Index}:{entity.Version}");
+                #endif
                 SetEntityData(entity, data);
-
+                
                 indices.Add(i);
             }
 
@@ -62,6 +65,9 @@ namespace StormiumTeam.GameBase
         {
             var entity = EntityManager.CreateEntity(EntityArchetypeWithAuthority);
 
+#if UNITY_EDITOR
+            EntityManager.SetName(entity, $"{GetTypeName(GetType())} #{entity.Index}:{entity.Version}");
+#endif
             SetEntityData(entity, data);
 
             outputEntities.Add(entity);
@@ -97,7 +103,7 @@ namespace StormiumTeam.GameBase
 
         private JobHandle m_ProducerHandle;
         
-        private static string GetTypeName(Type type)
+        protected static string GetTypeName(Type type)
         {        
             return TypeUtility.SpecifiedTypeName(type);
         }
