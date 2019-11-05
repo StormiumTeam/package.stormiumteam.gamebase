@@ -42,7 +42,7 @@ namespace StormiumTeam.GameBase
 
         public override void SpawnBatchEntitiesWithArguments(UnsafeAllocationLength<TCreateData> array, NativeList<Entity> outputEntities, NativeList<int> indices)
         {
-            var naArray = new NativeArray<Entity>(array.Length, Allocator.Temp);
+            var naArray = new NativeArray<Entity>(array.Length, Allocator.TempJob);
 
             EntityManager.CreateEntity(EntityArchetypeWithAuthority, naArray);
             for (var i = 0; i != array.Length; i++)
@@ -59,6 +59,7 @@ namespace StormiumTeam.GameBase
             }
 
             outputEntities.AddRange(naArray);
+            naArray.Dispose();
         }
 
         public override void SpawnLocalEntityWithArguments(TCreateData data, NativeList<Entity> outputEntities)

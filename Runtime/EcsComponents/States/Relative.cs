@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using package.stormiumteam.shared;
 using package.stormiumteam.shared.ecs;
@@ -123,18 +124,18 @@ namespace StormiumTeam.GameBase
         public interface ISyncEvent : IAppEvent
         {
             void SyncRelativeToEntity(Entity              origin,              Entity owner);
-            void SyncRelativeToEntity(EntityCommandBuffer entityCommandBuffer, Entity origin, Entity owner);
             void AddChildren(Entity                       origin,              Entity owner);
 
-            //void DirectAddOrSet(Entity entity, Entity owner);
             ComponentType ComponentType { get; }
         }
 
         public static void AddChildrenOwner(this EntityManager entityManager, Entity source, Entity owner)
         {
-            foreach (var obj in AppEvent<ISyncEvent>.GetObjEvents())
+            var relativeGroup = entityManager.World.GetExistingSystem<RelativeGroup>();
+            foreach (var componentSystemBase in relativeGroup.Systems)
             {
-                obj.AddChildren(source, owner);
+                var system = (ISyncEvent) componentSystemBase;
+                system.AddChildren(source, owner);
             }
         }
 
@@ -230,18 +231,17 @@ namespace StormiumTeam.GameBase
 
         public void AddChildren(Entity origin, Entity owner)
         {
-            var descriptions = GetComponentDataFromEntity<T>();
-            if (descriptions.Exists(origin))
-            {
-                var buffer = EntityManager.GetBuffer<OwnerChild>(owner);
-                for (var i = 0; i != buffer.Length; i++)
-                {
-                    if (buffer[i].Child == origin)
-                        return;
-                }
+            if (!EntityManager.HasComponent(origin, typeof(T))) 
+                return;
 
-                buffer.Add(new OwnerChild(origin, ComponentType.ReadWrite<T>()));
+            var buffer = EntityManager.GetBuffer<OwnerChild>(owner);
+            for (var i = 0; i != buffer.Length; i++)
+            {
+                if (buffer[i].Child == origin)
+                    return;
             }
+
+            buffer.Add(new OwnerChild(origin, ComponentType.ReadWrite<T>()));
         }
 
         public void SyncRelativeToEntity(Entity origin, Entity owner)
@@ -267,40 +267,16 @@ namespace StormiumTeam.GameBase
                     relative[origin] = new Relative<T> {Target = owner};
                 else
                     EntityManager.AddComponentData(origin, new Relative<T> {Target = owner});
+                
+              //  Debug.LogError("Had description " + typeof(T));
             }
 
-            // Debug.Log($"({GetType().FullName}) Owner {owner} added to {origin}");
-        }
-
-        public void SyncRelativeToEntity(EntityCommandBuffer entityCommandBuffer, Entity origin, Entity owner)
-        {
-            var relative     = GetComponentDataFromEntity<Relative<T>>();
-            var descriptions = GetComponentDataFromEntity<T>();
-
-            if (relative.Exists(owner))
-            {
-                if (relative.Exists(origin))
-                    relative[origin] = relative[owner];
-                else
-                    entityCommandBuffer.AddComponent(origin, relative[owner]);
-            }
-
-            if (!descriptions.Exists(owner) || relative.Exists(origin))
-                return;
-
-            // resync...
-            relative     = GetComponentDataFromEntity<Relative<T>>();
-            descriptions = GetComponentDataFromEntity<T>();
-
-            if (relative.Exists(owner))
-                relative[owner] = new Relative<T> {Target = owner};
-            else
-                entityCommandBuffer.AddComponent(origin, new Relative<T> {Target = owner});
+           // Debug.LogError($"({typeof(T)}) Owner {owner} added to {origin}");
         }
     }
 
     [UpdateInGroup(typeof(InitializationSystemGroup))]
-    public abstract class FindRelativeComponent : ComponentSystem
+    public class FindRelativeComponent : ComponentSystem
     {
         protected override void OnCreate()
         {

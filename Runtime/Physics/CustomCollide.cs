@@ -37,9 +37,9 @@ namespace StormiumTeam.GameBase
 			DataPtr = new IntPtr(cc.GetUnsafePtr());
 		}
 
-		public CustomCollideCollection(CustomCollide cc)
+		public CustomCollideCollection(ref CustomCollide cc)
 		{
-			DataPtr = (IntPtr) (&cc);
+			DataPtr = (IntPtr) UnsafeUtility.AddressOf(ref cc);
 			Count   = 1;
 		}
 
@@ -100,7 +100,7 @@ namespace StormiumTeam.GameBase
 			Collider        = rigidBody.Collider;
 			WorldFromMotion = rigidBody.WorldFromBody;
 			RigidBodyIndex  = -1;
-			Target          = default;
+			Target          = rigidBody.Entity;
 		}
 	}
 

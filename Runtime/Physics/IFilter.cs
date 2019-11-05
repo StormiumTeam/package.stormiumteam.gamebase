@@ -11,6 +11,11 @@ namespace StormiumTeam.GameBase
 		PhysicsWorld                  PhysicsWorld          { get; set; }
 	}
 
+	public interface ICollectorFilter
+	{
+		bool Filter(int rbIndex);
+	}
+
 	public class Filter
 	{
 		
