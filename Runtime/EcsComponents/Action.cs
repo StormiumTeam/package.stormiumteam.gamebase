@@ -139,22 +139,4 @@ namespace StormiumTeam.GameBase
 
         public bool ShouldBeFinished => Progress.Value >= Cooldown;
     }
-
-    public struct ActionSimpleFire : IComponentData
-    {
-    }
-
-    public struct ActionDualSwitch : IComponentData
-    {
-        public Entity PrimaryTarget;
-        public Entity SecondaryTarget;
-
-        public Entity this[int index] => index == 1 ? SecondaryTarget : PrimaryTarget;
-
-        public ActionDualSwitch(Entity primary, Entity secondary)
-        {
-            PrimaryTarget = primary;
-            SecondaryTarget = secondary;
-        }
-    }
 }

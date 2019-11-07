@@ -6,6 +6,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics;
 using Unity.Transforms;
+using UnityEngine;
 using Collider = Unity.Physics.Collider;
 using Math = Unity.Physics.Math;
 using RaycastHit = Unity.Physics.RaycastHit;
@@ -275,6 +276,62 @@ namespace StormiumTeam.GameBase
 			CollideWith.UpdateFilterRecursion(input.Collider, previousColliderInputFilter);
 
 			return hadHit;
+		}
+		
+		public static bool CalculateDistance<T>(this CustomCollideCollection buffer, PointDistanceInput input, ref T collector, bool setSameGroup = false)
+			where T : struct, ICollector<DistanceHit>
+		{
+			if (!buffer.Valid())
+				throw new InvalidOperationException();
+
+			var ptr    = (CustomCollide*) buffer.DataPtr;
+			var length = buffer.Count;
+
+			var hadHit = false;
+			for (var i = 0; i != length; i++)
+			{
+				ref var cw = ref UnsafeUtilityEx.ArrayElementAsRef<CustomCollide>(ptr, i);
+
+				// Transform the input into body space
+				var worldFromMotion = new Math.MTransform(cw.WorldFromMotion);
+				var bodyFromWorld   = Math.Inverse(worldFromMotion);
+				var inputLs = new PointDistanceInput
+				{
+					Filter = input.Filter,
+					Position    = Math.Mul(bodyFromWorld, input.Position),
+					MaxDistance = input.MaxDistance
+				};
+
+				var fraction = collector.MaxFraction;
+				var numHits  = collector.NumHits;
+
+				if (cw.Collider->CalculateDistance(inputLs, ref collector))
+				{
+					// Transform results back into world space
+					collector.TransformNewHits(numHits, fraction, worldFromMotion, cw.RigidBodyIndex);
+					hadHit = true;
+
+					if (collector.EarlyOutOnFirstHit)
+					{
+						return true;
+					}
+				}
+			}
+
+			return hadHit;
+		}
+		
+		public static bool CalculateDistance(this CustomCollideCollection buffer, PointDistanceInput input, out DistanceHit result)
+		{
+			var collector = new ClosestHitCollector<DistanceHit>(input.MaxDistance);
+			if (CalculateDistance(buffer, input, ref collector))
+			{
+				result = collector.ClosestHit; // TODO: would be nice to avoid this copy
+				return true;
+			}
+
+			result = new DistanceHit();
+			return false;
 		}
 	}
 }

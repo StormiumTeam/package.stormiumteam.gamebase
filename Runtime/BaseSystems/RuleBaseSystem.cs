@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading.Tasks;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
@@ -72,6 +74,23 @@ namespace StormiumTeam.GameBase.BaseSystems
 		public int                 Size;
 		public ComponentSystemBase System;
 
+		public unsafe Property<TValue> Add<TValue>(string name, Expression<Func<TData, TValue>> expression)
+			where TValue : struct
+		{
+			var memberInfo = ((MemberExpression) expression.Body).Member;
+			if (memberInfo is FieldInfo fieldInfo)
+			{
+				var property = new Property<TValue> {Name = name, WriteOffset = UnsafeUtility.GetFieldOffset(fieldInfo), Base = this};
+				Properties.Add(property);
+
+				Size += UnsafeUtility.SizeOf<TValue>();
+
+				return property;
+			}
+
+			throw new NotImplementedException("Only members that are field are supported for now.");
+		}
+
 		public unsafe Property<TValue> Add<TValue>(string name, ref TData data, ref TValue value)
 			where TValue : struct
 		{
@@ -143,7 +162,7 @@ namespace StormiumTeam.GameBase.BaseSystems
 	public class PhysicsFilterRuleSystemGroup : RuleSystemGroupBase
 	{
 	}
-	
+
 	public abstract class RuleBaseSystem : JobGameBaseSystem
 	{
 		public List<RulePropertiesBase> PropertiesCollection;
@@ -174,11 +193,10 @@ namespace StormiumTeam.GameBase.BaseSystems
 		{
 			base.OnDestroy();
 
-			Parallel.For(0, 4, (i) => { });
 			PropertiesCollection.ForEach(r => r.Dispose());
 		}
 
-		protected RuleProperties<TData> AddRule<TData>(out TData data)
+		protected RuleProperties<TData> AddRule<TData>()
 			where TData : struct, IComponentData
 		{
 			var properties = new RuleProperties<TData> {System = this};
@@ -191,8 +209,14 @@ namespace StormiumTeam.GameBase.BaseSystems
 				RequireSingletonForUpdate<TData>();
 			}
 
-			data = GetSingleton<TData>();
+			return properties;
+		}
 
+		protected RuleProperties<TData> AddRule<TData>(out TData data)
+			where TData : struct, IComponentData
+		{
+			var properties = AddRule<TData>();
+			data = GetSingleton<TData>();
 			return properties;
 		}
 	}

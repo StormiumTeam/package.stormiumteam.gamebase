@@ -1,3 +1,4 @@
+using Revolution;
 using Unity.Entities;
 
 namespace StormiumTeam.GameBase.Components
@@ -17,6 +18,7 @@ namespace StormiumTeam.GameBase.Components
 				{
 					typeof(GameEvent),
 					typeof(TargetDamageEvent),
+					typeof(GhostEntity)
 				};
 			}
 

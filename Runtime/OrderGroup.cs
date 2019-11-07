@@ -1,5 +1,6 @@
 using Revolution.NetCode;
 using Unity.Entities;
+using UnityEngine;
 
 namespace StormiumTeam.GameBase
 {
@@ -53,18 +54,29 @@ namespace StormiumTeam.GameBase
 			[UpdateAfter(typeof(UpdateEntities))]
 			public class DeleteEntities : ComponentSystemGroup
 			{
-
+				[UpdateInGroup(typeof(DeleteEntities))]
+				public class CommandBufferSystem : EntityCommandBufferSystem
+				{
+				}
 			}
+			
+			public class BeforeSpawnEntitiesCommandBuffer : EntityCommandBufferSystem
+			{}
 
 			[UpdateInGroup(typeof(Simulation))]
 			[UpdateAfter(typeof(DeleteEntities))]
 			public class SpawnEntities : ComponentSystemGroup
-			{
+			{				
 				[UpdateInGroup(typeof(SpawnEntities))]
 				public class SpawnEvent : ComponentSystemGroup
 				{
 
 				}
+				
+				[UpdateInGroup(typeof(SpawnEntities))]
+				[UpdateAfter(typeof(SpawnEvent))]
+				public class CommandBufferSystem : EntityCommandBufferSystem
+				{}
 			}
 
 			[UpdateInGroup(typeof(Simulation))]
