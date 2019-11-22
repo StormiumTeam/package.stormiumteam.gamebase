@@ -1,16 +1,13 @@
-using System;
 using System.Linq;
 using package.stormiumteam.shared;
 using package.stormiumteam.shared.ecs;
 using Revolution;
-using Revolution.NetCode;
 using StormiumTeam.GameBase;
 using StormiumTeam.GameBase.Data;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Networking.Transport;
-using UnityEngine;
 
 [assembly: RegisterGenericComponentType(typeof(Relative<HitShapeDescription>))]
 [assembly: RegisterGenericComponentType(typeof(Relative<MovableDescription>))]
@@ -18,6 +15,7 @@ using UnityEngine;
 [assembly: RegisterGenericComponentType(typeof(Relative<CharacterDescription>))]
 [assembly: RegisterGenericComponentType(typeof(Relative<PlayerDescription>))]
 [assembly: RegisterGenericComponentType(typeof(Relative<ActionDescription>))]
+[assembly: RegisterGenericComponentType(typeof(Relative<ActionHolderDescription>))]
 [assembly: RegisterGenericComponentType(typeof(Relative<ProjectileDescription>))]
 
 namespace StormiumTeam.GameBase
@@ -29,7 +27,7 @@ namespace StormiumTeam.GameBase
     public struct ExcludeRelativeFromSnapshot : IComponentData
     {}
 
-    public abstract class RelativeSynchronize<TDesc> : MixedComponentSnapshotSystem<Relative<TDesc>, GhostSetup>
+    public abstract class RelativeSynchronize<TDesc> : MixedComponentSnapshotSystem_Delta<Relative<TDesc>, GhostSetup>
         where TDesc : struct, IEntityDescription
     {
         public override ComponentType ExcludeComponent => typeof(ExcludeRelativeFromSnapshot);
@@ -80,6 +78,12 @@ namespace StormiumTeam.GameBase
         {}
     }
 
+    public struct ActionHolderDescription : IEntityDescription
+    {
+        public class Sync : RelativeSynchronize<ActionHolderDescription>
+        {}
+    }
+    
     public struct ActionDescription : IEntityDescription
     {
         public class Sync : RelativeSynchronize<ActionDescription>
@@ -96,21 +100,18 @@ namespace StormiumTeam.GameBase
     {
         public struct Exclude : IComponentData
         {}
-        
-        private uint m_InternalPreviousGhostId;
 
         public Entity Target;
 
         public void WriteTo(DataStreamWriter writer, ref Owner baseline, GhostSetup setup, SerializeClientData jobData)
         {
-            writer.WritePackedUIntDelta(setup[Target], setup[baseline.Target], jobData.NetworkCompressionModel);
+            writer.WritePackedUInt(setup[Target], jobData.NetworkCompressionModel);
         }
 
         public void ReadFrom(ref DataStreamReader.Context ctx, DataStreamReader reader, ref Owner baseline, DeserializeClientData jobData)
         {
-            var ghostId = reader.ReadPackedUIntDelta(ref ctx, m_InternalPreviousGhostId, jobData.NetworkCompressionModel);
+            var ghostId = reader.ReadPackedUInt(ref ctx, jobData.NetworkCompressionModel);
             jobData.GhostToEntityMap.TryGetValue(ghostId, out Target);
-            m_InternalPreviousGhostId = ghostId;
         }
 
         public class Sync : MixedComponentSnapshotSystem<Owner, GhostSetup>
@@ -301,8 +302,7 @@ namespace StormiumTeam.GameBase
     }
 
     // Todo: find a way to synchronize it nicely.
-    public struct Relative<TDescription> : IComponentData, IReadWriteComponentSnapshot<Relative<TDescription>, GhostSetup>
-        where TDescription : struct, IEntityDescription
+    public struct Relative<TDescription> : IComponentData, IReadWriteComponentSnapshot<Relative<TDescription>, GhostSetup>, ISnapshotDelta<Relative<TDescription>> where TDescription : struct, IEntityDescription
     {
         public Entity Target;
 
@@ -320,6 +320,11 @@ namespace StormiumTeam.GameBase
         {
             var ghostId = reader.ReadPackedUInt(ref ctx, jobData.NetworkCompressionModel);
             jobData.GhostToEntityMap.TryGetValue(ghostId, out Target);
+        }
+
+        public bool DidChange(Relative<TDescription> baseline)
+        {
+            return !Target.Equals(baseline.Target);
         }
     }
 

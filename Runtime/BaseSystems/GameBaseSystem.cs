@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Revolution.NetCode;
 using Unity.Collections;
 using Unity.Entities;
@@ -137,7 +136,7 @@ namespace StormiumTeam.GameBase
 	}
 
 	[DisableAutoCreation]
-	internal class GameJobHiddenSystem : JobComponentSystem
+	public class GameJobHiddenSystem : JobComponentSystem
 	{
 		protected override JobHandle OnUpdate(JobHandle inputDeps)
 		{

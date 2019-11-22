@@ -1,6 +1,5 @@
 using Revolution.NetCode;
 using Unity.Entities;
-using UnityEngine;
 
 namespace StormiumTeam.GameBase
 {
@@ -18,6 +17,7 @@ namespace StormiumTeam.GameBase
 		
 		[UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
 		[UpdateAfter(typeof(NetworkReceiveSnapshotSystemGroup))]
+		[UpdateBefore(typeof(SnapshotSendSystem))]
 		public class Simulation : ComponentSystemGroup
 		{
 			[UpdateInGroup(typeof(Simulation))]

@@ -103,7 +103,7 @@ namespace StormiumTeam.GameBase
 	}
 
 	[UpdateInGroup(typeof(ClientSimulationSystemGroup))]
-	[UpdateAfter(typeof(NetworkStreamReceiveSystem))]
+	[UpdateAfter(typeof(NetworkStreamReceiveSystemGroup))]
 	public abstract class DefaultEventReplicatedSpawnBase<TReplicated, TEvent> : JobComponentSystem
 		where TReplicated : struct, IReplicatedEvent
 		where TEvent : struct, IEventData

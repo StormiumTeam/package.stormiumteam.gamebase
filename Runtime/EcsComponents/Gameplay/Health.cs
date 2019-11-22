@@ -1,5 +1,7 @@
 using Revolution;
 using Revolution.NetCode;
+using StormiumTeam.GameBase;
+using StormiumTeam.GameBase.Components;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -8,11 +10,17 @@ using Unity.Mathematics;
 using Unity.Networking.Transport;
 using UnityEngine;
 
+[assembly: RegisterGenericComponentType(typeof(Relative<HealthDescription>))]
+
 namespace StormiumTeam.GameBase.Components
 {
 	public struct HealthConcreteValue : IComponentData
 	{
 		public int Value, Max;
+		
+		// We don't directly synchronize the value since they can be computed from the client
+		public class Sync : ComponentSnapshotSystemTag<HealthConcreteValue>
+		{}
 	}
 
 	public struct LivableHealth : IReadWriteComponentSnapshot<LivableHealth>
@@ -31,17 +39,18 @@ namespace StormiumTeam.GameBase.Components
 
 		public void WriteTo(DataStreamWriter writer, ref LivableHealth baseline, DefaultSetup setup, SerializeClientData jobData)
 		{
-			writer.WritePackedUInt(IsDead ? 1u : 0u, jobData.NetworkCompressionModel);
+			writer.WriteBitBool(IsDead);
 		}
 
 		public void ReadFrom(ref DataStreamReader.Context ctx, DataStreamReader reader, ref LivableHealth baseline, DeserializeClientData jobData)
 		{
-			IsDead = reader.ReadPackedUInt(ref ctx, jobData.NetworkCompressionModel) == 1u;
+			this   = baseline;
+			IsDead = reader.ReadBitBool(ref ctx);
 		}
 
 		public struct ExcludeDefaultSynchronization : IComponentData
 		{
-			
+
 		}
 
 		public class Synchronize : MixedComponentSnapshotSystem<LivableHealth, DefaultSetup>
@@ -74,13 +83,11 @@ namespace StormiumTeam.GameBase.Components
 			Target = healthTarget;
 		}
 	}
-
-	public struct HealthAssetDescription : IComponentData
+	
+	public struct HealthDescription : IEntityDescription
 	{
-	}
-
-	public struct HealthDescription : IComponentData
-	{
+		public class Sync : RelativeSynchronize<HealthDescription>
+		{}
 	}
 
 	public enum ModifyHealthType
@@ -127,19 +134,33 @@ namespace StormiumTeam.GameBase.Components
 		}
 
 		[BurstCompile]
-		private struct ClearBuffer : IJobChunk
+		private struct ClearBuffer : IJobForEach_B<HealthContainer>
 		{
-			public ArchetypeChunkBufferType<HealthContainer> HealthContainerType;
+			public void Execute(DynamicBuffer<HealthContainer> buffer) => buffer.Clear();
+		}
 
-			public void Execute(ArchetypeChunk chunk, int chunkIndex, int firstEntityIndex)
+		[BurstCompile]
+		public struct AddHealthToContainer : IJobForEachWithEntity_EC<Owner>
+		{
+			public BufferFromEntity<HealthContainer> Container;
+
+			[BurstDiscard]
+			private void NonBurst_ThrowException(Entity source, Entity owner)
 			{
-				var bufferAccessor = chunk.GetBufferAccessor(HealthContainerType);
-				var length         = chunk.Count;
+				if (owner == default)
+					return;
+				Debug.LogError($"No HealthContainer found on owner={owner}, source={source}");
+			}
 
-				for (var i = 0; i != length; i++)
+			public void Execute(Entity entity, int i, ref Owner owner)
+			{
+				if (owner.Target == default || !Container.Exists(owner.Target))
 				{
-					bufferAccessor[i].Clear();
+					NonBurst_ThrowException(entity, owner.Target);
+					return;
 				}
+				
+				Container[owner.Target].Add(new HealthContainer(entity));
 			}
 		}
 
@@ -199,7 +220,7 @@ namespace StormiumTeam.GameBase.Components
 				var livableVectorized  = new int2(health.Value, health.Max);
 				var concreteVectorized = new int2(concrete.Value, concrete.Max);
 				var result             = livableVectorized + concreteVectorized;
-
+				
 				LivableHealthFromEntity[owner.Target] = new LivableHealth
 				{
 					Value  = result.x,
@@ -211,9 +232,13 @@ namespace StormiumTeam.GameBase.Components
 
 		private NativeList<ModifyHealthEvent> m_ModifyEventList;
 		private EntityQuery                   m_GroupEvent;
+		private EntityQuery                   m_HealthQuery;
 		private EntityQuery                   m_LivableWithoutHistory;
+		private EntityQuery                   m_LivableWithoutContainer;
 		private EntityQuery                   m_GroupLivableBuffer;
 
+		private GameJobHiddenSystem m_HiddenJobSystem;
+		
 		private ComponentSystemGroup m_ServerSimulationSystemGroup;
 
 		protected override void OnCreate()
@@ -228,14 +253,24 @@ namespace StormiumTeam.GameBase.Components
 					ComponentType.ReadOnly<ModifyHealthEvent>(),
 				}
 			});
+			m_HealthQuery = GetEntityQuery(new EntityQueryDesc
+			{
+				All = new ComponentType[] {typeof(HealthDescription), typeof(Owner)}
+			});
 			m_LivableWithoutHistory = GetEntityQuery(new EntityQueryDesc
 			{
 				All  = new ComponentType[] {typeof(LivableHealth)},
 				None = new ComponentType[] {typeof(HealthModifyingHistory)}
 			});
+			m_LivableWithoutContainer = GetEntityQuery(new EntityQueryDesc
+			{
+				All  = new ComponentType[] {typeof(LivableHealth)},
+				None = new ComponentType[] {typeof(HealthContainer)}
+			});
 			m_GroupLivableBuffer = GetEntityQuery(typeof(HealthContainer));
 
 			m_ServerSimulationSystemGroup = World.GetExistingSystem<ServerSimulationSystemGroup>();
+			m_HiddenJobSystem = World.GetOrCreateSystem<GameJobHiddenSystem>();
 		}
 
 		protected override void OnDestroy()
@@ -250,23 +285,17 @@ namespace StormiumTeam.GameBase.Components
 			base.OnUpdate();
 			
 			// Add the health entity to the health container before doing something.
-			Entities.WithAll<HealthDescription>().ForEach((Entity e, ref Owner owner) =>
+			if (m_LivableWithoutContainer.CalculateEntityCount() > 0)
 			{
-				if (owner.Target == default || !EntityManager.Exists(owner.Target))
+				var entities = m_LivableWithoutContainer.ToEntityArray(Allocator.TempJob);
+				foreach (var ent in entities)
 				{
-					Debug.LogWarning($"No health container found for {e} (target: {owner.Target})");
-					return;
+					var buffer = EntityManager.AddBuffer<HealthContainer>(ent);
+					buffer.Reserve(buffer.Capacity + 1);
 				}
 
-				if (!EntityManager.HasComponent(owner.Target, typeof(HealthContainer)))
-				{
-					EntityManager.AddComponent(owner.Target, typeof(HealthContainer));
-					Debug.LogWarning("Added 'HealthContainer' to " + owner.Target);
-				}
-
-				var buffer = EntityManager.GetBuffer<HealthContainer>(owner.Target);
-				buffer.Add(new HealthContainer(e));
-			});
+				entities.Dispose();
+			}
 
 			if (!m_LivableWithoutHistory.IsEmptyIgnoreFilter)
 			{
@@ -285,10 +314,11 @@ namespace StormiumTeam.GameBase.Components
 
 			JobHandle job = default;
 
-			job = new ClearBuffer
+			job = new ClearBuffer().Schedule(m_GroupLivableBuffer, job);
+			job = new AddHealthToContainer
 			{
-				HealthContainerType = GetArchetypeChunkBufferType<HealthContainer>()
-			}.Schedule(m_GroupLivableBuffer, job);
+				Container = m_HiddenJobSystem.GetBufferFromEntity<HealthContainer>()
+			}.ScheduleSingle(m_HealthQuery, job);
 
 			//job.Complete();
 

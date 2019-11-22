@@ -13,6 +13,7 @@ namespace StormiumTeam.GameBase
 		[NativeSetThreadIndex] private int m_ThreadIndex;
 #pragma warning restore 649
 
+		[NativeDisableParallelForRestriction]
 		private NativeArray<BlobAssetReference<Collider>> m_Colliders;
 
 		public     BlobAssetReference<Collider> Blob      => m_Colliders[m_ThreadIndex];

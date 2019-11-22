@@ -1,5 +1,3 @@
-using StormiumTeam.GameBase;
-
 namespace  StormiumTeam.GameBase
 {
 	public struct UTimeProgression

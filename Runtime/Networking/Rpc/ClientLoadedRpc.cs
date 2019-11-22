@@ -1,3 +1,4 @@
+using ENet;
 using Revolution;
 using Revolution.NetCode;
 using StormiumTeam.GameBase.EcsComponents;
@@ -6,6 +7,7 @@ using Unity.Entities;
 using Unity.Jobs;
 using Unity.Networking.Transport;
 using UnityEngine;
+using Valve.Sockets;
 
 namespace StormiumTeam.GameBase
 {
@@ -44,7 +46,7 @@ namespace StormiumTeam.GameBase
 
 			public int CurrentVersion;
 
-			public UdpNetworkDriver Driver;
+			public ENetDriver Driver;
 
 			[ReadOnly]
 			public ComponentDataFromEntity<NetworkIdComponent> NetworkIdFromEntity;
@@ -111,7 +113,7 @@ namespace StormiumTeam.GameBase
 			{
 				CurrentVersion = GameStatic.Version,
 
-				Driver                            = World.GetExistingSystem<NetworkStreamReceiveSystem>().Driver,
+				Driver                            = World.GetExistingSystem<NetworkStreamReceiveENetDriver>().Driver,
 				NetworkStreamConnectionFromEntity = GetComponentDataFromEntity<NetworkStreamConnection>(true),
 
 				CommandBuffer       = m_Barrier.CreateCommandBuffer().ToConcurrent(),

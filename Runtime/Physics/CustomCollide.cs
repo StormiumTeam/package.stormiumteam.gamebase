@@ -6,7 +6,6 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics;
 using Unity.Transforms;
-using UnityEngine;
 using Collider = Unity.Physics.Collider;
 using Math = Unity.Physics.Math;
 using RaycastHit = Unity.Physics.RaycastHit;
@@ -217,18 +216,11 @@ namespace StormiumTeam.GameBase
 			return hadHit;
 		}
 
-		public static bool CalculateDistance<T>(this CustomCollideCollection buffer, ColliderDistanceInput input, ref T collector, bool setSameGroup = false)
+		public static bool CalculateDistance<T>(this CustomCollideCollection buffer, ColliderDistanceInput input, ref T collector)
 			where T : struct, ICollector<DistanceHit>
 		{
 			if (!buffer.Valid())
 				throw new InvalidOperationException();
-
-			var previousColliderInputFilter = input.Collider->Filter;
-			var newFilter                   = previousColliderInputFilter;
-			{
-				newFilter.GroupIndex = 1;
-			}
-			CollideWith.UpdateFilterRecursion(input.Collider, newFilter);
 
 			var ptr    = (CustomCollide*) buffer.DataPtr;
 			var length = buffer.Count;
@@ -253,9 +245,7 @@ namespace StormiumTeam.GameBase
 
 				var fraction = collector.MaxFraction;
 				var numHits  = collector.NumHits;
-
-				var previousFilter = cw.Collider->Filter;
-				CollideWith.UpdateFilterRecursion(cw.Collider, newFilter);
+				
 				if (cw.Collider->CalculateDistance(inputLs, ref collector))
 				{
 					// Transform results back into world space
@@ -263,17 +253,9 @@ namespace StormiumTeam.GameBase
 					hadHit = true;
 
 					if (collector.EarlyOutOnFirstHit)
-					{
-						CollideWith.UpdateFilterRecursion(cw.Collider, previousFilter);
-						CollideWith.UpdateFilterRecursion(input.Collider, previousColliderInputFilter);
 						return true;
-					}
 				}
-
-				CollideWith.UpdateFilterRecursion(cw.Collider, previousFilter);
 			}
-
-			CollideWith.UpdateFilterRecursion(input.Collider, previousColliderInputFilter);
 
 			return hadHit;
 		}
@@ -322,6 +304,19 @@ namespace StormiumTeam.GameBase
 		}
 		
 		public static bool CalculateDistance(this CustomCollideCollection buffer, PointDistanceInput input, out DistanceHit result)
+		{
+			var collector = new ClosestHitCollector<DistanceHit>(input.MaxDistance);
+			if (CalculateDistance(buffer, input, ref collector))
+			{
+				result = collector.ClosestHit; // TODO: would be nice to avoid this copy
+				return true;
+			}
+
+			result = new DistanceHit();
+			return false;
+		}
+		
+		public static bool CalculateDistance(this CustomCollideCollection buffer, ColliderDistanceInput input, out DistanceHit result)
 		{
 			var collector = new ClosestHitCollector<DistanceHit>(input.MaxDistance);
 			if (CalculateDistance(buffer, input, ref collector))

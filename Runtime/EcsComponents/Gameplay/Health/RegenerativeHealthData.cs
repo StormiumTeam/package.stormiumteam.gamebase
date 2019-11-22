@@ -74,7 +74,7 @@ namespace StormiumTeam.GameBase.Components
 
 			public bool DidChange(Snapshot baseline)
 			{
-				throw new NotImplementedException();
+				return true;
 			}
 
 			public void SynchronizeFrom(in RegenerativeHealthData component, in DefaultSetup setup, in SerializeClientData serializeData)
@@ -162,7 +162,8 @@ namespace StormiumTeam.GameBase.Components
 						}
 					}
 
-					if (healthData.Cooldown <= 0 || Tick > healthData.StartTick)
+					Dt = Tick.Delta;
+					if (healthData.Cooldown <= 0 || Tick.AsUInt > healthData.StartTick)
 						healthData.CurrentRegeneration += healthData.Rate * Dt;
 
 					if (healthData.CurrentRegeneration >= 1.0f)

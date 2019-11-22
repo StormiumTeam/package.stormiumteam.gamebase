@@ -1,4 +1,3 @@
-using System;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -133,10 +132,26 @@ namespace StormiumTeam.GameBase
     public struct ActionCooldown : IComponentData
     {
         public bool Active;
-        
+
         public UTimeProgression Progress;
         public int              Cooldown;
 
         public bool ShouldBeFinished => Progress.Value >= Cooldown;
+
+        public bool Update(UTick tick) 
+        {
+            if (Active)
+            {
+                Progress += tick;
+                if (ShouldBeFinished)
+                {
+                    Progress.Reset();
+                    Active = false;
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 }
