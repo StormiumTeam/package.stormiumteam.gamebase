@@ -205,24 +205,6 @@ namespace StormiumTeam.GameBase
         protected override void OnCreate()
         {
             World.GetOrCreateSystem<AppEventSystem>().SubscribeToAll(this);
-
-            // TODO: Add ways to synchronize relative snapshots
-            /*if (World.GetExistingSystem<ClientSimulationSystemGroup>() != null)
-            {
-                ComponentSystemGroup topGroup;
-                
-                var receiveSystem = World.GetOrCreateSystem<ReceiveRelativeSystem<T>>();
-                topGroup = World.GetOrCreateSystem<ReceiveRelativeSystemGroup>();
-                topGroup.AddSystemToUpdateList(receiveSystem);
-            }
-
-            if (World.GetExistingSystem<ServerSimulationSystemGroup>() != null)
-            {
-                var topGroup = World.GetOrCreateSystem<SynchronizeRelativeSystemGroup>();
-                var system   = World.GetOrCreateSystem<SynchronizeRelativeSystem<T>>();
-
-                topGroup.AddSystemToUpdateList(system);
-            }*/
         }
 
         protected override JobHandle OnUpdate(JobHandle _)

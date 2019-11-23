@@ -29,7 +29,7 @@ namespace StormiumTeam.GameBase.Systems
 				foreach (var chunk in chunks)
 				{
 					var disableDataArray = chunk.GetNativeArray(GetArchetypeChunkComponentType<RuntimeAssetDisable>(true));
-					var detectionArray   = chunk.GetComponentObjects(GetArchetypeChunkComponentType<RuntimeAssetDetection>(), EntityManager);
+					var detectionArray   = chunk.GetComponentObjects(EntityManager.GetArchetypeChunkComponentType<RuntimeAssetDetection>(false), EntityManager);
 					for (int ent = 0, count = chunk.Count; ent != count; ent++)
 					{
 						var disable     = disableDataArray[ent];

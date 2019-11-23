@@ -6,22 +6,10 @@ using Unity.Jobs;
 
 namespace StormiumTeam.GameBase
 {
+
 	[UpdateInGroup(typeof(ServerSimulationSystemGroup))]
 	public class DisposePlayerOnDisconnection : JobComponentSystem
 	{
-		private struct Job : IJobForEachWithEntity<NetworkOwner, GamePlayer>
-		{
-			public            EntityCommandBuffer.Concurrent                     CommandBuffer;
-			[ReadOnly] public ComponentDataFromEntity<NetworkStreamConnection>   ConnectionFromEntity;
-			[ReadOnly] public ComponentDataFromEntity<NetworkStreamDisconnected> DisconnectedTagFromEntity;
-
-			public void Execute(Entity entity, int jobIndex, ref NetworkOwner netOwner, ref GamePlayer gamePlayer)
-			{
-				if (!ConnectionFromEntity.Exists(netOwner.Value) || DisconnectedTagFromEntity.Exists(netOwner.Value))
-					CommandBuffer.DestroyEntity(jobIndex, entity);
-			}
-		}
-
 		private EndSimulationEntityCommandBufferSystem m_Barrier;
 
 		protected override void OnCreate()
@@ -33,12 +21,20 @@ namespace StormiumTeam.GameBase
 
 		protected override JobHandle OnUpdate(JobHandle inputDeps)
 		{
-			return new Job
-			{
-				CommandBuffer             = m_Barrier.CreateCommandBuffer().ToConcurrent(),
-				ConnectionFromEntity      = GetComponentDataFromEntity<NetworkStreamConnection>(),
-				DisconnectedTagFromEntity = GetComponentDataFromEntity<NetworkStreamDisconnected>()
-			}.Schedule(this, inputDeps);
+			var ecb                     = m_Barrier.CreateCommandBuffer().ToConcurrent();
+			var connectionFromEntity    = GetComponentDataFromEntity<NetworkStreamConnection>(true);
+			var disconnectTagFromEntity = GetComponentDataFromEntity<NetworkStreamDisconnected>(true);
+
+			inputDeps = Entities
+			            .ForEach((Entity entity, int nativeThreadIndex, in NetworkOwner netOwner, in GamePlayer gamePlayer) =>
+			            {
+				            if (!connectionFromEntity.Exists(netOwner.Value) || disconnectTagFromEntity.Exists(netOwner.Value))
+					            ecb.DestroyEntity(nativeThreadIndex, entity);
+			            })
+			            .Schedule(inputDeps);
+
+			m_Barrier.AddJobHandleForProducer(inputDeps);
+			return inputDeps;
 		}
 	}
 }

@@ -58,7 +58,7 @@ namespace package.StormiumTeam.GameBase
         {
             return;
             
-            m_Timer += Time.deltaTime;
+            m_Timer += Time.DeltaTime;
 
             foreach (var manager in AppEvent<IPhysicPreSimulate>.GetObjEvents())
             {
@@ -98,7 +98,7 @@ namespace package.StormiumTeam.GameBase
                 {
                     case PhysicUpdateMode.Framerate:
                     {
-                        delta = Time.deltaTime;
+                        delta = Time.DeltaTime;
 
                         LastFixedTimeStep  = delta;
                         LastIterationCount = 1;

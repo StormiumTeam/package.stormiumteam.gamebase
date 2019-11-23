@@ -1,6 +1,7 @@
 using Revolution.NetCode;
 using StormiumTeam.GameBase.EcsComponents;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Networking.Transport;
 
@@ -11,7 +12,7 @@ namespace StormiumTeam.GameBase.Data
 		public NativeString512 Key;
 	}
 
-	public struct UpdateServerMapRpc : IRpcCommandRequestComponentData
+	public unsafe struct UpdateServerMapRpc : IRpcCommandRequestComponentData
 	{
 		public NativeString512 Key;
 
@@ -19,10 +20,10 @@ namespace StormiumTeam.GameBase.Data
 		{
 			using (var compression = new NetworkCompressionModel(Allocator.Temp))
 			{
-				writer.WritePackedUInt((uint) Key.Length, compression);
-				for (int i = 0, length = Key.Length; i != length; i++)
+				writer.WritePackedUInt((uint) Key.LengthInBytes, compression);
+				for (int i = 0, length = Key.LengthInBytes; i != length; i++)
 				{
-					writer.WritePackedUInt((uint) Key[i], compression);
+					writer.WritePackedUInt(UnsafeUtility.ReadArrayElement<ushort>(UnsafeUtility.AddressOf(ref Key.buffer), i), compression);
 				}
 			}
 
@@ -34,10 +35,10 @@ namespace StormiumTeam.GameBase.Data
 			using (var compression = new NetworkCompressionModel(Allocator.Temp))
 			{
 				var length = reader.ReadPackedUInt(ref ctx, compression);
-				Key = new NativeString512 {Length = (int) length};
+				Key = new NativeString512 {LengthInBytes = (ushort) length};
 				for (var i = 0; i != length; i++)
 				{
-					Key[i] = (char) reader.ReadPackedUInt(ref ctx, compression);
+					UnsafeUtility.WriteArrayElement(UnsafeUtility.AddressOf(ref Key.buffer), i, (ushort) reader.ReadPackedUInt(ref ctx, compression));
 				}
 			}
 		}

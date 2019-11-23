@@ -4,6 +4,7 @@ using package.stormiumteam.shared.ecs;
 using Revolution;
 using StormiumTeam.GameBase.Data;
 using StormiumTeam.GameBase.Systems;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Networking.Transport;
 using Utilities;
