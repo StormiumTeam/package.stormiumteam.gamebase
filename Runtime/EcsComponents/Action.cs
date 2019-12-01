@@ -3,6 +3,7 @@ using Unity.Mathematics;
 
 namespace StormiumTeam.GameBase
 {
+    [InternalBufferCapacity(1)]
     public struct ActionContainer : IBufferElementData
     {
         public Entity Target;
