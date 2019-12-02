@@ -43,7 +43,7 @@ namespace StormiumTeam.GameBase
             }
         }
 
-        public class SynchronizeSnapshot : ComponentSnapshotSystem_Basic<AimLookState, Snapshot>
+        public class SynchronizeSnapshot : ComponentSnapshotSystemBasic<AimLookState, Snapshot>
         {
             public override ComponentType ExcludeComponent => typeof(Exclude);
         }

@@ -44,7 +44,7 @@ namespace StormiumTeam.GameBase.Snapshots
 			component.Usage = Usage;
 		}
 
-		public class Synchronize : ComponentSnapshotSystem_Basic_Predicted<ActionAmmo, ActionAmmoSnapshot>
+		public class Synchronize : ComponentSnapshotSystemBasicPredicted<ActionAmmo, ActionAmmoSnapshot>
 		{
 			public override ComponentType ExcludeComponent => typeof(Exclude);
 		}

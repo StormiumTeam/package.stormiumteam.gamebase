@@ -27,7 +27,7 @@ namespace StormiumTeam.GameBase
     public struct ExcludeRelativeFromSnapshot : IComponentData
     {}
 
-    public abstract class RelativeSynchronize<TDesc> : MixedComponentSnapshotSystem_Delta<Relative<TDesc>, GhostSetup>
+    public abstract class RelativeSynchronize<TDesc> : MixedComponentSnapshotSystemDelta<Relative<TDesc>, GhostSetup>
         where TDesc : struct, IEntityDescription
     {
         public override ComponentType ExcludeComponent => typeof(ExcludeRelativeFromSnapshot);

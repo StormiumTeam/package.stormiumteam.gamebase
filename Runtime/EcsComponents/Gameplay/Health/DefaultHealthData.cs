@@ -66,7 +66,7 @@ namespace StormiumTeam.GameBase.Components
 			}
 		}
 
-		public class SynchronizeSnapshot : ComponentSnapshotSystem_Delta<DefaultHealthData, Snapshot>
+		public class SynchronizeSnapshot : ComponentSnapshotSystemDelta<DefaultHealthData, Snapshot>
 		{
 			public override ComponentType ExcludeComponent => typeof(Exclude);
 		}

@@ -22,7 +22,7 @@ namespace StormiumTeam.GameBase
 		public Entity Value;
 	}
 
-	public class TeamEmptySystem : ComponentSnapshotSystem_Empty<TeamDescription>
+	public class TeamEmptySystem : ComponentSnapshotSystemEmpty<TeamDescription>
 	{
 		public struct Exclude : IComponentData
 		{

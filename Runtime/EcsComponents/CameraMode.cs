@@ -89,7 +89,7 @@ namespace StormiumTeam.GameBase
             }
         }
 
-        public class System : ComponentSnapshotSystem_Delta<ServerCameraState, Snapshot, GhostSetup>
+        public class System : ComponentSnapshotSystemDelta<ServerCameraState, Snapshot, GhostSetup>
         {
             public override ComponentType ExcludeComponent => typeof(Exclude);
         }

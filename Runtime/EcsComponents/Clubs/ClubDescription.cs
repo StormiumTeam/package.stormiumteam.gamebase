@@ -96,7 +96,7 @@ namespace StormiumTeam.GameBase.Components
 			}
 		}
 
-		public class SynchronizeSnapshot : ComponentSnapshotSystem_Delta<ClubInformation, Snapshot>
+		public class SynchronizeSnapshot : ComponentSnapshotSystemDelta<ClubInformation, Snapshot>
 		{
 			public override ComponentType   ExcludeComponent => typeof(Exclude);
 			public override DeltaChangeType DeltaType        => DeltaChangeType.Both;

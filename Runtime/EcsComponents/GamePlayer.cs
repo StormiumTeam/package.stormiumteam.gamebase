@@ -65,7 +65,7 @@ namespace StormiumTeam.GameBase
             return !(baseline.MasterServerId == MasterServerId && baseline.ServerId == ServerId);
         }
         
-        public class System : ComponentSnapshotSystem_Delta<GamePlayer, GamePlayerSnapshot>
+        public class System : ComponentSnapshotSystemDelta<GamePlayer, GamePlayerSnapshot>
         {
             public struct Exclude : IComponentData
             {}

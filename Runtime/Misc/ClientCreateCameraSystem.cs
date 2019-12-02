@@ -114,6 +114,10 @@ namespace StormiumTeam.GameBase.Misc
 			{
 				m_Camera.gameObject.SetActive(true);
 			}
+			else if (clientWorldCount > 0)
+			{
+				m_Camera.gameObject.SetActive(false);
+			}
 		}
 	}
 }
