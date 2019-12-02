@@ -14,12 +14,12 @@ namespace StormiumTeam.GameBase.Components
 		public float Value;
 	}
 
-	public struct DamageZoneEvent : IComponentData, IEventData
+	public struct DamageZoneEvent : IComponentData
 	{
 		public int Value;
 	}
 
-	public struct BumpZoneEvent : IComponentData, IEventData
+	public struct BumpZoneEvent : IComponentData
 	{
 		public float3 Force;
 		public float3 VelocityReset;

@@ -5,7 +5,7 @@ using Unity.Mathematics;
 namespace StormiumTeam.GameBase.Components
 {
 	// was called 'TargetBumpEvent' before.
-	public struct TargetImpulseEvent : IComponentData, IEventData
+	public struct TargetImpulseEvent : IComponentData
 	{
 		public Entity Origin;
 		public Entity Destination;

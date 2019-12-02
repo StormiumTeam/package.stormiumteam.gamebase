@@ -1,5 +1,5 @@
 using package.stormiumteam.shared.ecs;
-using Revolution.NetCode;
+using Unity.NetCode;
 using StormiumTeam.GameBase.Components;
 using Unity.Entities;
 using Unity.Transforms;
@@ -75,7 +75,7 @@ namespace StormiumTeam.GameBase.Misc
 	}
 
 	[UpdateBefore(typeof(TickClientPresentationSystem))]
-	[NotClientServerSystem]
+	[UpdateInWorld(UpdateInWorld.TargetWorld.Default)]
 	[AlwaysUpdateSystem]
 	public class ManageClientCameraSystem : GameBaseSystem
 	{
@@ -97,27 +97,22 @@ namespace StormiumTeam.GameBase.Misc
 				m_Camera = EntityManager.GetComponentObject<Camera>(entity);
 			}
 
-			if (ClientServerBootstrap.clientWorld == null
-			    || ClientServerBootstrap.clientWorld.Length <= 0)
+			var clientWorldCount = 0;
+			foreach (var world in World.AllWorlds)
 			{
-				if (m_Camera != null)
+				if (world.GetExistingSystem<ClientSimulationSystemGroup>() != null)
 				{
-					m_Camera.gameObject.SetActive(true);
+					var presentationSystemGroup = world.GetExistingSystem<ClientPresentationSystemGroup>();
+					var cameraSystem            = world.GetExistingSystem<ClientCreateCameraSystem>();
+					cameraSystem.InternalSetActive(presentationSystemGroup.Enabled);
+					
+					clientWorldCount++;
 				}
-
-				return;
-			}
-			
-			foreach (var clientWorld in ClientServerBootstrap.clientWorld)
-			{
-				var presentationSystemGroup = clientWorld.GetExistingSystem<ClientPresentationSystemGroup>();
-				var cameraSystem            = clientWorld.GetExistingSystem<ClientCreateCameraSystem>();
-				cameraSystem.InternalSetActive(presentationSystemGroup.Enabled);
 			}
 
-			if (m_Camera != null)
+			if (clientWorldCount == 0 && m_Camera != null)
 			{
-				m_Camera.gameObject.SetActive(false);
+				m_Camera.gameObject.SetActive(true);
 			}
 		}
 	}

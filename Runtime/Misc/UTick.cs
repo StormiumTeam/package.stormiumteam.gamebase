@@ -1,5 +1,7 @@
 using System;
-using Revolution.NetCode;
+using Unity.Core;
+using Unity.Entities;
+using Unity.NetCode;
 using Unity.Mathematics;
 
 namespace StormiumTeam.GameBase
@@ -259,27 +261,21 @@ namespace StormiumTeam.GameBase
 
 	public static class UTickExtensions
 	{
-		public static UTick GetTick(this ServerSimulationSystemGroup system)
+		public static UTick GetServerTick(this ServerSimulationSystemGroup system)
 		{
 			UTick tick;
 			tick.Value = system.ServerTick;
-			tick.Delta = FixedTimeLoop.fixedTimeStep;
+			tick.Delta = system.Time.DeltaTime;
+			
 			return tick;
 		}
-
-		public static UTick GetTickInterpolated(this NetworkTimeSystem system)
+		
+		public static UTick GetServerTick(this ClientSimulationSystemGroup system)
 		{
 			UTick tick;
-			tick.Value = system.interpolateTargetTick;
-			tick.Delta = FixedTimeLoop.fixedTimeStep;
-			return tick;
-		}
-
-		public static UTick GetTickPredicted(this NetworkTimeSystem system)
-		{
-			UTick tick;
-			tick.Value = system.predictTargetTick;
-			tick.Delta = FixedTimeLoop.fixedTimeStep;
+			tick.Value = system.ServerTick;
+			tick.Delta = system.Time.DeltaTime;
+			
 			return tick;
 		}
 	}

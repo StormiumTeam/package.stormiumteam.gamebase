@@ -1,5 +1,6 @@
-using Revolution.NetCode;
+using Unity.NetCode;
 using StormiumTeam.GameBase.EcsComponents;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
@@ -12,7 +13,7 @@ namespace StormiumTeam.GameBase.Data
 		public NativeString512 Key;
 	}
 
-	public unsafe struct UpdateServerMapRpc : IRpcCommandRequestComponentData
+	public unsafe struct UpdateServerMapRpc : IRpcCommand
 	{
 		public NativeString512 Key;
 
@@ -41,6 +42,17 @@ namespace StormiumTeam.GameBase.Data
 					UnsafeUtility.WriteArrayElement(UnsafeUtility.AddressOf(ref Key.buffer), i, (ushort) reader.ReadPackedUInt(ref ctx, compression));
 				}
 			}
+		}
+
+		[BurstCompile]
+		private static void InvokeExecute(ref RpcExecutor.Parameters parameters)
+		{
+			RpcExecutor.ExecuteCreateRequestComponent<UpdateServerMapRpc>(ref parameters);
+		}
+
+		public PortableFunctionPointer<RpcExecutor.ExecuteDelegate> CompileExecute()
+		{
+			return new PortableFunctionPointer<RpcExecutor.ExecuteDelegate>(InvokeExecute);
 		}
 
 		public Entity SourceConnection { get; set; }

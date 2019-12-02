@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Revolution.NetCode;
+using Unity.NetCode;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
@@ -11,6 +11,7 @@ namespace StormiumTeam.GameBase
 	public abstract class GameBaseSystem : BaseComponentSystem
 	{
 		private ServerSimulationSystemGroup m_ServerComponentGroup;
+		private ClientSimulationSystemGroup m_ClientComponentGroup;
 		private ComponentSystemGroup        m_ClientPresentationGroup;
 		private NetworkTimeSystem           m_NetworkTimeSystem;
 
@@ -24,8 +25,8 @@ namespace StormiumTeam.GameBase
 				throw new InvalidOperationException("Can only be called on client or server world.");
 
 			return isClient
-				? predicted ? m_NetworkTimeSystem.GetTickPredicted() : m_NetworkTimeSystem.GetTickInterpolated()
-				: m_ServerComponentGroup.GetTick();
+				? m_ClientComponentGroup.GetServerTick()
+				: m_ServerComponentGroup.GetServerTick();
 		}
 
 		public bool IsServer             => m_ServerComponentGroup != null;
@@ -51,6 +52,7 @@ namespace StormiumTeam.GameBase
 #endif
 #if !UNITY_SERVER
 			m_ClientPresentationGroup = World.GetExistingSystem<ClientPresentationSystemGroup>();
+			m_ClientComponentGroup    = World.GetExistingSystem<ClientSimulationSystemGroup>();
 #endif
 
 			if (m_ClientPresentationGroup != null)
@@ -107,23 +109,17 @@ namespace StormiumTeam.GameBase
 
 		public World GetActiveClientWorld()
 		{
-#if !UNITY_SERVER
-#if !UNITY_EDITOR
-			// There is only one client world outside of editor
-			return ClientServerBootstrap.clientWorld == null ? null : ClientServerBootstrap.clientWorld[0];
-#endif
-			// There can be multiple client worlds inside the editor
-			if (ClientServerBootstrap.clientWorld == null)
-				return null;
-
-			for (var i = 0; i != ClientServerBootstrap.clientWorld.Length; i++)
+#if UNITY_SERVER
+			throw new Exeception("GetActiveClientWorld() shouldn't be called on server.");
+#else
+			foreach (var world in World.AllWorlds)
 			{
-				if (ClientServerBootstrap.clientWorld[i].GetExistingSystem<ClientPresentationSystemGroup>().Enabled)
-					return ClientServerBootstrap.clientWorld[i];
+				if (world.GetExistingSystem<ClientPresentationSystemGroup>()?.Enabled == true)
+					return world;
 			}
-#endif
 
 			return null;
+#endif
 		}
 
 		private GameJobHiddenSystem m_JobHiddenSystem;
@@ -147,6 +143,7 @@ namespace StormiumTeam.GameBase
 	public abstract class JobGameBaseSystem : JobComponentSystem
 	{
 		private ServerSimulationSystemGroup m_ServerComponentGroup;
+		private ClientSimulationSystemGroup m_ClientComponentGroup;
 		private ComponentSystemGroup        m_ClientPresentationGroup;
 		private NetworkTimeSystem           m_NetworkTimeSystem;
 
@@ -160,8 +157,8 @@ namespace StormiumTeam.GameBase
 				throw new InvalidOperationException("Can only be called on client or server world.");
 
 			return isClient
-				? predicted ? m_NetworkTimeSystem.GetTickPredicted() : m_NetworkTimeSystem.GetTickInterpolated()
-				: m_ServerComponentGroup.GetTick();
+				? m_ClientComponentGroup.GetServerTick()
+				: m_ServerComponentGroup.GetServerTick();
 		}
 
 		public bool IsServer             => m_ServerComponentGroup != null;
@@ -183,6 +180,7 @@ namespace StormiumTeam.GameBase
 			m_ServerComponentGroup = World.GetExistingSystem<ServerSimulationSystemGroup>();
 #endif
 #if !UNITY_SERVER
+			m_ClientComponentGroup    = World.GetExistingSystem<ClientSimulationSystemGroup>();
 			m_ClientPresentationGroup = World.GetExistingSystem<ClientPresentationSystemGroup>();
 #endif
 
@@ -235,23 +233,17 @@ namespace StormiumTeam.GameBase
 
 		public World GetActiveClientWorld()
 		{
-#if !UNITY_SERVER
-#if !UNITY_EDITOR
-			// There is only one client world outside of editor
-			return ClientServerBootstrap.clientWorld == null ? null : ClientServerBootstrap.clientWorld[0];
-#endif
-			// There can be multiple client worlds inside the editor
-			if (ClientServerBootstrap.clientWorld == null)
-				return null;
-
-			for (var i = 0; i != ClientServerBootstrap.clientWorld.Length; i++)
+#if UNITY_SERVER
+			throw new Exeception("GetActiveClientWorld() shouldn't be called on server.");
+#else
+			foreach (var world in World.AllWorlds)
 			{
-				if (ClientServerBootstrap.clientWorld[i].GetExistingSystem<ClientPresentationSystemGroup>().Enabled)
-					return ClientServerBootstrap.clientWorld[i];
+				if (world.GetExistingSystem<ClientPresentationSystemGroup>()?.Enabled == true)
+					return world;
 			}
-#endif
 
 			return null;
+#endif
 		}
 	}
 

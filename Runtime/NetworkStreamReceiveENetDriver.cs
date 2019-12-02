@@ -2,7 +2,7 @@ using System;
 using System.Net;
 using System.Text;
 using ENet;
-using Revolution.NetCode;
+using Unity.NetCode;
 using Unity.Entities;
 using Unity.Networking.Transport;
 using UnityEngine;
@@ -11,6 +11,7 @@ using Library = ENet.Library;
 
 namespace StormiumTeam.GameBase
 {
+#if ENET_DRIVER
     public sealed unsafe class NetworkStreamReceiveENetDriver : NetworkStreamReceiveSystem<ENetDriver>
     {
         protected override void OnCreate()
@@ -81,4 +82,5 @@ namespace StormiumTeam.GameBase
             return driver;
         }
     }
+#endif
 }

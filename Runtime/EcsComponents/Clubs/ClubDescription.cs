@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using Revolution;
-using Revolution.NetCode;
+using Unity.NetCode;
 using StormiumTeam.GameBase;
 using StormiumTeam.GameBase.Components;
 using Unity.Collections;

@@ -1,5 +1,5 @@
 using Revolution;
-using Revolution.NetCode;
+using Unity.NetCode;
 using Revolution.Utils;
 using Unity.Entities;
 using Unity.Mathematics;

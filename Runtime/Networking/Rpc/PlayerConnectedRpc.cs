@@ -1,5 +1,5 @@
 using Revolution;
-using Revolution.NetCode;
+using Unity.NetCode;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace StormiumTeam.GameBase
 {
-	public struct PlayerConnectedRpc : IRpcCommandRequestExecuteNow
+	public struct PlayerConnectedRpc : IRpcCommand
 	{
 		public int ServerId;
 
@@ -27,6 +27,17 @@ namespace StormiumTeam.GameBase
 		public void Deserialize(DataStreamReader reader, ref DataStreamReader.Context ctx)
 		{
 			ServerId = reader.ReadInt(ref ctx);
+		}
+
+		[BurstCompile]
+		private static void InvokeExecute(ref RpcExecutor.Parameters parameters)
+		{
+			RpcExecutor.ExecuteCreateRequestComponent<PlayerConnectedRpc>(ref parameters);
+		}
+
+		public PortableFunctionPointer<RpcExecutor.ExecuteDelegate> CompileExecute()
+		{
+			return new PortableFunctionPointer<RpcExecutor.ExecuteDelegate>(InvokeExecute);
 		}
 
 		public Entity SourceConnection { get; set; }

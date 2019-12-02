@@ -2,7 +2,7 @@ using Revolution;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Networking.Transport;
-using Revolution.NetCode;
+using Unity.NetCode;
 
 namespace StormiumTeam.GameBase
 {

@@ -1,5 +1,5 @@
 using Revolution;
-using Revolution.NetCode;
+using Unity.NetCode;
 using StormiumTeam.GameBase;
 using StormiumTeam.GameBase.Components;
 using Unity.Burst;

@@ -1,6 +1,6 @@
 using System;
 using System.Linq;
-using Revolution.NetCode;
+using Unity.NetCode;
 using Unity.Entities;
 using UnityEngine;
 
@@ -22,6 +22,8 @@ namespace StormiumTeam.GameBase.Authoring
 
 		private void Awake()
 		{
+			// TODO: This should be remade
+			/*
 #if !UNITY_SERVER
 			bool destroyOnClient = (ClientServerBootstrap.clientWorld != null && ClientServerBootstrap.clientWorld.Length >= 1);
 #else
@@ -42,7 +44,7 @@ namespace StormiumTeam.GameBase.Authoring
 			destroyOnServer &= (DestroyOnTarget & DestroyTargetType.Server) != 0 && ClientServerBootstrap.serverWorld == World.Active;
 			
 			if (destroyOnClient || destroyOnServer)
-				Destroy(gameObject);
+				Destroy(gameObject);*/
 		}
 	}
 }

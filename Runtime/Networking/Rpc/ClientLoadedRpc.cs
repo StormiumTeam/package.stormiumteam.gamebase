@@ -1,7 +1,8 @@
 using ENet;
 using Revolution;
-using Revolution.NetCode;
+using Unity.NetCode;
 using StormiumTeam.GameBase.EcsComponents;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
@@ -11,7 +12,7 @@ using Valve.Sockets;
 
 namespace StormiumTeam.GameBase
 {
-	public struct ClientLoadedRpc : IRpcCommandRequestComponentData
+	public struct ClientLoadedRpc : IRpcCommand
 	{
 		public int GameVersion;
 
@@ -32,6 +33,17 @@ namespace StormiumTeam.GameBase
 			GameVersion = reader.ReadInt(ref ctx);
 		}
 
+		[BurstCompile]
+		private static void InvokeExecute(ref RpcExecutor.Parameters parameters)
+		{
+			RpcExecutor.ExecuteCreateRequestComponent<ClientLoadedRpc>(ref parameters);
+		}
+
+		public PortableFunctionPointer<RpcExecutor.ExecuteDelegate> CompileExecute()
+		{
+			return new PortableFunctionPointer<RpcExecutor.ExecuteDelegate>(InvokeExecute);
+		}
+
 		public Entity SourceConnection { get; set; }
 	}
 
@@ -46,7 +58,7 @@ namespace StormiumTeam.GameBase
 
 			public int CurrentVersion;
 
-			public ENetDriver Driver;
+			public UdpNetworkDriver Driver;
 
 			[ReadOnly]
 			public ComponentDataFromEntity<NetworkIdComponent> NetworkIdFromEntity;
@@ -113,7 +125,7 @@ namespace StormiumTeam.GameBase
 			{
 				CurrentVersion = GameStatic.Version,
 
-				Driver                            = World.GetExistingSystem<NetworkStreamReceiveENetDriver>().Driver,
+				Driver                            = World.GetExistingSystem<NetworkStreamReceiveSystem>().Driver,
 				NetworkStreamConnectionFromEntity = GetComponentDataFromEntity<NetworkStreamConnection>(true),
 
 				CommandBuffer       = m_Barrier.CreateCommandBuffer().ToConcurrent(),

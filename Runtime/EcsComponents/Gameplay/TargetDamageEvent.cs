@@ -4,7 +4,7 @@ using Unity.Networking.Transport;
 
 namespace StormiumTeam.GameBase.Components
 {
-	public struct TargetDamageEvent : IReadWriteComponentSnapshot<TargetDamageEvent, GhostSetup>, IEventData
+	public struct TargetDamageEvent : IReadWriteComponentSnapshot<TargetDamageEvent, GhostSetup>
 	{
 		public Entity Origin;
 		public Entity Destination;

@@ -1,4 +1,4 @@
-using Revolution.NetCode;
+using Unity.NetCode;
 using Unity.Entities;
 
 namespace StormiumTeam.GameBase.Internal
