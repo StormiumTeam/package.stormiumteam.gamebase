@@ -70,7 +70,7 @@ namespace Systems
 			});
 			m_DataQuery  = GetEntityQuery(typeof(Owner));
 
-			m_EndBarrier = World.GetExistingSystem<EndSimulationEntityCommandBufferSystem>();
+			m_EndBarrier = World.GetOrCreateSystem<EndSimulationEntityCommandBufferSystem>();
 		}
 
 		protected override JobHandle OnUpdate(JobHandle inputDeps)

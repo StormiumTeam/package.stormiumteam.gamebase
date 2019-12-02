@@ -12,13 +12,7 @@ namespace StormiumTeam.GameBase
 	public struct PlayerConnectedRpc : IRpcCommand
 	{
 		public int ServerId;
-
-		public void Execute(EntityManager em)
-		{
-			var delayed = em.CreateEntity(typeof(DelayedPlayerConnection));
-			em.SetComponentData(delayed, new DelayedPlayerConnection {Connection = SourceConnection, ServerId = ServerId});
-		}
-
+		
 		public void Serialize(DataStreamWriter writer)
 		{
 			writer.Write(ServerId);
@@ -32,15 +26,17 @@ namespace StormiumTeam.GameBase
 		[BurstCompile]
 		private static void InvokeExecute(ref RpcExecutor.Parameters parameters)
 		{
-			RpcExecutor.ExecuteCreateRequestComponent<PlayerConnectedRpc>(ref parameters);
+			var rpcData = default(PlayerConnectedRpc);
+			rpcData.Deserialize(parameters.Reader, ref parameters.ReaderContext);
+
+			var delayed = parameters.CommandBuffer.CreateEntity(parameters.JobIndex);
+			parameters.CommandBuffer.AddComponent(parameters.JobIndex, delayed, new DelayedPlayerConnection {Connection = parameters.Connection, ServerId = rpcData.ServerId});
 		}
 
 		public PortableFunctionPointer<RpcExecutor.ExecuteDelegate> CompileExecute()
 		{
 			return new PortableFunctionPointer<RpcExecutor.ExecuteDelegate>(InvokeExecute);
 		}
-
-		public Entity SourceConnection { get; set; }
 	}
 
 	/* --------------------------------------------------------- *

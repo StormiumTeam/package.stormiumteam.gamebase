@@ -54,8 +54,6 @@ namespace StormiumTeam.GameBase.Data
 		{
 			return new PortableFunctionPointer<RpcExecutor.ExecuteDelegate>(InvokeExecute);
 		}
-
-		public Entity SourceConnection { get; set; }
 	}
 
 	[UpdateInGroup(typeof(ServerInitializationSystemGroup))]

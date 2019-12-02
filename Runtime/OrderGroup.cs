@@ -17,6 +17,8 @@ namespace StormiumTeam.GameBase
 		
 		[UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
 		[UpdateAfter(typeof(NetworkReceiveSnapshotSystemGroup))]
+		[UpdateAfter(typeof(GhostSimulationSystemGroup))]
+		[UpdateAfter(typeof(GhostPredictionSystemGroup))]
 		[UpdateBefore(typeof(SnapshotSendSystem))]
 		public class Simulation : ComponentSystemGroup
 		{

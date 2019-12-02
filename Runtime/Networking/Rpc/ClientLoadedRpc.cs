@@ -43,14 +43,12 @@ namespace StormiumTeam.GameBase
 		{
 			return new PortableFunctionPointer<RpcExecutor.ExecuteDelegate>(InvokeExecute);
 		}
-
-		public Entity SourceConnection { get; set; }
 	}
 
 	[UpdateInGroup(typeof(OrderGroup.Simulation.SpawnEntities))]
 	public class CreateGamePlayerSystem : JobComponentSystem
 	{
-		private struct CreateJob : IJobForEachWithEntity<ClientLoadedRpc>
+		private struct CreateJob : IJobForEachWithEntity<ClientLoadedRpc, ReceiveRpcCommandRequestComponent>
 		{
 			public EntityCommandBuffer.Concurrent CommandBuffer;
 
@@ -66,33 +64,33 @@ namespace StormiumTeam.GameBase
 			[ReadOnly]
 			public ComponentDataFromEntity<NetworkStreamConnection> NetworkStreamConnectionFromEntity;
 
-			public void Execute(Entity entity, int jobIndex, ref ClientLoadedRpc create)
+			public void Execute(Entity entity, int jobIndex, ref ClientLoadedRpc create, [ReadOnly] ref ReceiveRpcCommandRequestComponent receive)
 			{
 				CommandBuffer.DestroyEntity(jobIndex, entity);
 
 				if (create.GameVersion != CurrentVersion)
 				{
 					Debug.Log($"bye bye [player version:{create.GameVersion}, current: {CurrentVersion}]");
-					NetworkStreamConnectionFromEntity[create.SourceConnection].Value.Disconnect(Driver);
+					NetworkStreamConnectionFromEntity[receive.SourceConnection].Value.Disconnect(Driver);
 					return;
 				}
 
-				var networkId = NetworkIdFromEntity[create.SourceConnection];
+				var networkId = NetworkIdFromEntity[receive.SourceConnection];
 
 				var geEnt = CommandBuffer.CreateEntity(jobIndex, PlayerArchetype);
 				CommandBuffer.SetComponent(jobIndex, geEnt, new GamePlayer(0) {ServerId = networkId.Value});
-				CommandBuffer.AddComponent(jobIndex, geEnt, new NetworkOwner {Value     = create.SourceConnection});
+				CommandBuffer.AddComponent(jobIndex, geEnt, new NetworkOwner {Value     = receive.SourceConnection});
 				CommandBuffer.AddComponent(jobIndex, geEnt, new GamePlayerReadyTag());
 				CommandBuffer.AddComponent(jobIndex, geEnt, new GhostEntity());
 				CommandBuffer.AddComponent(jobIndex, geEnt, new WorldOwnedTag());
 
-				Debug.Log($"Create GamePlayer {geEnt}; source={create.SourceConnection}");
+				Debug.Log($"Create GamePlayer {geEnt}; source={receive.SourceConnection}");
 				
-				CommandBuffer.SetComponent(jobIndex, create.SourceConnection, new CommandTargetComponent {targetEntity = geEnt});
+				CommandBuffer.SetComponent(jobIndex, receive.SourceConnection, new CommandTargetComponent {targetEntity = geEnt});
 				
 				// Create event
 				var evEnt = CommandBuffer.CreateEntity(jobIndex);
-				CommandBuffer.AddComponent(jobIndex, evEnt, new PlayerConnectedEvent {Player = geEnt, Connection = create.SourceConnection, ServerId = networkId.Value});
+				CommandBuffer.AddComponent(jobIndex, evEnt, new PlayerConnectedEvent {Player = geEnt, Connection = receive.SourceConnection, ServerId = networkId.Value});
 
 				var reqEnt = CommandBuffer.CreateEntity(jobIndex);
 				CommandBuffer.AddComponent(jobIndex, reqEnt, new PlayerConnectedRpc {ServerId = networkId.Value});
