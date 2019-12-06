@@ -39,6 +39,7 @@ namespace StormiumTeam.GameBase
 
 	public class TeamUpdateContainerSystem : JobComponentSystem
 	{
+		[BurstCompile]
 		private struct JobClearBuffer : IJobForEach_B<TeamEntityContainer>
 		{
 			public void Execute(DynamicBuffer<TeamEntityContainer> ctn)

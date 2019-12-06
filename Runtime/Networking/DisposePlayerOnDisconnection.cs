@@ -30,6 +30,8 @@ namespace StormiumTeam.GameBase
 				            if (!connectionFromEntity.Exists(netOwner.Value) || disconnectTagFromEntity.Exists(netOwner.Value))
 					            ecb.DestroyEntity(nativeThreadIndex, entity);
 			            })
+			            .WithReadOnly(connectionFromEntity)
+			            .WithReadOnly(disconnectTagFromEntity)
 			            .Schedule(inputDeps);
 
 			m_Barrier.AddJobHandleForProducer(inputDeps);

@@ -12,8 +12,12 @@ using Valve.Sockets;
 
 namespace StormiumTeam.GameBase
 {
+	[BurstCompile]
 	public struct ClientLoadedRpc : IRpcCommand
 	{
+		public class RequestSystem : RpcCommandRequestSystem<ClientLoadedRpc>
+		{}
+		
 		public int GameVersion;
 
 		public void Serialize(DataStreamWriter writer)

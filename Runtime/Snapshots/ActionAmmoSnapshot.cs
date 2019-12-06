@@ -1,8 +1,12 @@
 using Revolution;
+using StormiumTeam.GameBase.Snapshots;
 using Unity.NetCode;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Networking.Transport;
+using UnityEngine;
+
+[assembly: RegisterGenericComponentType(typeof(Predicted<ActionAmmoSnapshot>))]
 
 namespace StormiumTeam.GameBase.Snapshots
 {
@@ -51,7 +55,8 @@ namespace StormiumTeam.GameBase.Snapshots
 		
 		public class Update : ComponentUpdateSystemInterpolated<ActionAmmo, ActionAmmoSnapshot>
 		{
-			protected override bool IsPredicted => true;
+			public Update() : base(true)
+			{}
 		}
 
 

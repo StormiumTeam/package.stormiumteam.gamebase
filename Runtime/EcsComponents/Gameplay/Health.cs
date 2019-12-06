@@ -237,8 +237,6 @@ namespace StormiumTeam.GameBase.Components
 		private EntityQuery                   m_LivableWithoutContainer;
 		private EntityQuery                   m_GroupLivableBuffer;
 
-		private GameJobHiddenSystem m_HiddenJobSystem;
-		
 		private ComponentSystemGroup m_ServerSimulationSystemGroup;
 
 		protected override void OnCreate()
@@ -270,7 +268,6 @@ namespace StormiumTeam.GameBase.Components
 			m_GroupLivableBuffer = GetEntityQuery(typeof(HealthContainer));
 
 			m_ServerSimulationSystemGroup = World.GetExistingSystem<ServerSimulationSystemGroup>();
-			m_HiddenJobSystem = World.GetOrCreateSystem<GameJobHiddenSystem>();
 		}
 
 		protected override void OnDestroy()
@@ -317,7 +314,7 @@ namespace StormiumTeam.GameBase.Components
 			job = new ClearBuffer().Schedule(m_GroupLivableBuffer, job);
 			job = new AddHealthToContainer
 			{
-				Container = m_HiddenJobSystem.GetBufferFromEntity<HealthContainer>()
+				Container = GetBufferFromEntity<HealthContainer>()
 			}.ScheduleSingle(m_HealthQuery, job);
 
 			//job.Complete();

@@ -66,14 +66,12 @@ namespace StormiumTeam.GameBase.Systems
 		}
 
 		private EntityQuery         m_ResetBufferQuery;
-		private GameJobHiddenSystem m_HiddenJobSystem;
 
 		protected override void OnCreate()
 		{
 			base.OnCreate();
 
 			m_ResetBufferQuery = GetEntityQuery(typeof(CollideWith));
-			m_HiddenJobSystem  = World.GetOrCreateSystem<GameJobHiddenSystem>();
 		}
 
 		public JobHandle Filter(EntityQuery query, JobHandle inputDeps)
@@ -100,7 +98,7 @@ namespace StormiumTeam.GameBase.Systems
 				handle = new UpdateAndCleanCollideWithBufferJob
 				{
 					Entities              = targets,
-					CollideWithFromEntity = m_HiddenJobSystem.GetBufferFromEntity<CollideWith>()
+					CollideWithFromEntity = GetBufferFromEntity<CollideWith>()
 				}.Schedule(targets.Length, 16, handle);
 			}
 			else
@@ -108,7 +106,7 @@ namespace StormiumTeam.GameBase.Systems
 				handle = new ClearCollideWithBufferJob
 				{
 					Entities              = targets,
-					CollideWithFromEntity = m_HiddenJobSystem.GetBufferFromEntity<CollideWith>()
+					CollideWithFromEntity = GetBufferFromEntity<CollideWith>()
 				}.Schedule(targets.Length, 64, handle);
 			}
 

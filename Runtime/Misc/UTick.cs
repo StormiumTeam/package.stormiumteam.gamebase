@@ -265,7 +265,13 @@ namespace StormiumTeam.GameBase
 		{
 			UTick tick;
 			tick.Value = system.ServerTick;
-			tick.Delta = system.Time.DeltaTime;
+
+			ClientServerTickRate tickRate = default;
+			if (system.HasSingleton<ClientServerTickRate>())
+				tickRate = system.GetSingleton<ClientServerTickRate>();
+			tickRate.ResolveDefaults();
+
+			tick.Delta = 1f / tickRate.SimulationTickRate;
 			
 			return tick;
 		}
@@ -274,7 +280,7 @@ namespace StormiumTeam.GameBase
 		{
 			UTick tick;
 			tick.Value = system.ServerTick;
-			tick.Delta = system.Time.DeltaTime;
+			tick.Delta = system.ServerTickDeltaTime;
 			
 			return tick;
 		}

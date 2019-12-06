@@ -9,8 +9,12 @@ using UnityEngine;
 
 namespace StormiumTeam.GameBase
 {
+	[BurstCompile]
 	public struct PlayerConnectedRpc : IRpcCommand
 	{
+		public class RequestSystem : RpcCommandRequestSystem<PlayerConnectedRpc>
+		{}
+		
 		public int ServerId;
 		
 		public void Serialize(DataStreamWriter writer)

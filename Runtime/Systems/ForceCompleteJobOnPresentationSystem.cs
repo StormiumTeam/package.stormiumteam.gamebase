@@ -7,13 +7,13 @@ namespace StormiumTeam.GameBase.Internal
 	public class ForceCompleteJobOnPresentationEndSystem : ComponentSystem
 	{
 		private BeginPresentationEntityCommandBufferSystem m_BeginBarrier;
-		private EndPresentationEntityCommandBufferSystem m_EndBarrier;
+		private BeginInitializationEntityCommandBufferSystem m_EndBarrier;
 
 		protected override void OnCreate()
 		{
 			base.OnCreate();
 			m_BeginBarrier = World.GetOrCreateSystem<BeginPresentationEntityCommandBufferSystem>();
-			m_EndBarrier = World.GetOrCreateSystem<EndPresentationEntityCommandBufferSystem>();
+			m_EndBarrier = World.GetOrCreateSystem<BeginInitializationEntityCommandBufferSystem>();
 		}
 
 		protected override void OnUpdate()

@@ -1,3 +1,4 @@
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
@@ -12,7 +13,7 @@ namespace StormiumTeam.GameBase
 {
 	public unsafe class TransformCustomCollideBufferSystem : JobComponentSystem
 	{
-		//[BurstCompile]
+		[BurstCompile]
 		private struct ProcessJob : IJobParallelFor
 		{
 			[DeallocateOnJobCompletion]

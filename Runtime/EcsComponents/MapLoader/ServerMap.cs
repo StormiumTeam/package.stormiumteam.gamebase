@@ -1,3 +1,4 @@
+using System.Net.Mime;
 using Unity.NetCode;
 using StormiumTeam.GameBase.EcsComponents;
 using Unity.Burst;
@@ -5,6 +6,7 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Networking.Transport;
+using UnityEngine;
 
 namespace StormiumTeam.GameBase.Data
 {
@@ -13,19 +15,24 @@ namespace StormiumTeam.GameBase.Data
 		public NativeString512 Key;
 	}
 
+	[BurstCompile]
 	public unsafe struct UpdateServerMapRpc : IRpcCommand
 	{
+		public class RequestSystem : RpcCommandRequestSystem<UpdateServerMapRpc>
+		{}
+		
 		public NativeString512 Key;
 
 		public void Serialize(DataStreamWriter writer)
 		{
-			using (var compression = new NetworkCompressionModel(Allocator.Temp))
+			writer.WritePackedUInt((uint) Key.LengthInBytes, NetworkCompressionModel);
+
+			var prevKey = default(ushort);
+			for (int i = 0, length = Key.LengthInBytes; i != length; i++)
 			{
-				writer.WritePackedUInt((uint) Key.LengthInBytes, compression);
-				for (int i = 0, length = Key.LengthInBytes; i != length; i++)
-				{
-					writer.WritePackedUInt(UnsafeUtility.ReadArrayElement<ushort>(UnsafeUtility.AddressOf(ref Key.buffer), i), compression);
-				}
+				var curr = UnsafeUtility.ReadArrayElement<ushort>(UnsafeUtility.AddressOf(ref Key.buffer), i);
+				writer.WritePackedUIntDelta(curr, prevKey, NetworkCompressionModel);
+				prevKey = curr;
 			}
 
 			writer.Flush();
@@ -33,14 +40,15 @@ namespace StormiumTeam.GameBase.Data
 
 		public void Deserialize(DataStreamReader reader, ref DataStreamReader.Context ctx)
 		{
-			using (var compression = new NetworkCompressionModel(Allocator.Temp))
+			var length = reader.ReadPackedUInt(ref ctx, NetworkCompressionModel);
+			Key = new NativeString512 {LengthInBytes = (ushort) length};
+
+			var prevKey = default(ushort);
+			for (var i = 0; i != length; i++)
 			{
-				var length = reader.ReadPackedUInt(ref ctx, compression);
-				Key = new NativeString512 {LengthInBytes = (ushort) length};
-				for (var i = 0; i != length; i++)
-				{
-					UnsafeUtility.WriteArrayElement(UnsafeUtility.AddressOf(ref Key.buffer), i, (ushort) reader.ReadPackedUInt(ref ctx, compression));
-				}
+				var curr = (ushort) reader.ReadPackedUIntDelta(ref ctx, prevKey, NetworkCompressionModel);
+				UnsafeUtility.WriteArrayElement(UnsafeUtility.AddressOf(ref Key.buffer), i, curr);
+				prevKey = curr;
 			}
 		}
 
@@ -50,9 +58,23 @@ namespace StormiumTeam.GameBase.Data
 			RpcExecutor.ExecuteCreateRequestComponent<UpdateServerMapRpc>(ref parameters);
 		}
 
+		private static readonly NetworkCompressionModel NetworkCompressionModel;
+
+		static UpdateServerMapRpc()
+		{
+			NetworkCompressionModel = new NetworkCompressionModel(Allocator.Persistent);
+			Application.quitting += DoQuit;
+		}
+		
 		public PortableFunctionPointer<RpcExecutor.ExecuteDelegate> CompileExecute()
 		{
 			return new PortableFunctionPointer<RpcExecutor.ExecuteDelegate>(InvokeExecute);
+		}
+
+		private static void DoQuit()
+		{
+			NetworkCompressionModel.Dispose();
+			Application.quitting -= DoQuit;
 		}
 	}
 
