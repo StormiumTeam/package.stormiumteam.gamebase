@@ -1,9 +1,13 @@
 using Revolution;
 using Unity.NetCode;
 using Revolution.Utils;
+using StormiumTeam.GameBase;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Networking.Transport;
+using NotImplementedException = System.NotImplementedException;
+
+[assembly: RegisterGenericComponentType(typeof(Predicted<Velocity.SnapshotData>))]
 
 namespace StormiumTeam.GameBase
 {
@@ -13,7 +17,7 @@ namespace StormiumTeam.GameBase
         {
         }
 
-        public struct SnapshotData : IReadWriteSnapshot<SnapshotData>, ISynchronizeImpl<Velocity>
+        public struct SnapshotData : IReadWriteSnapshot<SnapshotData>, ISynchronizeImpl<Velocity>, IPredictable<SnapshotData>
         {
             public const int   Quantization   = 100;
             public const float DeQuantization = 1 / 100f;
@@ -43,6 +47,20 @@ namespace StormiumTeam.GameBase
             {
                 component.Value = Velocity.Get(DeQuantization);
             }
+
+            public void Interpolate(SnapshotData target, float factor)
+            {
+                Velocity.Result = (int3) math.lerp(Velocity.Result, target.Velocity.Result, factor);
+            }
+
+            public void PredictDelta(uint tick, ref SnapshotData baseline1, ref SnapshotData baseline2)
+            {
+                var predictor = new GhostDeltaPredictor(tick, Tick, baseline1.Tick, baseline2.Tick);
+                for (var i = 0; i != 3; i++)
+                {
+                    Velocity.Result[i] = predictor.PredictInt(Velocity.Result[i], baseline1.Velocity.Result[i], baseline2.Velocity.Result[i]);
+                }
+            }
         }
 
         public float3 Value;
@@ -58,13 +76,14 @@ namespace StormiumTeam.GameBase
             Value = value;
         }
 
-        public class System : ComponentSnapshotSystemBasic<Velocity, SnapshotData>
+        public class System : ComponentSnapshotSystemBasicPredicted<Velocity, SnapshotData>
         {
             public override ComponentType ExcludeComponent => typeof(Exclude);
         }
 
-        public class Synchronize : ComponentUpdateSystemDirect<Velocity, SnapshotData>
+        public class Synchronize : ComponentUpdateSystemInterpolated<Velocity, SnapshotData>
         {
+            public Synchronize() : base(true) {}
         }
     }
 }
