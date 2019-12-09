@@ -124,8 +124,8 @@ namespace StormiumTeam.GameBase
     {
         public interface ISyncEvent : IAppEvent
         {
-            void SyncRelativeToEntity(Entity              origin,              Entity owner);
-            void AddChildren(Entity                       origin,              Entity owner);
+            void SyncRelativeToEntity(Entity origin, Entity owner);
+            void AddChildren(Entity          origin, Entity owner);
 
             ComponentType ComponentType { get; }
         }
@@ -180,7 +180,31 @@ namespace StormiumTeam.GameBase
                 ownerChildren.Dispose();
 
             if (autoEntityLink)
-                entityManager.SetOrAddComponentData(entity, new DestroyChainReaction(owner));
+            {
+                // If the entity had an owner before, delete it from the old linked group
+                if (entityManager.HasComponent(entity, typeof(Owner)))
+                {
+                    var previousOwner = entityManager.GetComponentData<Owner>(entity);
+                    if (entityManager.HasComponent(previousOwner.Target, typeof(LinkedEntityGroup)))
+                    {
+                        var previousLinkedEntityGroup = entityManager.GetBuffer<LinkedEntityGroup>(previousOwner.Target);
+                        for (var i = 0; i != previousLinkedEntityGroup.Length; i++)
+                        {
+                            if (previousLinkedEntityGroup[i].Value == entity)
+                            {
+                                previousLinkedEntityGroup.RemoveAt(i);
+                                i--;
+                            }
+                        }
+                    }
+                }
+
+                if (!entityManager.HasComponent(owner, typeof(LinkedEntityGroup)))
+                    entityManager.AddBuffer<LinkedEntityGroup>(owner);
+
+                var linkedEntityGroup = entityManager.GetBuffer<LinkedEntityGroup>(owner);
+                linkedEntityGroup.Add(entity);
+            }
 
             if (hasBuffer && addAsChildren)
             {
