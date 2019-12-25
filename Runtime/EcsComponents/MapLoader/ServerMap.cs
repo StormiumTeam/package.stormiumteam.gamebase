@@ -1,4 +1,6 @@
+using System;
 using System.Net.Mime;
+using Revolution;
 using Unity.NetCode;
 using StormiumTeam.GameBase.EcsComponents;
 using Unity.Burst;
@@ -7,177 +9,62 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Networking.Transport;
 using UnityEngine;
+using Utilities;
 
 namespace StormiumTeam.GameBase.Data
 {
-	public struct ExecutingServerMap : IComponentData
+	public unsafe struct ExecutingServerMap : IReadWriteComponentSnapshot<ExecutingServerMap>, ISnapshotDelta<ExecutingServerMap>
 	{
 		public NativeString512 Key;
-	}
 
-	[BurstCompile]
-	public unsafe struct UpdateServerMapRpc : IRpcCommand
-	{
-		public class RequestSystem : RpcCommandRequestSystem<UpdateServerMapRpc>
-		{}
-		
-		public NativeString512 Key;
-
-		public void Serialize(DataStreamWriter writer)
+		public void WriteTo(DataStreamWriter writer, ref ExecutingServerMap baseline, DefaultSetup setup, SerializeClientData jobData)
 		{
-			writer.WritePackedUInt((uint) Key.LengthInBytes, NetworkCompressionModel);
-
-			var prevKey = default(ushort);
-			for (int i = 0, length = Key.LengthInBytes; i != length; i++)
-			{
-				var curr = UnsafeUtility.ReadArrayElement<ushort>(UnsafeUtility.AddressOf(ref Key.buffer), i);
-				writer.WritePackedUIntDelta(curr, prevKey, NetworkCompressionModel);
-				prevKey = curr;
-			}
-
-			writer.Flush();
+			writer.WritePackedStringDelta(Key, baseline.Key, jobData.NetworkCompressionModel);
 		}
 
-		public void Deserialize(DataStreamReader reader, ref DataStreamReader.Context ctx)
+		public void ReadFrom(ref DataStreamReader.Context ctx, DataStreamReader reader, ref ExecutingServerMap baseline, DeserializeClientData jobData)
 		{
-			var length = reader.ReadPackedUInt(ref ctx, NetworkCompressionModel);
-			Key = new NativeString512 {LengthInBytes = (ushort) length};
-
-			var prevKey = default(ushort);
-			for (var i = 0; i != length; i++)
-			{
-				var curr = (ushort) reader.ReadPackedUIntDelta(ref ctx, prevKey, NetworkCompressionModel);
-				UnsafeUtility.WriteArrayElement(UnsafeUtility.AddressOf(ref Key.buffer), i, curr);
-				prevKey = curr;
-			}
+			Key = reader.ReadPackedStringDelta(ref ctx, baseline.Key, jobData.NetworkCompressionModel);
 		}
 
-		[BurstCompile]
-		private static void InvokeExecute(ref RpcExecutor.Parameters parameters)
+		public bool DidChange(ExecutingServerMap baseline)
 		{
-			RpcExecutor.ExecuteCreateRequestComponent<UpdateServerMapRpc>(ref parameters);
+			return !baseline.Key.Equals(Key);
 		}
 
-		private static readonly NetworkCompressionModel NetworkCompressionModel;
-
-		static UpdateServerMapRpc()
+		public struct Exclude : IComponentData
 		{
-			NetworkCompressionModel = new NetworkCompressionModel(Allocator.Persistent);
-			Application.quitting += DoQuit;
-		}
-		
-		public PortableFunctionPointer<RpcExecutor.ExecuteDelegate> CompileExecute()
-		{
-			return new PortableFunctionPointer<RpcExecutor.ExecuteDelegate>(InvokeExecute);
 		}
 
-		private static void DoQuit()
+		public class NetSync : MixedComponentSnapshotSystemDelta<ExecutingServerMap>
 		{
-			NetworkCompressionModel.Dispose();
-			Application.quitting -= DoQuit;
+			public override ComponentType ExcludeComponent => typeof(Exclude);
 		}
 	}
 
 	[UpdateInGroup(typeof(ServerInitializationSystemGroup))]
 	public class ServerSynchronizeMap : ComponentSystem
 	{
-		private struct ClientSynchronized : IComponentData
-		{
-		}
-
 		private EntityQuery m_ExecutingMapQuery;
-		private EntityQuery m_ClientQuery;
-		private EntityQuery m_ClientWithoutMapQuery;
-
-		private Entity m_PreviousMapEntity;
+		private Entity      m_ServerMapEntity;
 
 		protected override void OnCreate()
 		{
 			base.OnCreate();
 
 			m_ExecutingMapQuery     = GetEntityQuery(typeof(ExecutingMapData));
-			m_ClientQuery           = GetEntityQuery(typeof(GamePlayerReadyTag), typeof(GamePlayer), ComponentType.ReadWrite<ClientSynchronized>());
-			m_ClientWithoutMapQuery = GetEntityQuery(typeof(GamePlayerReadyTag), typeof(NetworkOwner), ComponentType.Exclude<ClientSynchronized>());
+			m_ServerMapEntity = EntityManager.CreateEntity(typeof(ExecutingServerMap), typeof(GhostEntity));
 		}
 
 		protected override void OnUpdate()
 		{
-			var hasChange = false;
-			if (m_ExecutingMapQuery.CalculateEntityCount() > 0)
-			{
-				Entities.With(m_ClientWithoutMapQuery).ForEach((Entity entity, ref NetworkOwner netOwner) =>
-				{
-					var requestEnt = EntityManager.CreateEntity(typeof(UpdateServerMapRpc), typeof(SendRpcCommandRequestComponent));
-					EntityManager.SetComponentData(requestEnt, new UpdateServerMapRpc
-					{
-						Key = m_ExecutingMapQuery.GetSingleton<ExecutingMapData>().Key
-					});
-					EntityManager.SetComponentData(requestEnt, new SendRpcCommandRequestComponent
-					{
-						TargetConnection = netOwner.Value
-					});
-
-					// We don't directly add the component here... we delay it for next update
-					PostUpdateCommands.AddComponent(entity, ComponentType.ReadWrite<ClientSynchronized>());
-				});
-
-				if (m_PreviousMapEntity != m_ExecutingMapQuery.GetSingletonEntity())
-				{
-					hasChange           = true;
-					m_PreviousMapEntity = m_ExecutingMapQuery.GetSingletonEntity();
-				}
-			}
-			else if (m_PreviousMapEntity != default)
-			{
-				hasChange           = true;
-				m_PreviousMapEntity = default;
-			}
-
-			if (!hasChange)
+			if (m_ExecutingMapQuery.IsEmptyIgnoreFilter)
 				return;
 
-			Entities.With(m_ClientQuery).ForEach((Entity entity, ref NetworkOwner netOwner) =>
-			{
-				var requestEnt = EntityManager.CreateEntity(typeof(UpdateServerMapRpc), typeof(SendRpcCommandRequestComponent));
-				EntityManager.SetComponentData(requestEnt, new UpdateServerMapRpc
-				{
-					Key = m_ExecutingMapQuery.GetSingleton<ExecutingMapData>().Key
-				});
-				EntityManager.SetComponentData(requestEnt, new SendRpcCommandRequestComponent
-				{
-					TargetConnection = netOwner.Value
-				});
-			});
-		}
-	}
+			var entity  = m_ExecutingMapQuery.GetSingletonEntity();
+			var currMap = EntityManager.GetComponentData<ExecutingMapData>(entity);
 
-	[UpdateInGroup(typeof(ClientInitializationSystemGroup))]
-	public class ClientReceiveMapInformation : ComponentSystem
-	{
-		private EntityQuery m_RpcQuery;
-		private EntityQuery m_ServerMapQuery;
-
-		protected override void OnCreate()
-		{
-			base.OnCreate();
-
-			m_RpcQuery       = GetEntityQuery(typeof(UpdateServerMapRpc));
-			m_ServerMapQuery = GetEntityQuery(typeof(ExecutingServerMap));
-		}
-
-		protected override void OnUpdate()
-		{
-			if (m_RpcQuery.CalculateEntityCount() == 0)
-				return;
-
-			// Destroy previous one...
-			EntityManager.DestroyEntity(m_ServerMapQuery);
-			EntityManager.CreateEntity(typeof(ExecutingServerMap));
-
-			Entities.With(m_RpcQuery).ForEach((Entity reqEntity, ref UpdateServerMapRpc req) => { SetSingleton(new ExecutingServerMap {Key = req.Key}); });
-
-			// Destroy current query
-			EntityManager.DestroyEntity(m_RpcQuery);
+			EntityManager.SetComponentData(m_ServerMapEntity, new ExecutingServerMap {Key = currMap.Key});
 		}
 	}
 }

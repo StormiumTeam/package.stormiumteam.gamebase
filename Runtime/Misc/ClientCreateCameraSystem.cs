@@ -100,7 +100,7 @@ namespace StormiumTeam.GameBase.Misc
 			var clientWorldCount = 0;
 			foreach (var world in World.AllWorlds)
 			{
-				if (world.GetExistingSystem<ClientSimulationSystemGroup>() != null)
+				if (world.GetExistingSystem<ClientPresentationSystemGroup>() != null)
 				{
 					var presentationSystemGroup = world.GetExistingSystem<ClientPresentationSystemGroup>();
 					var cameraSystem            = world.GetExistingSystem<ClientCreateCameraSystem>();

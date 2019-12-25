@@ -5,6 +5,7 @@ using System.Reflection;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
+using UnityEngine;
 
 namespace StormiumTeam.GameBase.BaseSystems
 {
@@ -204,6 +205,7 @@ namespace StormiumTeam.GameBase.BaseSystems
 
 			if (!HasSingleton<TData>())
 			{
+				Debug.Log($"Create {typeof(TData)}");
 				EntityManager.CreateEntity(typeof(TData));
 				RequireSingletonForUpdate<TData>();
 			}
@@ -215,6 +217,7 @@ namespace StormiumTeam.GameBase.BaseSystems
 			where TData : struct, IComponentData
 		{
 			var properties = AddRule<TData>();
+			Debug.Log(HasSingleton<TData>());
 			data = GetSingleton<TData>();
 			return properties;
 		}
