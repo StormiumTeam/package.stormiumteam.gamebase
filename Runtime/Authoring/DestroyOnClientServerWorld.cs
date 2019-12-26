@@ -1,7 +1,4 @@
 using System;
-using System.Linq;
-using Unity.NetCode;
-using Unity.Entities;
 using UnityEngine;
 
 namespace StormiumTeam.GameBase.Authoring

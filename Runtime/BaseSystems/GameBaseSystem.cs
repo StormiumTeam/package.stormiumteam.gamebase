@@ -13,13 +13,12 @@ namespace StormiumTeam.GameBase
 		private ServerSimulationSystemGroup m_ServerComponentGroup;
 		private ClientSimulationSystemGroup m_ClientComponentGroup;
 		private ComponentSystemGroup        m_ClientPresentationGroup;
-		private NetworkTimeSystem           m_NetworkTimeSystem;
 
 		public UTick ServerTick => GetTick(false);
 
 		public UTick GetTick(bool predicted)
 		{
-			var isClient = m_NetworkTimeSystem != null;
+			var isClient = m_ClientComponentGroup != null;
 			var isServer = m_ServerComponentGroup != null;
 			if (!isClient && !isServer)
 				throw new InvalidOperationException("Can only be called on client or server world.");
@@ -51,11 +50,6 @@ namespace StormiumTeam.GameBase
 			m_ClientPresentationGroup = World.GetExistingSystem<ClientPresentationSystemGroup>();
 			m_ClientComponentGroup    = World.GetExistingSystem<ClientSimulationSystemGroup>();
 #endif
-
-			if (m_ClientPresentationGroup != null)
-			{
-				m_NetworkTimeSystem = World.GetOrCreateSystem<NetworkTimeSystem>();
-			}
 		}
 
 		private EntityQuery m_PlayerGroup;
@@ -125,13 +119,12 @@ namespace StormiumTeam.GameBase
 		private ServerSimulationSystemGroup m_ServerComponentGroup;
 		private ClientSimulationSystemGroup m_ClientComponentGroup;
 		private ComponentSystemGroup        m_ClientPresentationGroup;
-		private NetworkTimeSystem           m_NetworkTimeSystem;
 
 		public UTick ServerTick => GetTick(false);
 
 		public UTick GetTick(bool predicted)
 		{
-			var isClient = m_NetworkTimeSystem != null;
+			var isClient = m_ClientComponentGroup != null;
 			var isServer = m_ServerComponentGroup != null;
 			if (!isClient && !isServer)
 				throw new InvalidOperationException("Can only be called on client or server world.");
@@ -163,11 +156,6 @@ namespace StormiumTeam.GameBase
 			m_ClientComponentGroup    = World.GetExistingSystem<ClientSimulationSystemGroup>();
 			m_ClientPresentationGroup = World.GetExistingSystem<ClientPresentationSystemGroup>();
 #endif
-
-			if (m_ClientPresentationGroup != null)
-			{
-				m_NetworkTimeSystem = World.GetOrCreateSystem<NetworkTimeSystem>();
-			}
 		}
 
 		private EntityQuery m_PlayerGroup;

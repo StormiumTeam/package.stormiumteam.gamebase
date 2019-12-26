@@ -1,14 +1,8 @@
-using System;
-using System.Net.Mime;
 using Revolution;
 using Unity.NetCode;
-using StormiumTeam.GameBase.EcsComponents;
-using Unity.Burst;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Networking.Transport;
-using UnityEngine;
 using Utilities;
 
 namespace StormiumTeam.GameBase.Data

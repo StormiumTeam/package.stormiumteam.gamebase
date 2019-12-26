@@ -4,7 +4,6 @@ using Unity.NetCode;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Networking.Transport;
-using UnityEngine;
 
 [assembly: RegisterGenericComponentType(typeof(Predicted<ActionAmmoSnapshot>))]
 

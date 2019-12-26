@@ -3,7 +3,6 @@ using package.stormiumteam.shared;
 using package.stormiumteam.shared.ecs;
 using Revolution;
 using StormiumTeam.GameBase;
-using StormiumTeam.GameBase.Data;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;

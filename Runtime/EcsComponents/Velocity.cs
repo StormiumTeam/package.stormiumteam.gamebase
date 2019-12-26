@@ -5,7 +5,6 @@ using StormiumTeam.GameBase;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Networking.Transport;
-using NotImplementedException = System.NotImplementedException;
 
 [assembly: RegisterGenericComponentType(typeof(Predicted<Velocity.SnapshotData>))]
 
