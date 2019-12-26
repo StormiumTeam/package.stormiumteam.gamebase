@@ -13,13 +13,11 @@ namespace StormiumTeam.GameBase
 	public class AssetPool<T>
 		where T : Object
 	{
-		private World                 m_SpawnWorld;
-		private Func<AssetPool<T>, T> m_CreateFunction;
+		private readonly Func<AssetPool<T>, T> m_CreateFunction;
+		private readonly Queue<T>              m_ObjectPool;
 
-		private List<T>  m_Objects;
-		private Queue<T> m_ObjectPool;
-
-		public int LastDequeueIndex { get; private set; }
+		private readonly List<T> m_Objects;
+		private readonly World   m_SpawnWorld;
 
 		public AssetPool(Func<AssetPool<T>, T> createFunc, World spawnWorld = null)
 		{
@@ -29,6 +27,8 @@ namespace StormiumTeam.GameBase
 			m_Objects    = new List<T>();
 			m_ObjectPool = new Queue<T>();
 		}
+
+		public int LastDequeueIndex { get; private set; }
 
 		public void Enqueue(T obj)
 		{
@@ -45,14 +45,12 @@ namespace StormiumTeam.GameBase
 					obj = m_CreateFunction(this);
 
 					if (obj is GameObject go)
-					{
 						foreach (var component1 in go.GetComponents(typeof(RuntimeAssetBackendBase)))
 						{
 							var component = (RuntimeAssetBackendBase) component1;
 							if (component.rootPool == null)
 								component.SetRootPool(this as AssetPool<GameObject>);
 						}
-					}
 				}
 
 				m_Objects.Add(obj);
@@ -64,10 +62,7 @@ namespace StormiumTeam.GameBase
 
 		public void AddElements(int size)
 		{
-			for (var i = 0; i != size; i++)
-			{
-				Enqueue(Dequeue());
-			}
+			for (var i = 0; i != size; i++) Enqueue(Dequeue());
 		}
 
 		public int IndexOf(T obj)
@@ -79,17 +74,17 @@ namespace StormiumTeam.GameBase
 	public class AsyncAssetPool<T>
 		where T : Object
 	{
+		public delegate void OnLoad(T result);
+
+		public string AssetId;
+
 		// Is the pool still valid?
 		public bool IsValid;
-		
-		public string AssetId;
-		public T LoadedAsset;
-		
-		private Queue<T> m_ObjectPool;
+		public T    LoadedAsset;
 
-		private List<OnLoad> m_EventQueue;
+		private readonly List<OnLoad> m_EventQueue;
 
-		public delegate void OnLoad(T result);
+		private readonly Queue<T> m_ObjectPool;
 
 		public AsyncAssetPool(string id)
 		{
@@ -102,10 +97,7 @@ namespace StormiumTeam.GameBase
 			InternalAddAsset().Completed += handle =>
 			{
 				LoadedAsset = handle.Result;
-				foreach (var onLoad in m_EventQueue)
-				{
-					onLoad(Object.Instantiate(LoadedAsset));
-				}
+				foreach (var onLoad in m_EventQueue) onLoad(Object.Instantiate(LoadedAsset));
 
 				m_EventQueue.Clear();
 			};
@@ -132,13 +124,9 @@ namespace StormiumTeam.GameBase
 			if (m_ObjectPool.Count == 0)
 			{
 				if (LoadedAsset == null)
-				{
 					m_EventQueue.Add(complete);
-				}
 				else
-				{
 					complete(Object.Instantiate(LoadedAsset));
-				}
 
 				return;
 			}
@@ -155,10 +143,7 @@ namespace StormiumTeam.GameBase
 
 		public void SafeUnload()
 		{
-			foreach (var obj in m_ObjectPool)
-			{
-				Object.Destroy(obj);
-			}
+			foreach (var obj in m_ObjectPool) Object.Destroy(obj);
 
 			IsValid = false;
 			m_ObjectPool.Clear();
@@ -166,30 +151,22 @@ namespace StormiumTeam.GameBase
 
 		private AsyncOperationHandle<T> InternalAddAsset()
 		{
-			if (LoadedAsset == null)
-			{
-				return Addressables.LoadAsset<T>(AssetId);
-			}
+			if (LoadedAsset == null) return Addressables.LoadAsset<T>(AssetId);
 
 			Debug.LogError("???????????????");
-			return default(AsyncOperationHandle<T>);
+			return default;
 		}
 
 		public void AddElements(int elem)
 		{
 			for (var i = 0; i != elem; i++)
-			{
-				Dequeue((c) =>
+				Dequeue(c =>
 				{
 					var go = c as GameObject;
-					if (go)
-					{
-						go.SetActive(false);
-					}
+					if (go) go.SetActive(false);
 
 					Enqueue(c);
 				});
-			}
 		}
 	}
 
@@ -219,20 +196,21 @@ namespace StormiumTeam.GameBase
 		public static RuntimeAssetDisable All =>
 			new RuntimeAssetDisable
 			{
-				IgnoreParent = false,
-				DisableGameObject = true,
+				IgnoreParent       = false,
+				DisableGameObject  = true,
 				ReturnToPool       = true,
-				ReturnPresentation = true,
+				ReturnPresentation = true
 			};
+
 		public static RuntimeAssetDisable AllAndIgnoreParent =>
 			new RuntimeAssetDisable
 			{
 				IgnoreParent       = true,
 				DisableGameObject  = true,
 				ReturnToPool       = true,
-				ReturnPresentation = true,
+				ReturnPresentation = true
 			};
-		
+
 		public bool IgnoreParent;
 		public bool DisableGameObject;
 		public bool ReturnToPool;
@@ -246,40 +224,40 @@ namespace StormiumTeam.GameBase
 
 	public abstract class RuntimeAssetBackendBase : MonoBehaviour
 	{
-		public AsyncAssetPool<GameObject> presentationPool;
-		public AssetPool<GameObject>      rootPool;
-
-		private bool m_Enabled;
-		protected bool m_IncomingPresentation;
-		
 		public int  DestroyFlags;
 		public bool DisableNextUpdate, ReturnToPoolOnDisable, ReturnPresentationToPoolNextFrame;
 
-		public abstract object GetPresentationBoxed();
-		
-		internal abstract void OnCompletePoolDequeue(GameObject result);
-		public abstract void SetSingleModel(string key, EntityManager em = default, Entity ent = default);
-		internal abstract bool SetPresentation(GameObject obj);
-		public abstract void ReturnPresentation();
+		private   bool                       m_Enabled;
+		protected bool                       m_IncomingPresentation;
+		public    AsyncAssetPool<GameObject> presentationPool;
+		public    AssetPool<GameObject>      rootPool;
 
 		public EntityManager DstEntityManager { get; protected set; }
 		public Entity        DstEntity        { get; protected set; }
 
 		public Entity BackendEntity { get; private set; }
 
+		public abstract object GetPresentationBoxed();
+
+		internal abstract void OnCompletePoolDequeue(GameObject result);
+		public abstract   void SetSingleModel(string            key, EntityManager em = default, Entity ent = default);
+		internal abstract bool SetPresentation(GameObject       obj);
+		public abstract   void ReturnPresentation();
+
 		public virtual void OnComponentEnabled()
-		{}
-		
+		{
+		}
+
 		public virtual void OnComponentDisabled()
-		{}
-		
+		{
+		}
+
 		public virtual void OnReset()
 		{
 		}
 
 		public virtual void OnTargetUpdate()
 		{
-			
 		}
 
 		public virtual void OnPresentationPoolUpdate()
@@ -289,12 +267,9 @@ namespace StormiumTeam.GameBase
 		protected void UpdateGameObjectEntity()
 		{
 			Debug.Assert(m_Enabled, "m_Enabled");
-			
-			var gameObjectEntity = GetComponent<GameObjectEntity>();
-			if (gameObjectEntity != null)
-			{
-				BackendEntity = gameObjectEntity.Entity;
-			}
+
+			var gameObjectEntity                        = GetComponent<GameObjectEntity>();
+			if (gameObjectEntity != null) BackendEntity = gameObjectEntity.Entity;
 
 			if (DstEntity == default || DstEntityManager == null || gameObjectEntity == null)
 				return;
@@ -310,7 +285,7 @@ namespace StormiumTeam.GameBase
 				Debug.LogError($"'{gameObject.name}' -> {DstEntityManager.World.Name} has no entity found with {DstEntity}'");
 				return;
 			}
-			
+
 			var entityManager = gameObjectEntity.EntityManager;
 			entityManager.SetOrAddComponentData(gameObjectEntity.Entity, new ModelParent {Parent = DstEntity});
 		}
@@ -321,18 +296,18 @@ namespace StormiumTeam.GameBase
 
 			if (!GetComponent<RuntimeAssetDetection>())
 				gameObject.AddComponent<RuntimeAssetDetection>();
-			
+
 			UpdateGameObjectEntity();
-			
+
 			OnComponentEnabled();
 		}
 
 		private void OnDisable()
 		{
 			m_Enabled = false;
-			
+
 			OnComponentDisabled();
-			DstEntity = default;
+			DstEntity        = default;
 			DstEntityManager = default;
 		}
 
@@ -341,10 +316,7 @@ namespace StormiumTeam.GameBase
 			DstEntityManager = entityManager;
 			DstEntity        = target;
 
-			if (m_Enabled)
-			{
-				UpdateGameObjectEntity();
-			}
+			if (m_Enabled) UpdateGameObjectEntity();
 
 			OnTargetUpdate();
 		}
@@ -356,7 +328,7 @@ namespace StormiumTeam.GameBase
 			OnPresentationPoolUpdate();
 
 			m_IncomingPresentation = true;
-			pool.Dequeue(OnCompletePoolDequeue);	
+			pool.Dequeue(OnCompletePoolDequeue);
 		}
 
 		public void SetPresentationSingle(GameObject go)
@@ -378,14 +350,14 @@ namespace StormiumTeam.GameBase
 			if (ReturnPresentationToPoolNextFrame)
 			{
 				Debug.Log("return pp " + gameObject.name);
-				
+
 				ReturnPresentationToPoolNextFrame = false;
 				ReturnPresentation();
 			}
 
 			if (!DisableNextUpdate)
 				return;
-			
+
 			Debug.Log("return " + gameObject.name);
 
 			DisableNextUpdate = false;
@@ -443,10 +415,7 @@ namespace StormiumTeam.GameBase
 				ReturnPresentation();
 			}
 
-			if (disable)
-			{
-				gameObject.SetActive(false);
-			}
+			if (disable) gameObject.SetActive(false);
 
 			DisableNextUpdate     = false;
 			ReturnToPoolOnDisable = false;
@@ -456,14 +425,14 @@ namespace StormiumTeam.GameBase
 
 		public virtual void OnPresentationSet()
 		{
-		}		
+		}
 	}
 
 	public abstract class RuntimeAssetBackend<TMonoPresentation> : RuntimeAssetBackendBase
 		where TMonoPresentation : RuntimeAssetPresentation<TMonoPresentation>
 	{
-		public TMonoPresentation Presentation { get; protected set; }
-		public bool HasIncomingPresentation => m_IncomingPresentation || Presentation != null;
+		public TMonoPresentation Presentation            { get; protected set; }
+		public bool              HasIncomingPresentation => m_IncomingPresentation || Presentation != null;
 
 		public override object GetPresentationBoxed()
 		{
@@ -492,7 +461,7 @@ namespace StormiumTeam.GameBase
 			opResult.SetActive(true);
 
 			m_IncomingPresentation = false;
-			
+
 			if (DstEntityManager == null)
 			{
 				SetPresentation(opResult);
@@ -500,28 +469,18 @@ namespace StormiumTeam.GameBase
 				return;
 			}
 
-			var gameObjectEntity = opResult.GetComponent<GameObjectEntity>();
-			if (!gameObjectEntity)
-			{
-				gameObjectEntity = opResult.AddComponent<GameObjectEntity>();
-			}
+			var gameObjectEntity                    = opResult.GetComponent<GameObjectEntity>();
+			if (!gameObjectEntity) gameObjectEntity = opResult.AddComponent<GameObjectEntity>();
 
 			World.Active = previousWorld;
-			
+
 			if (gameObjectEntity.Entity != default)
-			{
 				DstEntityManager.SetOrAddComponentData(gameObjectEntity.Entity, new ModelParent {Parent = DstEntity});
-			}
 			else
-			{
 				Debug.LogWarning("Presentation gameObject entity is null, this may happen if the main gameObject is not active.\nPlease fix that behavior by calling gameObject.SetActive(true).");
-			}
 
 			var listeners = opResult.GetComponents<IOnModelLoadedListener>();
-			foreach (var listener in listeners)
-			{
-				listener.React(DstEntity, DstEntityManager, gameObject);
-			}
+			foreach (var listener in listeners) listener.React(DstEntity, DstEntityManager, gameObject);
 
 			SetPresentation(opResult);
 		}
@@ -546,7 +505,7 @@ namespace StormiumTeam.GameBase
 			loadModel.SpawnRoot  = transform;
 			loadModel.OnComplete = SetPresentation;
 		}
-		
+
 		internal override bool SetPresentation(GameObject gameObject)
 		{
 			var tr = gameObject.transform;
@@ -559,7 +518,7 @@ namespace StormiumTeam.GameBase
 			Presentation.SetBackend(this);
 
 			m_IncomingPresentation = false;
-			
+
 			OnPresentationSet();
 
 			return true;
@@ -581,7 +540,7 @@ namespace StormiumTeam.GameBase
 				}
 				else
 				{
-					Debug.Log($"Null pool or not valid for " + Presentation.name);
+					Debug.Log("Null pool or not valid for " + Presentation.name);
 					Destroy(Presentation.gameObject);
 				}
 			}

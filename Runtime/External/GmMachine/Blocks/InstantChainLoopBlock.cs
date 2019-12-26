@@ -4,12 +4,10 @@ using UnityEngine;
 namespace GmMachine.Blocks
 {
 	/// <summary>
-	/// Similar to <see cref="BlockAutoLoopCollection"/> but blocks that are executed immediately will be chained
+	///     Similar to <see cref="BlockAutoLoopCollection" /> but blocks that are executed immediately will be chained
 	/// </summary>
 	public class InstantChainLoopBlock : BlockCollection, IResetCollectionOnBeginning
 	{
-		public bool ResetOnBeginning { get; set; }
-
 		public InstantChainLoopBlock(string name) : base(name)
 		{
 		}
@@ -18,6 +16,8 @@ namespace GmMachine.Blocks
 		{
 		}
 
+		public bool ResetOnBeginning { get; set; }
+
 		protected override bool OnRun()
 		{
 			var collections = GetList();
@@ -25,7 +25,9 @@ namespace GmMachine.Blocks
 			{
 				// If we automatically reset the loop, there is no need to further instructions as they're basically the same
 				if (ResetOnBeginning)
+				{
 					Reset();
+				}
 				else
 				{
 					Index               = 0;
@@ -46,10 +48,7 @@ namespace GmMachine.Blocks
 				AfterChildIsRunning();
 			}
 
-			if (iter >= 500)
-			{
-				Debug.Log($"Crashed on block: {CurrentRunningChild.Name} (parent: {Name})");
-			}
+			if (iter >= 500) Debug.Log($"Crashed on block: {CurrentRunningChild.Name} (parent: {Name})");
 
 			return true;
 		}

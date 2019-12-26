@@ -9,12 +9,12 @@ namespace StormiumTeam.GameBase
 		{
 			return TransformSpace(input, rigidBody.WorldFromBody, out pWorldFromMotion);
 		}
-		
+
 		public static ColliderCastInput TransformSpace(this ColliderCastInput input, RigidBody rigidBody)
 		{
 			return TransformSpace(input, rigidBody.WorldFromBody, out _);
 		}
-		
+
 		public static ColliderCastInput TransformSpace(this ColliderCastInput input, RigidTransform worldFromMotion, out Math.MTransform pWorldFromMotion)
 		{
 			// Transform the input into body space

@@ -69,8 +69,9 @@ namespace StormiumTeam.GameBase.Components
 		{
 			public override ComponentType ExcludeComponent => typeof(Exclude);
 		}
-		
+
 		public struct Exclude : IComponentData
-		{}
+		{
+		}
 	}
 }

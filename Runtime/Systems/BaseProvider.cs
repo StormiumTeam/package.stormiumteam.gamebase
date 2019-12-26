@@ -9,268 +9,261 @@ using Unity.Jobs;
 
 namespace StormiumTeam.GameBase
 {
-    public abstract class BaseProvider : BaseProvider<BaseProvider.NoData>
-    {
-        public struct NoData
-        {
-        }
+	public abstract class BaseProvider : BaseProvider<BaseProvider.NoData>
+	{
+		public override void SpawnLocalEntityWithArguments(NoData data, NativeList<Entity> outputEntities)
+		{
+			throw new NotImplementedException();
+		}
 
-        public override void SpawnLocalEntityWithArguments(NoData data, NativeList<Entity> outputEntities)
-        {
-            throw new NotImplementedException();
-        }
-    }
+		public struct NoData
+		{
+		}
+	}
 
-    public abstract class BaseProviderBatch<TCreateData> : BaseProvider<TCreateData>
-        where TCreateData : struct
-    {
-        private NativeList<Entity> m_TemporaryEntity;
+	public abstract class BaseProviderBatch<TCreateData> : BaseProvider<TCreateData>
+		where TCreateData : struct
+	{
+		private NativeList<Entity> m_TemporaryEntity;
 
-        protected override void OnCreate()
-        {
-            base.OnCreate();
-            
-            m_TemporaryEntity = new NativeList<Entity>(1, Allocator.Persistent);
-        }
+		protected override void OnCreate()
+		{
+			base.OnCreate();
 
-        protected override void OnDestroy()
-        {
-            base.OnDestroy();
+			m_TemporaryEntity = new NativeList<Entity>(1, Allocator.Persistent);
+		}
 
-            m_TemporaryEntity.Dispose();
-        }
+		protected override void OnDestroy()
+		{
+			base.OnDestroy();
 
-        public override void SpawnBatchEntitiesWithArguments(UnsafeAllocationLength<TCreateData> array, NativeList<Entity> outputEntities, NativeList<int> indices)
-        {
-            var naArray = new NativeArray<Entity>(array.Length, Allocator.TempJob);
+			m_TemporaryEntity.Dispose();
+		}
 
-            EntityManager.CreateEntity(EntityArchetypeWithAuthority, naArray);
-            for (var i = 0; i != array.Length; i++)
-            {
-                var entity = naArray[i];
-                var data   = array[i];
+		public override void SpawnBatchEntitiesWithArguments(UnsafeAllocationLength<TCreateData> array, NativeList<Entity> outputEntities, NativeList<int> indices)
+		{
+			var naArray = new NativeArray<Entity>(array.Length, Allocator.TempJob);
 
-                #if UNITY_EDITOR
-                EntityManager.SetName(entity, $"{GetTypeName(GetType())} #{entity.Index}:{entity.Version}");
-                #endif
-                SetEntityData(entity, data);
-                
-                indices.Add(i);
-            }
-
-            outputEntities.AddRange(naArray);
-            naArray.Dispose();
-        }
-
-        public override void SpawnLocalEntityWithArguments(TCreateData data, NativeList<Entity> outputEntities)
-        {
-            var entity = EntityManager.CreateEntity(EntityArchetypeWithAuthority);
+			EntityManager.CreateEntity(EntityArchetypeWithAuthority, naArray);
+			for (var i = 0; i != array.Length; i++)
+			{
+				var entity = naArray[i];
+				var data   = array[i];
 
 #if UNITY_EDITOR
-            EntityManager.SetName(entity, $"{GetTypeName(GetType())} #{entity.Index}:{entity.Version}");
+				EntityManager.SetName(entity, $"{GetTypeName(GetType())} #{entity.Index}:{entity.Version}");
 #endif
-            SetEntityData(entity, data);
+				SetEntityData(entity, data);
 
-            outputEntities.Add(entity);
-        }
+				indices.Add(i);
+			}
 
-        public Entity SpawnLocalEntityWithArguments(TCreateData data)
-        {
-            m_TemporaryEntity.Clear();
-            SpawnLocalEntityWithArguments(data, m_TemporaryEntity);
-            return m_TemporaryEntity[0];
-        }
+			outputEntities.AddRange(naArray);
+			naArray.Dispose();
+		}
 
-        public abstract void SetEntityData(Entity entity, TCreateData data);
-    }
-    
-    [AlwaysUpdateSystem]
-    public abstract class BaseProvider<TCreateData> : GameBaseSystem
-        where TCreateData : struct
-    {
-        private EntityModelManager m_ModelManager;
-        private GameManager        m_GameManager;
-        private ModelIdent         m_ModelIdent;
+		public override void SpawnLocalEntityWithArguments(TCreateData data, NativeList<Entity> outputEntities)
+		{
+			var entity = EntityManager.CreateEntity(EntityArchetypeWithAuthority);
 
-        private ComponentType[] m_EntityComponents;
+#if UNITY_EDITOR
+			EntityManager.SetName(entity, $"{GetTypeName(GetType())} #{entity.Index}:{entity.Version}");
+#endif
+			SetEntityData(entity, data);
 
-        public ComponentType[] EntityComponents             => m_EntityComponents;
-        public EntityArchetype EntityArchetype              { get; protected set; }
-        public EntityArchetype EntityArchetypeWithAuthority { get; protected set; }
+			outputEntities.Add(entity);
+		}
 
-        protected NativeList<TCreateData> CreateEntityDelayed;
+		public Entity SpawnLocalEntityWithArguments(TCreateData data)
+		{
+			m_TemporaryEntity.Clear();
+			SpawnLocalEntityWithArguments(data, m_TemporaryEntity);
+			return m_TemporaryEntity[0];
+		}
 
-        private bool m_CanHaveDelayedEntities;
+		public abstract void SetEntityData(Entity entity, TCreateData data);
+	}
 
-        private JobHandle m_ProducerHandle;
-        
-        protected static string GetTypeName(Type type)
-        {        
-            return TypeUtility.SpecifiedTypeName(type);
-        }
+	[AlwaysUpdateSystem]
+	public abstract class BaseProvider<TCreateData> : GameBaseSystem
+		where TCreateData : struct
+	{
+		protected NativeList<TCreateData> CreateEntityDelayed;
 
-        protected override void OnCreate()
-        {
-            base.OnCreate();
-            
-            if ((m_CanHaveDelayedEntities = typeof(TCreateData) != typeof(BaseProvider.NoData)) == true)
-            {
-                CreateEntityDelayed = new NativeList<TCreateData>(32, Allocator.Persistent);
-            }
+		private bool m_CanHaveDelayedEntities;
 
-            GetManager();
-        }
+		private ComponentType[]    m_EntityComponents;
+		private GameManager        m_GameManager;
+		private ModelIdent         m_ModelIdent;
+		private EntityModelManager m_ModelManager;
 
-        protected override void OnUpdate()
-        {
-            if (m_CanHaveDelayedEntities)
-                FlushDelayedEntities();
-        }
+		private JobHandle m_ProducerHandle;
 
-        protected override void OnDestroy()
-        {
-            base.OnDestroy();
+		public ComponentType[] EntityComponents             => m_EntityComponents;
+		public EntityArchetype EntityArchetype              { get; protected set; }
+		public EntityArchetype EntityArchetypeWithAuthority { get; protected set; }
 
-            if (m_CanHaveDelayedEntities)
-                CreateEntityDelayed.Dispose();
-        }
+		protected static string GetTypeName(Type type)
+		{
+			return TypeUtility.SpecifiedTypeName(type);
+		}
 
-        public NativeList<TCreateData> GetEntityDelayedList()
-        {
-            if (!m_CanHaveDelayedEntities)
-                throw new NotImplementedException();
+		protected override void OnCreate()
+		{
+			base.OnCreate();
 
-            return CreateEntityDelayed;
-        }
+			if (m_CanHaveDelayedEntities = typeof(TCreateData) != typeof(BaseProvider.NoData)) CreateEntityDelayed = new NativeList<TCreateData>(32, Allocator.Persistent);
 
-        public void AddJobHandleForProducer(JobHandle inputDeps)
-        {
-            m_ProducerHandle = JobHandle.CombineDependencies(m_ProducerHandle, inputDeps);
-        }
+			GetManager();
+		}
 
-        public void FlushDelayedEntities()
-        {
-            m_ProducerHandle.Complete();
+		protected override void OnUpdate()
+		{
+			if (m_CanHaveDelayedEntities)
+				FlushDelayedEntities();
+		}
 
-            if (CreateEntityDelayed.Length == 0)
-                return;
-            
-            var output  = new NativeList<Entity>(CreateEntityDelayed.Length, Allocator.Temp);
-            var indices = new NativeList<int>(CreateEntityDelayed.Length, Allocator.Temp);
+		protected override void OnDestroy()
+		{
+			base.OnDestroy();
 
-            SpawnBatchEntitiesWithArguments(new UnsafeAllocationLength<TCreateData>(CreateEntityDelayed), output, indices);
+			if (m_CanHaveDelayedEntities)
+				CreateEntityDelayed.Dispose();
+		}
 
-            output.Dispose();
-            indices.Dispose();
+		public NativeList<TCreateData> GetEntityDelayedList()
+		{
+			if (!m_CanHaveDelayedEntities)
+				throw new NotImplementedException();
 
-            CreateEntityDelayed.Clear();
-        }
+			return CreateEntityDelayed;
+		}
 
-        public EntityModelManager GetManager()
-        {
-            if (m_ModelManager == null)
-            {
-                m_ModelManager = World.GetOrCreateSystem<EntityModelManager>();
-                m_GameManager  = World.GetOrCreateSystem<GameManager>();
-                
-                GetComponents(out m_EntityComponents);
-                if (EntityComponents == null)
-                {
-                    m_ModelIdent = m_ModelManager.Register
-                    (
-                        $"EntityProvider.{GetTypeName(GetType())}", SpawnEntity, DestroyEntity
-                    );
-                }
-                else
-                {
-                    // todo: I was lazy when making this, this should be remade as it's slow
-                    var l = new Dictionary<ComponentType, byte> {[ComponentType.ReadWrite<ModelIdent>()] = 0};
+		public void AddJobHandleForProducer(JobHandle inputDeps)
+		{
+			m_ProducerHandle = JobHandle.CombineDependencies(m_ProducerHandle, inputDeps);
+		}
 
-                    // Remove duplicates and add ModelIdent component
-                    if (m_EntityComponents != null)
-                        foreach (var c in m_EntityComponents)
-                            l[c] = 0;
-                    m_EntityComponents = l.Keys.ToArray();
-                    l.Clear();
+		public void FlushDelayedEntities()
+		{
+			m_ProducerHandle.Complete();
 
-                    l = new Dictionary<ComponentType, byte> {[ComponentType.ReadWrite<ModelIdent>()] = 0};
+			if (CreateEntityDelayed.Length == 0)
+				return;
 
-                    var foreignList = new List<ComponentType>();
-                    foreach (var c in foreignList)
-                        l[c] = 0;
+			var output  = new NativeList<Entity>(CreateEntityDelayed.Length, Allocator.Temp);
+			var indices = new NativeList<int>(CreateEntityDelayed.Length, Allocator.Temp);
 
-                    EntityArchetype              = EntityManager.CreateArchetype(EntityComponents);
-                    EntityArchetypeWithAuthority = EntityManager.CreateArchetype(EntityComponents.Append(ComponentType.ReadWrite<EntityAuthority>()).ToArray());
+			SpawnBatchEntitiesWithArguments(new UnsafeAllocationLength<TCreateData>(CreateEntityDelayed), output, indices);
 
-                    var patternName = $"EntityProvider.Full.{GetTypeName(GetType())}";
-                    m_ModelIdent = m_ModelManager.RegisterFull
-                    (
-                        patternName + ".Model", EntityComponents, ProviderSpawnEntity, ProviderDestroyEntity
-                    );
-                }
-            }
+			output.Dispose();
+			indices.Dispose();
 
-            return m_ModelManager;
-        }
+			CreateEntityDelayed.Clear();
+		}
 
-        public ModelIdent GetModelIdent()
-        {
-            return m_ModelIdent;
-        }
+		public EntityModelManager GetManager()
+		{
+			if (m_ModelManager == null)
+			{
+				m_ModelManager = World.GetOrCreateSystem<EntityModelManager>();
+				m_GameManager  = World.GetOrCreateSystem<GameManager>();
 
-        protected virtual Entity SpawnEntity(Entity origin)
-        {
-            return EntityManager.CreateEntity(EntityArchetype);
-        }
+				GetComponents(out m_EntityComponents);
+				if (EntityComponents == null)
+				{
+					m_ModelIdent = m_ModelManager.Register
+					(
+						$"EntityProvider.{GetTypeName(GetType())}", SpawnEntity, DestroyEntity
+					);
+				}
+				else
+				{
+					// todo: I was lazy when making this, this should be remade as it's slow
+					var l = new Dictionary<ComponentType, byte> {[ComponentType.ReadWrite<ModelIdent>()] = 0};
 
-        protected virtual void DestroyEntity(Entity worldEntity)
-        {
-            EntityManager.DestroyEntity(worldEntity);
-        }
+					// Remove duplicates and add ModelIdent component
+					if (m_EntityComponents != null)
+						foreach (var c in m_EntityComponents)
+							l[c] = 0;
+					m_EntityComponents = l.Keys.ToArray();
+					l.Clear();
 
-        public Entity ProviderSpawnEntity(Entity origin)
-        {
-            return SpawnEntity(origin);
-        }
+					l = new Dictionary<ComponentType, byte> {[ComponentType.ReadWrite<ModelIdent>()] = 0};
 
-        public void ProviderDestroyEntity(Entity worldEntity)
-        {
-            DestroyEntity(worldEntity);
-        }
+					var foreignList = new List<ComponentType>();
+					foreach (var c in foreignList)
+						l[c] = 0;
 
-        public virtual void GetComponents(out ComponentType[] entityComponents)
-        {
-            entityComponents = null;
-        }
+					EntityArchetype              = EntityManager.CreateArchetype(EntityComponents);
+					EntityArchetypeWithAuthority = EntityManager.CreateArchetype(EntityComponents.Append(ComponentType.ReadWrite<EntityAuthority>()).ToArray());
 
-        public virtual void SpawnBatchEntitiesWithArguments(UnsafeAllocationLength<TCreateData> array, NativeList<Entity> outputEntities, NativeList<int> indices)
-        {
-            var count = array.Length;
-            for (var i = 0; i != count; i++)
-            {
-                var item = array[i];
-                SpawnLocalEntityWithArguments(item, outputEntities);
+					var patternName = $"EntityProvider.Full.{GetTypeName(GetType())}";
+					m_ModelIdent = m_ModelManager.RegisterFull
+					(
+						patternName + ".Model", EntityComponents, ProviderSpawnEntity, ProviderDestroyEntity
+					);
+				}
+			}
 
-                for (var j = 0; j != outputEntities.Length; j++)
-                {
-                    indices.Add(i);
-                }
-            }
-        }
+			return m_ModelManager;
+		}
 
-        public abstract void SpawnLocalEntityWithArguments(TCreateData data, NativeList<Entity> outputEntities);
+		public ModelIdent GetModelIdent()
+		{
+			return m_ModelIdent;
+		}
 
-        public virtual Entity SpawnLocalEntityDelayed(EntityCommandBuffer entityCommandBuffer)
-        {
-            var e = entityCommandBuffer.CreateEntity(EntityArchetype);
-            entityCommandBuffer.SetComponent(e, GetModelIdent());
+		protected virtual Entity SpawnEntity(Entity origin)
+		{
+			return EntityManager.CreateEntity(EntityArchetype);
+		}
 
-            return e;
-        }
+		protected virtual void DestroyEntity(Entity worldEntity)
+		{
+			EntityManager.DestroyEntity(worldEntity);
+		}
 
-        public Entity SpawnLocal()
-        {
-            return m_GameManager.SpawnLocal(GetModelIdent());
-        }
-    }
+		public Entity ProviderSpawnEntity(Entity origin)
+		{
+			return SpawnEntity(origin);
+		}
+
+		public void ProviderDestroyEntity(Entity worldEntity)
+		{
+			DestroyEntity(worldEntity);
+		}
+
+		public virtual void GetComponents(out ComponentType[] entityComponents)
+		{
+			entityComponents = null;
+		}
+
+		public virtual void SpawnBatchEntitiesWithArguments(UnsafeAllocationLength<TCreateData> array, NativeList<Entity> outputEntities, NativeList<int> indices)
+		{
+			var count = array.Length;
+			for (var i = 0; i != count; i++)
+			{
+				var item = array[i];
+				SpawnLocalEntityWithArguments(item, outputEntities);
+
+				for (var j = 0; j != outputEntities.Length; j++) indices.Add(i);
+			}
+		}
+
+		public abstract void SpawnLocalEntityWithArguments(TCreateData data, NativeList<Entity> outputEntities);
+
+		public virtual Entity SpawnLocalEntityDelayed(EntityCommandBuffer entityCommandBuffer)
+		{
+			var e = entityCommandBuffer.CreateEntity(EntityArchetype);
+			entityCommandBuffer.SetComponent(e, GetModelIdent());
+
+			return e;
+		}
+
+		public Entity SpawnLocal()
+		{
+			return m_GameManager.SpawnLocal(GetModelIdent());
+		}
+	}
 }

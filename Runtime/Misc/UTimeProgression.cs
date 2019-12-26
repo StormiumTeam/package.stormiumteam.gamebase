@@ -1,4 +1,4 @@
-namespace  StormiumTeam.GameBase
+namespace StormiumTeam.GameBase
 {
 	public struct UTimeProgression
 	{
@@ -8,10 +8,13 @@ namespace  StormiumTeam.GameBase
 		public void Reset()
 		{
 			m_Accumulated = 0.0f;
-			Value = 0;
+			Value         = 0;
 		}
 
-		public float GetAccumulated() => m_Accumulated;
+		public float GetAccumulated()
+		{
+			return m_Accumulated;
+		}
 
 		public static UTimeProgression operator +(UTimeProgression left, UTick tick)
 		{
@@ -28,5 +31,4 @@ namespace  StormiumTeam.GameBase
 			return left;
 		}
 	}
-
 }

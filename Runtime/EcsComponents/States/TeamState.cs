@@ -12,7 +12,8 @@ namespace StormiumTeam.GameBase
 	public struct TeamDescription : IEntityDescription
 	{
 		public class Sync : RelativeSynchronize<TeamDescription>
-		{}
+		{
+		}
 	}
 
 	// added automatically
@@ -24,10 +25,6 @@ namespace StormiumTeam.GameBase
 
 	public class TeamEmptySystem : ComponentSnapshotSystemEmpty<TeamDescription>
 	{
-		public struct Exclude : IComponentData
-		{
-		}
-
 		public override NativeArray<ComponentType> EntityComponents =>
 			new NativeArray<ComponentType>(1, Allocator.Temp, NativeArrayOptions.UninitializedMemory)
 			{
@@ -35,10 +32,50 @@ namespace StormiumTeam.GameBase
 			};
 
 		public override ComponentType ExcludeComponent => typeof(Exclude);
+
+		public struct Exclude : IComponentData
+		{
+		}
 	}
 
 	public class TeamUpdateContainerSystem : JobComponentSystem
 	{
+		private EntityQuery m_EntityWithTeam;
+		private EntityQuery m_TeamWithContainer;
+
+		private EntityQuery m_TeamWithoutContainer;
+
+		protected override void OnCreate()
+		{
+			base.OnCreate();
+
+			m_TeamWithoutContainer = GetEntityQuery(new EntityQueryDesc
+			{
+				All  = new ComponentType[] {typeof(TeamDescription)},
+				None = new ComponentType[] {typeof(TeamEntityContainer)}
+			});
+			m_TeamWithContainer = GetEntityQuery(typeof(TeamDescription), typeof(TeamEntityContainer));
+			m_EntityWithTeam    = GetEntityQuery(typeof(Relative<TeamDescription>));
+		}
+
+		protected override JobHandle OnUpdate(JobHandle inputDeps)
+		{
+			if (m_TeamWithoutContainer.CalculateEntityCount() > 0)
+			{
+				EntityManager.AddComponent(m_TeamWithoutContainer, typeof(TeamEntityContainer));
+				var entities = m_TeamWithoutContainer.ToEntityArray(Allocator.TempJob);
+				foreach (var ent in entities) EntityManager.GetBuffer<TeamEntityContainer>(ent).Reserve(10);
+			}
+
+			inputDeps = new JobClearBuffer().Schedule(m_TeamWithContainer, inputDeps);
+			inputDeps = new JobFindAndAdd
+			{
+				ContainerFromEntity = GetBufferFromEntity<TeamEntityContainer>()
+			}.ScheduleSingle(m_EntityWithTeam, inputDeps);
+
+			return inputDeps;
+		}
+
 		[BurstCompile]
 		private struct JobClearBuffer : IJobForEach_B<TeamEntityContainer>
 		{
@@ -63,44 +100,6 @@ namespace StormiumTeam.GameBase
 
 				ContainerFromEntity[teamRelative.Target].Add(ctn);
 			}
-		}
-
-		private EntityQuery m_TeamWithoutContainer;
-		private EntityQuery m_TeamWithContainer;
-		private EntityQuery m_EntityWithTeam;
-
-		protected override void OnCreate()
-		{
-			base.OnCreate();
-
-			m_TeamWithoutContainer = GetEntityQuery(new EntityQueryDesc
-			{
-				All  = new ComponentType[] {typeof(TeamDescription)},
-				None = new ComponentType[] {typeof(TeamEntityContainer)}
-			});
-			m_TeamWithContainer = GetEntityQuery(typeof(TeamDescription), typeof(TeamEntityContainer));
-			m_EntityWithTeam    = GetEntityQuery(typeof(Relative<TeamDescription>));
-		}
-
-		protected override JobHandle OnUpdate(JobHandle inputDeps)
-		{
-			if (m_TeamWithoutContainer.CalculateEntityCount() > 0)
-			{
-				EntityManager.AddComponent(m_TeamWithoutContainer, typeof(TeamEntityContainer));
-				var entities = m_TeamWithoutContainer.ToEntityArray(Allocator.TempJob);
-				foreach (var ent in entities)
-				{
-					EntityManager.GetBuffer<TeamEntityContainer>(ent).Reserve(10);
-				}
-			}
-
-			inputDeps = new JobClearBuffer().Schedule(m_TeamWithContainer, inputDeps);
-			inputDeps = new JobFindAndAdd
-			{
-				ContainerFromEntity = GetBufferFromEntity<TeamEntityContainer>()
-			}.ScheduleSingle(m_EntityWithTeam, inputDeps);
-
-			return inputDeps;
 		}
 	}
 }

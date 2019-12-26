@@ -6,11 +6,11 @@ namespace Misc.GmMachine.Contexts
 	public class WorldContext : ExternalContextBase
 	{
 		public readonly EntityManager EntityMgr;
-		public readonly World World;
+		public readonly World         World;
 
 		public WorldContext(World world)
 		{
-			World = world;
+			World     = world;
 			EntityMgr = world.EntityManager;
 		}
 

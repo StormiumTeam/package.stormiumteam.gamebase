@@ -1,5 +1,5 @@
-using Unity.NetCode;
 using Unity.Entities;
+using Unity.NetCode;
 
 namespace StormiumTeam.GameBase
 {
@@ -11,10 +11,9 @@ namespace StormiumTeam.GameBase
 			[UpdateInGroup(typeof(PreFrame))]
 			public class Rules : ComponentSystemGroup
 			{
-					
 			}
 		}
-		
+
 		[UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
 		[UpdateAfter(typeof(NetworkReceiveSnapshotSystemGroup))]
 		[UpdateAfter(typeof(GhostSimulationSystemGroup))]
@@ -34,21 +33,18 @@ namespace StormiumTeam.GameBase
 				[UpdateInGroup(typeof(UpdateEntities))]
 				public class Interaction : ComponentSystemGroup
 				{
-					
 				}
 
 				[UpdateInGroup(typeof(UpdateEntities))]
 				[UpdateAfter(typeof(Interaction))]
 				public class Rules : ComponentSystemGroup
 				{
-					
 				}
-				
+
 				[UpdateInGroup(typeof(UpdateEntities))]
 				[UpdateAfter(typeof(Rules))]
 				public class GameMode : ComponentSystemGroup
 				{
-					
 				}
 			}
 
@@ -61,38 +57,37 @@ namespace StormiumTeam.GameBase
 				{
 				}
 			}
-			
+
 			public class BeforeSpawnEntitiesCommandBuffer : EntityCommandBufferSystem
-			{}
+			{
+			}
 
 			[UpdateInGroup(typeof(Simulation))]
 			[UpdateAfter(typeof(DeleteEntities))]
 			public class SpawnEntities : ComponentSystemGroup
-			{				
+			{
 				[UpdateInGroup(typeof(SpawnEntities))]
 				public class SpawnEvent : ComponentSystemGroup
 				{
-
 				}
-				
+
 				[UpdateInGroup(typeof(SpawnEntities))]
 				[UpdateAfter(typeof(SpawnEvent))]
 				public class CommandBufferSystem : EntityCommandBufferSystem
-				{}
+				{
+				}
 			}
 
 			[UpdateInGroup(typeof(Simulation))]
 			[UpdateAfter(typeof(SpawnEntities))]
 			public class ConfigureSpawnedEntities : ComponentSystemGroup
 			{
-
 			}
 
 			[UpdateInGroup(typeof(Simulation))]
 			[UpdateAfter(typeof(ConfigureSpawnedEntities))]
 			public class ProcessEvents : ComponentSystemGroup
 			{
-				
 			}
 		}
 	}

@@ -21,7 +21,7 @@ namespace StormiumTeam.GameBase
 			World.GetOrCreateSystem<BuildPhysicsWorld>().Update();
 
 			base.OnUpdate();
-			
+
 			m_EndBarrier.Update();
 		}
 	}
@@ -31,7 +31,7 @@ namespace StormiumTeam.GameBase
 	{
 	}
 
-	[UpdateInGroup(typeof(ProjectileSystemGroup)), UpdateAfter(typeof(ProjectilePhysicIterationSystemGroup))]
+	[UpdateInGroup(typeof(ProjectileSystemGroup))] [UpdateAfter(typeof(ProjectilePhysicIterationSystemGroup))]
 	public class ProjectilePhysicCollisionEventSystemGroup : ComponentSystemGroup
 	{
 	}

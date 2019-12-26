@@ -6,7 +6,7 @@ namespace StormiumTeam.GameBase
 	{
 		public byte Value;
 
-		public bool IsLeft => Value == 0;
+		public bool IsLeft  => Value == 0;
 		public bool IsValue => Value == 1;
 	}
 }

@@ -28,9 +28,7 @@ namespace StormiumTeam.GameBase.BaseSystems
 
 				if (m_GetAllBackendModule.BackendWithoutModel.Length > 0
 				    || m_GetAllBackendModule.MissingTargets.Length > 0)
-				{
 					OnResult(m_GetAllBackendModule.BackendWithoutModel, m_GetAllBackendModule.MissingTargets);
-				}
 			}
 		}
 

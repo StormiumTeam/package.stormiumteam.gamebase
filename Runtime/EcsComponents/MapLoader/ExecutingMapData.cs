@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 namespace StormiumTeam.GameBase.Data
 {
 	/// <summary>
-	/// The current map (for more information, use MapManager properties)
+	///     The current map (for more information, use MapManager properties)
 	/// </summary>
 	public struct ExecutingMapData : IComponentData
 	{

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace GmMachine.Blocks
 {
 	/// <summary>
-	/// It's a bit similar to an instruction block, but it can be waited.
+	///     It's a bit similar to an instruction block, but it can be waited.
 	/// </summary>
 	public class BlockLoopRunAllCollection : BlockCollection
 	{

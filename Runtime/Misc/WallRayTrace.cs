@@ -2,32 +2,32 @@ using UnityEngine;
 
 namespace StormiumTeam.GameBase
 {
-    public class RayUtility
-    {
-        public static Vector3 GetBounce(Vector3 vec)
-        {
-            return default;
-        }
-        
-        public static Vector3 SlideVelocityNoYChange(Vector3 velocity, Vector3 onNormal)
-        {
-            var oldY = velocity.y;
+	public class RayUtility
+	{
+		public static Vector3 GetBounce(Vector3 vec)
+		{
+			return default;
+		}
 
-            velocity.y = 0;
-            onNormal.y = 0;
+		public static Vector3 SlideVelocityNoYChange(Vector3 velocity, Vector3 onNormal)
+		{
+			var oldY = velocity.y;
 
-            var desiredMotion = SlideVelocity(velocity, onNormal);
-            desiredMotion.y = oldY;
+			velocity.y = 0;
+			onNormal.y = 0;
 
-            return desiredMotion;
-        }
-        
-        public static Vector3 SlideVelocity(Vector3 velocity, Vector3 onNormal)
-        {            
-            var undesiredMotion = onNormal * Vector3.Dot(velocity, onNormal);
-            var desiredMotion   = velocity - undesiredMotion;
+			var desiredMotion = SlideVelocity(velocity, onNormal);
+			desiredMotion.y = oldY;
 
-            return desiredMotion;
-        }
-    }
+			return desiredMotion;
+		}
+
+		public static Vector3 SlideVelocity(Vector3 velocity, Vector3 onNormal)
+		{
+			var undesiredMotion = onNormal * Vector3.Dot(velocity, onNormal);
+			var desiredMotion   = velocity - undesiredMotion;
+
+			return desiredMotion;
+		}
+	}
 }

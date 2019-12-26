@@ -6,14 +6,13 @@ namespace StormiumTeam.GameBase
 	[ExecuteInEditMode]
 	public class TMPMaterialInstance : MonoBehaviour
 	{
-		private Material m_PreviousMaterial;
-
 		public bool IsShared;
-		
+
+		[SerializeField] [HideInInspector] private Material m_InstancedMaterial;
+		private                                    Material m_PreviousMaterial;
+
 		public Material Material;
 		public TMP_Text Text;
-
-		[SerializeField, HideInInspector] private Material m_InstancedMaterial;
 
 		private void OnEnable()
 		{

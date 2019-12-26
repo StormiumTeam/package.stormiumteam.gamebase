@@ -1,11 +1,11 @@
 using System;
 using System.Diagnostics;
-using Unity.NetCode;
 using StormiumTeam.GameBase.BaseSystems;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
+using Unity.NetCode;
 using Unity.Physics;
 using Unity.Physics.Systems;
 
@@ -14,58 +14,14 @@ namespace StormiumTeam.GameBase.Systems
 	[UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
 	public class CollisionFilterSystemGroup : RuleSystemGroupBase
 	{
-		private struct DisposeJob : IJob
-		{
-			[DeallocateOnJobCompletion] public NativeArray<Entity> Entities;
+		private int m_PreviousBufferVersion;
 
-			public void Execute()
-			{
-			}
-		}
-
-		[BurstCompile]
-		private struct UpdateAndCleanCollideWithBufferJob : IJobParallelFor
-		{
-			[NativeDisableParallelForRestriction]
-			public BufferFromEntity<CollideWith> CollideWithFromEntity;
-
-			[ReadOnly]
-			public NativeArray<Entity> Entities;
-
-			public void Execute(int index)
-			{
-				var cwBuffer = CollideWithFromEntity[Entities[index]];
-				if (cwBuffer.Capacity <= 10)
-				{
-					cwBuffer.ResizeUninitialized(11);
-				}
-
-				cwBuffer.Clear();
-			}
-		}
-
-		[BurstCompile]
-		private struct ClearCollideWithBufferJob : IJobParallelFor
-		{
-			[NativeDisableParallelForRestriction]
-			public BufferFromEntity<CollideWith> CollideWithFromEntity;
-
-			[ReadOnly]
-			public NativeArray<Entity> Entities;
-
-			public void Execute(int index)
-			{
-				var cwBuffer = CollideWithFromEntity[Entities[index]];
-				cwBuffer.Clear();
-			}
-		}
+		private EntityQuery m_ResetBufferQuery;
 
 		public override void Process()
 		{
 			throw new NotImplementedException("CollisionFilterSystemGroup doesn't implement RuleSystemGroupBase.Process(). Use Filter(query) instead.");
 		}
-
-		private EntityQuery         m_ResetBufferQuery;
 
 		protected override void OnCreate()
 		{
@@ -86,9 +42,7 @@ namespace StormiumTeam.GameBase.Systems
 			return inputDeps;
 		}
 
-		private int m_PreviousBufferVersion;
-
-		public unsafe JobHandle Filter(NativeArray<Entity> targets, JobHandle inputDeps)
+		public JobHandle Filter(NativeArray<Entity> targets, JobHandle inputDeps)
 		{
 			var handle     = inputDeps;
 			var newVersion = EntityManager.GetComponentOrderVersion<CollideWith>();
@@ -121,13 +75,56 @@ namespace StormiumTeam.GameBase.Systems
 
 			return handle;
 		}
+
+		private struct DisposeJob : IJob
+		{
+			[DeallocateOnJobCompletion] public NativeArray<Entity> Entities;
+
+			public void Execute()
+			{
+			}
+		}
+
+		[BurstCompile]
+		private struct UpdateAndCleanCollideWithBufferJob : IJobParallelFor
+		{
+			[NativeDisableParallelForRestriction]
+			public BufferFromEntity<CollideWith> CollideWithFromEntity;
+
+			[ReadOnly]
+			public NativeArray<Entity> Entities;
+
+			public void Execute(int index)
+			{
+				var cwBuffer = CollideWithFromEntity[Entities[index]];
+				if (cwBuffer.Capacity <= 10) cwBuffer.ResizeUninitialized(11);
+
+				cwBuffer.Clear();
+			}
+		}
+
+		[BurstCompile]
+		private struct ClearCollideWithBufferJob : IJobParallelFor
+		{
+			[NativeDisableParallelForRestriction]
+			public BufferFromEntity<CollideWith> CollideWithFromEntity;
+
+			[ReadOnly]
+			public NativeArray<Entity> Entities;
+
+			public void Execute(int index)
+			{
+				var cwBuffer = CollideWithFromEntity[Entities[index]];
+				cwBuffer.Clear();
+			}
+		}
 	}
 
 	[UpdateInGroup(typeof(CollisionFilterSystemGroup))]
 	public abstract class CollisionFilterSystemBase : RuleBaseSystem
 	{
-		private NativeArray<Entity> m_Targets;
 		private PhysicsWorld        m_PhysicsWorld;
+		private NativeArray<Entity> m_Targets;
 
 		public abstract JobHandle Filter(PhysicsWorld physicsWorld, NativeArray<Entity> targets, JobHandle jobHandle);
 

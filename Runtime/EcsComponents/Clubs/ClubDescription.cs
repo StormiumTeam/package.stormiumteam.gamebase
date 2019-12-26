@@ -1,11 +1,11 @@
 using System;
 using System.Runtime.InteropServices;
 using Revolution;
-using Unity.NetCode;
 using StormiumTeam.GameBase;
 using StormiumTeam.GameBase.Components;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.NetCode;
 using Unity.Networking.Transport;
 using UnityEngine;
 using Utilities;
@@ -110,14 +110,6 @@ namespace StormiumTeam.GameBase.Components
 	[UpdateInGroup(typeof(OrderGroup.Simulation.SpawnEntities))]
 	public class ClubProvider : BaseProviderBatch<ClubProvider.Create>
 	{
-		[Serializable]
-		public struct Create
-		{
-			public NativeString64 name;
-			public Color          primaryColor;
-			public Color          secondaryColor;
-		}
-
 		public override void GetComponents(out ComponentType[] entityComponents)
 		{
 			entityComponents = new ComponentType[]
@@ -135,6 +127,14 @@ namespace StormiumTeam.GameBase.Components
 				PrimaryColor   = data.primaryColor,
 				SecondaryColor = data.secondaryColor
 			});
+		}
+
+		[Serializable]
+		public struct Create
+		{
+			public NativeString64 name;
+			public Color          primaryColor;
+			public Color          secondaryColor;
 		}
 	}
 }

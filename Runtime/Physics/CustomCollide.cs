@@ -6,9 +6,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics;
 using Unity.Transforms;
-using Collider = Unity.Physics.Collider;
 using Math = Unity.Physics.Math;
-using RaycastHit = Unity.Physics.RaycastHit;
 
 namespace StormiumTeam.GameBase
 {
@@ -245,7 +243,7 @@ namespace StormiumTeam.GameBase
 
 				var fraction = collector.MaxFraction;
 				var numHits  = collector.NumHits;
-				
+
 				if (cw.Collider->CalculateDistance(inputLs, ref collector))
 				{
 					// Transform results back into world space
@@ -259,7 +257,7 @@ namespace StormiumTeam.GameBase
 
 			return hadHit;
 		}
-		
+
 		public static bool CalculateDistance<T>(this CustomCollideCollection buffer, PointDistanceInput input, ref T collector, bool setSameGroup = false)
 			where T : struct, ICollector<DistanceHit>
 		{
@@ -279,7 +277,7 @@ namespace StormiumTeam.GameBase
 				var bodyFromWorld   = Math.Inverse(worldFromMotion);
 				var inputLs = new PointDistanceInput
 				{
-					Filter = input.Filter,
+					Filter      = input.Filter,
 					Position    = Math.Mul(bodyFromWorld, input.Position),
 					MaxDistance = input.MaxDistance
 				};
@@ -293,16 +291,13 @@ namespace StormiumTeam.GameBase
 					collector.TransformNewHits(numHits, fraction, worldFromMotion, cw.RigidBodyIndex);
 					hadHit = true;
 
-					if (collector.EarlyOutOnFirstHit)
-					{
-						return true;
-					}
+					if (collector.EarlyOutOnFirstHit) return true;
 				}
 			}
 
 			return hadHit;
 		}
-		
+
 		public static bool CalculateDistance(this CustomCollideCollection buffer, PointDistanceInput input, out DistanceHit result)
 		{
 			var collector = new ClosestHitCollector<DistanceHit>(input.MaxDistance);
@@ -315,7 +310,7 @@ namespace StormiumTeam.GameBase
 			result = new DistanceHit();
 			return false;
 		}
-		
+
 		public static bool CalculateDistance(this CustomCollideCollection buffer, ColliderDistanceInput input, out DistanceHit result)
 		{
 			var collector = new ClosestHitCollector<DistanceHit>(input.MaxDistance);

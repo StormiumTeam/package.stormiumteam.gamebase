@@ -1,6 +1,6 @@
 using System;
-using Unity.NetCode;
 using Unity.Mathematics;
+using Unity.NetCode;
 
 namespace StormiumTeam.GameBase
 {
@@ -203,7 +203,7 @@ namespace StormiumTeam.GameBase
 		}
 
 		/// <summary>
-		/// Add milliseconds as ticks, if it's not modified, add another tick.
+		///     Add milliseconds as ticks, if it's not modified, add another tick.
 		/// </summary>
 		/// <param name="arg"></param>
 		public void AddMsNextFrame(long arg)
@@ -270,16 +270,16 @@ namespace StormiumTeam.GameBase
 			tickRate.ResolveDefaults();
 
 			tick.Delta = 1f / tickRate.SimulationTickRate;
-			
+
 			return tick;
 		}
-		
+
 		public static UTick GetServerTick(this ClientSimulationSystemGroup system)
 		{
 			UTick tick;
 			tick.Value = system.ServerTick;
 			tick.Delta = system.ServerTickDeltaTime;
-			
+
 			return tick;
 		}
 	}

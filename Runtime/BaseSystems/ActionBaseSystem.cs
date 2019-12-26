@@ -27,7 +27,7 @@ namespace StormiumTeam.GameBase
 		public float3 GetDirectionWithAimDelta(float2 delta)
 		{
 			var aim = AimLook.Aim;
-			return (Quaternion.Euler(-aim.y, aim.x, 0) * Quaternion.Euler(-delta.y, delta.x, 0)) * new float3(0, 0, 1);
+			return Quaternion.Euler(-aim.y, aim.x, 0) * Quaternion.Euler(-delta.y, delta.x, 0) * new float3(0, 0, 1);
 		}
 
 		public void GetPositionAndDirection(out float3 position, out float3 direction)
@@ -36,10 +36,10 @@ namespace StormiumTeam.GameBase
 			direction = GetDirectionWithAimDelta(float2.zero);
 		}
 	}
-	
+
 	[Obsolete("ActionBaseSystem should not be used anymore", true)]
 	public abstract class ActionBaseSystem : JobGameBaseSystem
-	{		
+	{
 		protected void GetPosition(in Entity livable, out float3 position)
 		{
 			position = new ActionShootHelper

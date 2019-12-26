@@ -1,13 +1,13 @@
 using Revolution;
-using Unity.NetCode;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.NetCode;
 using Unity.Networking.Transport;
 using Utilities;
 
 namespace StormiumTeam.GameBase.Data
 {
-	public unsafe struct ExecutingServerMap : IReadWriteComponentSnapshot<ExecutingServerMap>, ISnapshotDelta<ExecutingServerMap>
+	public struct ExecutingServerMap : IReadWriteComponentSnapshot<ExecutingServerMap>, ISnapshotDelta<ExecutingServerMap>
 	{
 		public NativeString512 Key;
 
@@ -46,8 +46,8 @@ namespace StormiumTeam.GameBase.Data
 		{
 			base.OnCreate();
 
-			m_ExecutingMapQuery     = GetEntityQuery(typeof(ExecutingMapData));
-			m_ServerMapEntity = EntityManager.CreateEntity(typeof(ExecutingServerMap), typeof(GhostEntity));
+			m_ExecutingMapQuery = GetEntityQuery(typeof(ExecutingMapData));
+			m_ServerMapEntity   = EntityManager.CreateEntity(typeof(ExecutingServerMap), typeof(GhostEntity));
 		}
 
 		protected override void OnUpdate()

@@ -37,11 +37,11 @@ namespace GmMachine.Blocks
 
 	public class VariableBlock<T> : VariableBaseBlock, IVariableHolder<T>
 	{
-		public T Value { get; set; }
-
 		public VariableBlock(string name) : base(name)
 		{
 		}
+
+		public T Value { get; set; }
 
 		public override string ToString()
 		{

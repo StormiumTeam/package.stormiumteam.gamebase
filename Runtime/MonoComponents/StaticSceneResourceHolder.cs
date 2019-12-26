@@ -41,7 +41,7 @@ namespace MonoComponents
 		{
 			AsyncAssetPool<GameObject> CreatePool(GameObject origin)
 			{
-				return new AsyncAssetPool<GameObject>(origin, null);
+				return new AsyncAssetPool<GameObject>(origin);
 			}
 
 			// first get guid from children that already have one...
@@ -54,13 +54,8 @@ namespace MonoComponents
 					if (sceneAssetGuid.GetValidAddressableKey() != null)
 					{
 						if (!string.IsNullOrEmpty(sceneAssetGuid.id) && !IdToGameObject.TryGetValue(sceneAssetGuid.id, out otherGo))
-						{
 							IdToGameObject[sceneAssetGuid.id] = new AsyncAssetPool<GameObject>((string) sceneAssetGuid.GetValidAddressableKey());
-						}
-						else if (otherGo != null)
-						{
-							Debug.LogWarning($"{otherGo.LoadedAsset.name} had the same id as {gameObject.name}");
-						}
+						else if (otherGo != null) Debug.LogWarning($"{otherGo.LoadedAsset.name} had the same id as {gameObject.name}");
 
 						continue;
 					}
@@ -72,23 +67,15 @@ namespace MonoComponents
 					GuidToGameObject[sceneAssetGuid.assetGuid] = CreatePool(child.gameObject);
 
 					if (!string.IsNullOrEmpty(sceneAssetGuid.id) && !IdToGameObject.TryGetValue(sceneAssetGuid.id, out otherGo))
-					{
 						IdToGameObject[sceneAssetGuid.id] = CreatePool(child.gameObject);
-					}
-					else if (otherGo != null)
-					{
-						Debug.LogWarning($"{otherGo.LoadedAsset.name} had the same id as {gameObject.name}");
-					}
+					else if (otherGo != null) Debug.LogWarning($"{otherGo.LoadedAsset.name} had the same id as {gameObject.name}");
 				}
 			}
 
 			if (Application.isPlaying)
 			{
 				// Disable child gameObject (except us)
-				foreach (Transform child in transform)
-				{
-					child.gameObject.SetActive(false);
-				}
+				foreach (Transform child in transform) child.gameObject.SetActive(false);
 
 				return;
 			}
@@ -104,7 +91,9 @@ namespace MonoComponents
 					generate       = true;
 				}
 				else if (sceneAssetGuid.assetGuid.Equals(default))
+				{
 					generate = true;
+				}
 
 				if (!generate)
 					continue;
@@ -127,32 +116,22 @@ namespace MonoComponents
 				ReplicatedGuid guidToRemove = default;
 				string         idToRemove   = default;
 				foreach (var kvp in GuidToGameObject)
-				{
 					if (kvp.Value.LoadedAsset == child.gameObject)
 					{
 						guidToRemove = kvp.Key;
-						if (kvp.Value.IsValid)
-						{
-							kvp.Value.SafeUnload();
-						}
+						if (kvp.Value.IsValid) kvp.Value.SafeUnload();
 
 						break;
 					}
-				}
 
 				foreach (var kvp in IdToGameObject)
-				{
 					if (kvp.Value.LoadedAsset == child.gameObject)
 					{
 						idToRemove = kvp.Key;
-						if (kvp.Value.IsValid)
-						{
-							kvp.Value.SafeUnload();
-						}
+						if (kvp.Value.IsValid) kvp.Value.SafeUnload();
 
 						break;
 					}
-				}
 
 				if (idToRemove != null)
 					IdToGameObject.Remove(idToRemove);

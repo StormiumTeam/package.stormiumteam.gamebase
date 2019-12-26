@@ -1,20 +1,26 @@
 using System;
 using System.Collections.Generic;
-using Unity.NetCode;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
+using Unity.NetCode;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace StormiumTeam.GameBase
 {
 	public abstract class GameBaseSystem : BaseComponentSystem
 	{
-		private ServerSimulationSystemGroup m_ServerComponentGroup;
 		private ClientSimulationSystemGroup m_ClientComponentGroup;
 		private ComponentSystemGroup        m_ClientPresentationGroup;
+		private EntityQuery                 m_LocalPlayerGroup;
+
+		private EntityQuery                 m_PlayerGroup;
+		private ServerSimulationSystemGroup m_ServerComponentGroup;
 
 		public UTick ServerTick => GetTick(false);
+
+		public bool IsServer             => m_ServerComponentGroup != null;
+		public bool IsPresentationActive => m_ClientPresentationGroup != null && m_ClientPresentationGroup.Enabled;
 
 		public UTick GetTick(bool predicted)
 		{
@@ -27,9 +33,6 @@ namespace StormiumTeam.GameBase
 				? m_ClientComponentGroup.GetServerTick()
 				: m_ServerComponentGroup.GetServerTick();
 		}
-
-		public bool IsServer             => m_ServerComponentGroup != null;
-		public bool IsPresentationActive => m_ClientPresentationGroup != null && m_ClientPresentationGroup.Enabled;
 
 		protected override void OnCreate()
 		{
@@ -51,9 +54,6 @@ namespace StormiumTeam.GameBase
 			m_ClientComponentGroup    = World.GetExistingSystem<ClientSimulationSystemGroup>();
 #endif
 		}
-
-		private EntityQuery m_PlayerGroup;
-		private EntityQuery m_LocalPlayerGroup;
 
 		public void GetModule<TModule>(out TModule module)
 			where TModule : BaseSystemModule, new()
@@ -104,10 +104,8 @@ namespace StormiumTeam.GameBase
 			throw new Exeception("GetActiveClientWorld() shouldn't be called on server.");
 #else
 			foreach (var world in World.AllWorlds)
-			{
 				if (world.GetExistingSystem<ClientPresentationSystemGroup>()?.Enabled == true)
 					return world;
-			}
 
 			return null;
 #endif
@@ -116,11 +114,17 @@ namespace StormiumTeam.GameBase
 
 	public abstract class JobGameBaseSystem : JobComponentSystem
 	{
-		private ServerSimulationSystemGroup m_ServerComponentGroup;
 		private ClientSimulationSystemGroup m_ClientComponentGroup;
 		private ComponentSystemGroup        m_ClientPresentationGroup;
+		private EntityQuery                 m_LocalPlayerGroup;
+
+		private EntityQuery                 m_PlayerGroup;
+		private ServerSimulationSystemGroup m_ServerComponentGroup;
 
 		public UTick ServerTick => GetTick(false);
+
+		public bool IsServer             => m_ServerComponentGroup != null;
+		public bool IsPresentationActive => m_ClientPresentationGroup != null && m_ClientPresentationGroup.Enabled;
 
 		public UTick GetTick(bool predicted)
 		{
@@ -133,9 +137,6 @@ namespace StormiumTeam.GameBase
 				? m_ClientComponentGroup.GetServerTick()
 				: m_ServerComponentGroup.GetServerTick();
 		}
-
-		public bool IsServer             => m_ServerComponentGroup != null;
-		public bool IsPresentationActive => m_ClientPresentationGroup != null && m_ClientPresentationGroup.Enabled;
 
 		protected override void OnCreate()
 		{
@@ -157,9 +158,6 @@ namespace StormiumTeam.GameBase
 			m_ClientPresentationGroup = World.GetExistingSystem<ClientPresentationSystemGroup>();
 #endif
 		}
-
-		private EntityQuery m_PlayerGroup;
-		private EntityQuery m_LocalPlayerGroup;
 
 		public void GetModule<TModule>(out TModule module)
 			where TModule : BaseSystemModule, new()
@@ -205,10 +203,8 @@ namespace StormiumTeam.GameBase
 			throw new Exeception("GetActiveClientWorld() shouldn't be called on server.");
 #else
 			foreach (var world in World.AllWorlds)
-			{
 				if (world.GetExistingSystem<ClientPresentationSystemGroup>()?.Enabled == true)
 					return world;
-			}
 
 			return null;
 #endif
@@ -273,10 +269,10 @@ namespace StormiumTeam.GameBase
 
 	public sealed class NetworkConnectionModule : BaseSystemModule
 	{
-		public override ModuleUpdateType UpdateType => ModuleUpdateType.All;
-
-		public EntityQuery        ConnectedQuery;
 		public NativeList<Entity> ConnectedEntities;
+
+		public          EntityQuery      ConnectedQuery;
+		public override ModuleUpdateType UpdateType => ModuleUpdateType.All;
 
 		protected override void OnEnable()
 		{
@@ -311,27 +307,8 @@ namespace StormiumTeam.GameBase
 
 	public sealed class AsyncOperationModule : BaseSystemModule
 	{
-		public override ModuleUpdateType UpdateType => ModuleUpdateType.MainThread;
-
-		public class BaseHandleDataPair
-		{
-			public AsyncOperationHandle Handle;
-		}
-
-		public class HandleDataPair<THandle, TData> : BaseHandleDataPair
-			where TData : struct
-		{
-			public AsyncOperationHandle<THandle> Generic => Handle.Convert<THandle>();
-			public TData                         Data;
-
-			public void Deconstruct(out AsyncOperationHandle<THandle> handle, out TData data)
-			{
-				handle = Generic;
-				data   = Data;
-			}
-		}
-
-		public List<BaseHandleDataPair> Handles;
+		public          List<BaseHandleDataPair> Handles;
+		public override ModuleUpdateType         UpdateType => ModuleUpdateType.MainThread;
 
 		protected override void OnEnable()
 		{
@@ -340,7 +317,6 @@ namespace StormiumTeam.GameBase
 
 		protected override void OnUpdate(ref JobHandle jobHandle)
 		{
-
 		}
 
 		protected override void OnDisable()
@@ -362,6 +338,24 @@ namespace StormiumTeam.GameBase
 			where TData : struct
 		{
 			return (HandleDataPair<THandle, TData>) Handles[index];
+		}
+
+		public class BaseHandleDataPair
+		{
+			public AsyncOperationHandle Handle;
+		}
+
+		public class HandleDataPair<THandle, TData> : BaseHandleDataPair
+			where TData : struct
+		{
+			public TData                         Data;
+			public AsyncOperationHandle<THandle> Generic => Handle.Convert<THandle>();
+
+			public void Deconstruct(out AsyncOperationHandle<THandle> handle, out TData data)
+			{
+				handle = Generic;
+				data   = Data;
+			}
 		}
 	}
 }

@@ -18,6 +18,5 @@ namespace StormiumTeam.GameBase
 
 	public class Filter
 	{
-		
 	}
 }

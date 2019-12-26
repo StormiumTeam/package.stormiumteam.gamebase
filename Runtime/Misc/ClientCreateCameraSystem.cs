@@ -1,7 +1,7 @@
 using package.stormiumteam.shared.ecs;
-using Unity.NetCode;
 using StormiumTeam.GameBase.Components;
 using Unity.Entities;
+using Unity.NetCode;
 using Unity.Transforms;
 using UnityEngine;
 
@@ -10,10 +10,9 @@ namespace StormiumTeam.GameBase.Misc
 	[UpdateInGroup(typeof(ClientPresentationSystemGroup))]
 	public class ClientCreateCameraSystem : GameBaseSystem
 	{
-		private Camera m_Camera;
-		private bool   m_PreviousState;
+		private bool m_PreviousState;
 
-		public Camera Camera => m_Camera;
+		public Camera Camera { get; private set; }
 
 		protected override void OnCreate()
 		{
@@ -27,10 +26,10 @@ namespace StormiumTeam.GameBase.Misc
 					typeof(GameCamera),
 					typeof(AudioListener),
 					typeof(GameObjectEntity));
-				m_Camera                  = gameObject.GetComponent<Camera>();
-				m_Camera.orthographicSize = 10;
-				m_Camera.fieldOfView      = 60;
-				m_Camera.nearClipPlane    = 0.025f;
+				Camera                  = gameObject.GetComponent<Camera>();
+				Camera.orthographicSize = 10;
+				Camera.fieldOfView      = 60;
+				Camera.nearClipPlane    = 0.025f;
 
 				gameObject.transform.position = new Vector3(0, 0, -100);
 			}
@@ -46,9 +45,9 @@ namespace StormiumTeam.GameBase.Misc
 		{
 			base.OnDestroy();
 
-			if (m_Camera != null)
-				GameObject.Destroy(m_Camera.gameObject);
-			m_Camera = null;
+			if (Camera != null)
+				Object.Destroy(Camera.gameObject);
+			Camera = null;
 		}
 
 		internal void InternalSetActive(bool state)
@@ -60,10 +59,10 @@ namespace StormiumTeam.GameBase.Misc
 
 			using (new SetTemporaryActiveWorld(World))
 			{
-				m_Camera.gameObject.SetActive(state);
+				Camera.gameObject.SetActive(state);
 			}
 
-			var e = m_Camera.GetComponent<GameObjectEntity>().Entity;
+			var e = Camera.GetComponent<GameObjectEntity>().Entity;
 			if (state)
 			{
 				EntityManager.SetOrAddComponentData(e, new Translation());
@@ -79,8 +78,8 @@ namespace StormiumTeam.GameBase.Misc
 	[AlwaysUpdateSystem]
 	public class ManageClientCameraSystem : GameBaseSystem
 	{
-		private EntityQuery m_GameCameraQuery;
 		private Camera      m_Camera;
+		private EntityQuery m_GameCameraQuery;
 
 		protected override void OnCreate()
 		{
@@ -99,25 +98,18 @@ namespace StormiumTeam.GameBase.Misc
 
 			var clientWorldCount = 0;
 			foreach (var world in World.AllWorlds)
-			{
 				if (world.GetExistingSystem<ClientPresentationSystemGroup>() != null)
 				{
 					var presentationSystemGroup = world.GetExistingSystem<ClientPresentationSystemGroup>();
 					var cameraSystem            = world.GetExistingSystem<ClientCreateCameraSystem>();
 					cameraSystem.InternalSetActive(presentationSystemGroup.Enabled);
-					
+
 					clientWorldCount++;
 				}
-			}
 
 			if (clientWorldCount == 0 && m_Camera != null)
-			{
 				m_Camera.gameObject.SetActive(true);
-			}
-			else if (clientWorldCount > 0)
-			{
-				m_Camera.gameObject.SetActive(false);
-			}
+			else if (clientWorldCount > 0) m_Camera.gameObject.SetActive(false);
 		}
 	}
 }

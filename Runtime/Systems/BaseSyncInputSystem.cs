@@ -6,9 +6,8 @@ namespace StormiumTeam.GameBase.Systems
 {
 	public abstract class BaseSyncInputSystem : GameBaseSystem
 	{
-		public InputActionAsset Asset { get; private set; }
-
 		protected List<InputAction.CallbackContext> InputEvents = new List<InputAction.CallbackContext>();
+		public    InputActionAsset                  Asset { get; private set; }
 
 		protected bool Refresh(InputActionAsset asset)
 		{
@@ -28,13 +27,11 @@ namespace StormiumTeam.GameBase.Systems
 				return;
 
 			foreach (var map in Asset.actionMaps)
+			foreach (var action in map.actions)
 			{
-				foreach (var action in map.actions)
-				{
-					action.performed -= InputActionEvent;
-					action.started   -= InputActionEvent;
-					action.canceled  -= InputActionEvent;
-				}
+				action.performed -= InputActionEvent;
+				action.started   -= InputActionEvent;
+				action.canceled  -= InputActionEvent;
 			}
 
 			Asset.Disable();
@@ -58,9 +55,8 @@ namespace StormiumTeam.GameBase.Systems
 
 	public abstract class JobSyncInputSystem : JobGameBaseSystem
 	{
-		public InputActionAsset Asset { get; private set; }
-
 		protected List<InputAction.CallbackContext> InputEvents = new List<InputAction.CallbackContext>();
+		public    InputActionAsset                  Asset { get; private set; }
 
 		protected bool Refresh(InputActionAsset asset)
 		{
@@ -80,13 +76,11 @@ namespace StormiumTeam.GameBase.Systems
 				return;
 
 			foreach (var map in Asset.actionMaps)
+			foreach (var action in map.actions)
 			{
-				foreach (var action in map.actions)
-				{
-					action.performed -= InputActionEvent;
-					action.started   -= InputActionEvent;
-					action.canceled  -= InputActionEvent;
-				}
+				action.performed -= InputActionEvent;
+				action.started   -= InputActionEvent;
+				action.canceled  -= InputActionEvent;
 			}
 
 			Asset.Disable();

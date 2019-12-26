@@ -10,8 +10,18 @@ namespace StormiumTeam.GameBase.Systems.Filters
 {
 	public class FilterEnvironmentBodies : CollisionFilterSystemBase
 	{
-		public override string Name => "Environment Bodies Filter rule.";
+		public override string Name        => "Environment Bodies Filter rule.";
 		public override string Description => "Automatically add Environmental bodies to collision physics filters";
+
+		public override JobHandle Filter(PhysicsWorld physicsWorld, NativeArray<Entity> targets, JobHandle jobHandle)
+		{
+			return FillVariables(new Job()).Schedule(this, jobHandle);
+		}
+
+		protected override JobHandle OnUpdate(JobHandle inputDeps)
+		{
+			return inputDeps;
+		}
 
 		[RequireComponentTag(typeof(EnvironmentTag))]
 		[BurstCompile]
@@ -21,10 +31,7 @@ namespace StormiumTeam.GameBase.Systems.Filters
 			{
 				var rigidBodyIndex = PhysicsWorld.GetRigidBodyIndex(entity);
 
-				for (var i = 0; i != Targets.Length; i++)
-				{
-					CollideWithFromEntity[Targets[i]].Add(new CollideWith(rigidBodyIndex));
-				}
+				for (var i = 0; i != Targets.Length; i++) CollideWithFromEntity[Targets[i]].Add(new CollideWith(rigidBodyIndex));
 			}
 
 			[field: NativeDisableParallelForRestriction]
@@ -35,16 +42,6 @@ namespace StormiumTeam.GameBase.Systems.Filters
 
 			[field: ReadOnly]
 			public PhysicsWorld PhysicsWorld { get; set; }
-		}
-
-		public override JobHandle Filter(PhysicsWorld physicsWorld, NativeArray<Entity> targets, JobHandle jobHandle)
-		{
-			return FillVariables(new Job()).Schedule(this, jobHandle);
-		}
-
-		protected override JobHandle OnUpdate(JobHandle inputDeps)
-		{
-			return inputDeps;
 		}
 	}
 }

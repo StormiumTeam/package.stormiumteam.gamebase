@@ -1,6 +1,6 @@
-using Unity.NetCode;
 using Unity.Entities;
 using Unity.Jobs;
+using Unity.NetCode;
 
 namespace StormiumTeam.GameBase
 {

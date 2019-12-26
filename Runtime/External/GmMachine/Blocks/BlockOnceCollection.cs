@@ -13,15 +13,12 @@ namespace GmMachine.Blocks
 		}
 
 		protected override bool OnRun()
-		{	
+		{
 			var collections = GetList();
 			if (collections.Count == 0)
 				return true;
-			
-			if (Index >= collections.Count || CurrentRunningChild == null)
-			{
-				return true;
-			}
+
+			if (Index >= collections.Count || CurrentRunningChild == null) return true;
 
 			RunNext(CurrentRunningChild);
 			return false;

@@ -3,7 +3,6 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Physics;
 using UnityEngine;
 using UnityEngine.Assertions;
-using Math = Unity.Physics.Math;
 using RaycastHit = Unity.Physics.RaycastHit;
 
 namespace StormiumTeam.GameBase
@@ -16,18 +15,18 @@ namespace StormiumTeam.GameBase
 		public int   NumHits            { get; private set; }
 
 		private readonly NativeArray<int> m_Filters;
-		private readonly bool m_FiltersCreated;
-		
-		private T                m_ClosestHit;
-		public  T                ClosestHit => m_ClosestHit;
+		private readonly bool             m_FiltersCreated;
+
+		private T m_ClosestHit;
+		public  T ClosestHit => m_ClosestHit;
 
 		public ClosestHitFilterCollector(NativeArray<int> filters, float maxFraction)
 		{
-			MaxFraction  = maxFraction;
-			m_ClosestHit = default(T);
-			m_Filters    = filters;
+			MaxFraction      = maxFraction;
+			m_ClosestHit     = default;
+			m_Filters        = filters;
 			m_FiltersCreated = filters.IsCreated;
-			NumHits      = 0;
+			NumHits          = 0;
 		}
 
 		#region ICollector
@@ -37,10 +36,10 @@ namespace StormiumTeam.GameBase
 			if (m_FiltersCreated)
 			{
 				var rigidBodyIndex = -1;
-				var sizeT = UnsafeUtility.SizeOf<T>();
-				
+				var sizeT          = UnsafeUtility.SizeOf<T>();
+
 				Debug.Log(sizeT + ", " + UnsafeUtility.SizeOf<ColliderCastHit>());
-				
+
 				if (sizeT == UnsafeUtility.SizeOf<RaycastHit>())
 				{
 					UnsafeUtility.CopyPtrToStructure(UnsafeUtility.AddressOf(ref hit), out RaycastHit output);
@@ -61,7 +60,7 @@ namespace StormiumTeam.GameBase
 					UnsafeUtility.CopyPtrToStructure(UnsafeUtility.AddressOf(ref hit), out OverlapAabbHit output);
 					rigidBodyIndex = output.RigidBodyIndex;
 				}
-				
+
 				Debug.Log(rigidBodyIndex);
 
 				if (rigidBodyIndex == -1 || !m_Filters.Contains(rigidBodyIndex))
@@ -77,18 +76,12 @@ namespace StormiumTeam.GameBase
 
 		public void TransformNewHits(int oldNumHits, float oldFraction, Math.MTransform transform, uint numSubKeyBits, uint subKey)
 		{
-			if (m_ClosestHit.Fraction < oldFraction)
-			{
-				m_ClosestHit.Transform(transform, numSubKeyBits, subKey);
-			}
+			if (m_ClosestHit.Fraction < oldFraction) m_ClosestHit.Transform(transform, numSubKeyBits, subKey);
 		}
 
 		public void TransformNewHits(int oldNumHits, float oldFraction, Math.MTransform transform, int rigidBodyIndex)
 		{
-			if (m_ClosestHit.Fraction < oldFraction)
-			{
-				m_ClosestHit.Transform(transform, rigidBodyIndex);
-			}
+			if (m_ClosestHit.Fraction < oldFraction) m_ClosestHit.Transform(transform, rigidBodyIndex);
 		}
 
 		#endregion

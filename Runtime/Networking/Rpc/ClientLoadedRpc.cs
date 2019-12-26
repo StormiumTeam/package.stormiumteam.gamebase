@@ -1,10 +1,10 @@
 using Revolution;
-using Unity.NetCode;
 using StormiumTeam.GameBase.EcsComponents;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
+using Unity.NetCode;
 using Unity.Networking.Transport;
 using UnityEngine;
 
@@ -14,8 +14,9 @@ namespace StormiumTeam.GameBase
 	public struct ClientLoadedRpc : IRpcCommand
 	{
 		public class RequestSystem : RpcCommandRequestSystem<ClientLoadedRpc>
-		{}
-		
+		{
+		}
+
 		public int GameVersion;
 
 		public void Serialize(DataStreamWriter writer)
@@ -50,6 +51,41 @@ namespace StormiumTeam.GameBase
 	[UpdateInGroup(typeof(OrderGroup.Simulation.SpawnEntities))]
 	public class CreateGamePlayerSystem : JobComponentSystem
 	{
+		private BeginSimulationEntityCommandBufferSystem m_Barrier;
+		private EntityQuery                              m_PreviousEventQuery;
+
+		protected override void OnCreate()
+		{
+			base.OnCreate();
+
+			m_Barrier            = World.GetOrCreateSystem<BeginSimulationEntityCommandBufferSystem>();
+			m_PreviousEventQuery = GetEntityQuery(typeof(PlayerConnectedEvent));
+
+			GetEntityQuery(typeof(ClientLoadedRpc));
+		}
+
+		protected override JobHandle OnUpdate(JobHandle inputDeps)
+		{
+			var peLength = m_PreviousEventQuery.CalculateEntityCount();
+			if (peLength > 0) EntityManager.DestroyEntity(m_PreviousEventQuery);
+
+			inputDeps = new CreateJob
+			{
+				CurrentVersion = GameStatic.Version,
+
+				Driver                            = World.GetExistingSystem<NetworkStreamReceiveSystem>().Driver,
+				NetworkStreamConnectionFromEntity = GetComponentDataFromEntity<NetworkStreamConnection>(true),
+
+				CommandBuffer       = m_Barrier.CreateCommandBuffer().ToConcurrent(),
+				PlayerArchetype     = World.GetOrCreateSystem<GamePlayerProvider>().EntityArchetype,
+				NetworkIdFromEntity = GetComponentDataFromEntity<NetworkIdComponent>()
+			}.ScheduleSingle(this, inputDeps);
+
+			m_Barrier.AddJobHandleForProducer(inputDeps);
+
+			return inputDeps;
+		}
+
 		private struct CreateJob : IJobForEachWithEntity<ClientLoadedRpc, ReceiveRpcCommandRequestComponent>
 		{
 			public EntityCommandBuffer.Concurrent CommandBuffer;
@@ -87,9 +123,9 @@ namespace StormiumTeam.GameBase
 				CommandBuffer.AddComponent(jobIndex, geEnt, new WorldOwnedTag());
 
 				Debug.Log($"Create GamePlayer {geEnt}; source={receive.SourceConnection}");
-				
+
 				CommandBuffer.SetComponent(jobIndex, receive.SourceConnection, new CommandTargetComponent {targetEntity = geEnt});
-				
+
 				// Create event
 				var evEnt = CommandBuffer.CreateEntity(jobIndex);
 				CommandBuffer.AddComponent(jobIndex, evEnt, new PlayerConnectedEvent {Player = geEnt, Connection = receive.SourceConnection, ServerId = networkId.Value});
@@ -98,44 +134,6 @@ namespace StormiumTeam.GameBase
 				CommandBuffer.AddComponent(jobIndex, reqEnt, new PlayerConnectedRpc {ServerId = networkId.Value});
 				CommandBuffer.AddComponent(jobIndex, reqEnt, new SendRpcCommandRequestComponent()); // send to everyone
 			}
-		}
-
-		private BeginSimulationEntityCommandBufferSystem m_Barrier;
-		private EntityQuery                              m_PreviousEventQuery;
-
-		protected override void OnCreate()
-		{
-			base.OnCreate();
-
-			m_Barrier            = World.GetOrCreateSystem<BeginSimulationEntityCommandBufferSystem>();
-			m_PreviousEventQuery = GetEntityQuery(typeof(PlayerConnectedEvent));
-
-			GetEntityQuery(typeof(ClientLoadedRpc));
-		}
-
-		protected override JobHandle OnUpdate(JobHandle inputDeps)
-		{
-			var peLength = m_PreviousEventQuery.CalculateEntityCount();
-			if (peLength > 0)
-			{
-				EntityManager.DestroyEntity(m_PreviousEventQuery);
-			}
-			
-			inputDeps = new CreateJob
-			{
-				CurrentVersion = GameStatic.Version,
-
-				Driver                            = World.GetExistingSystem<NetworkStreamReceiveSystem>().Driver,
-				NetworkStreamConnectionFromEntity = GetComponentDataFromEntity<NetworkStreamConnection>(true),
-
-				CommandBuffer       = m_Barrier.CreateCommandBuffer().ToConcurrent(),
-				PlayerArchetype     = World.GetOrCreateSystem<GamePlayerProvider>().EntityArchetype,
-				NetworkIdFromEntity = GetComponentDataFromEntity<NetworkIdComponent>()
-			}.ScheduleSingle(this, inputDeps);
-
-			m_Barrier.AddJobHandleForProducer(inputDeps);
-
-			return inputDeps;
 		}
 	}
 }

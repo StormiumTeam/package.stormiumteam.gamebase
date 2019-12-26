@@ -19,23 +19,25 @@ namespace StormiumTeam.GameBase
 	public struct DebugRenderSphereShared : ISharedComponentData, IEquatable<DebugRenderSphereShared>
 	{
 		public Color color;
-		
+
 		public Mesh     mesh;
 		public Material material;
 		public int      subMesh;
+
 		[LayerField]
 		public int layer;
+
 		public ShadowCastingMode castShadows;
 		public bool              receiveShadows;
 
 		public bool Equals(DebugRenderSphereShared other)
 		{
-			return color.Equals(other.color) 
-			       && Equals(mesh, other.mesh) 
-			       && Equals(material, other.material) 
-			       && subMesh == other.subMesh 
+			return color.Equals(other.color)
+			       && Equals(mesh, other.mesh)
+			       && Equals(material, other.material)
+			       && subMesh == other.subMesh
 			       && layer == other.layer
-			       && castShadows == other.castShadows 
+			       && castShadows == other.castShadows
 			       && receiveShadows == other.receiveShadows;
 		}
 
@@ -64,11 +66,10 @@ namespace StormiumTeam.GameBase
 	//[UpdateBefore(typeof(RenderMeshSystemV2))]
 	public class DebugRenderSphereSystem : ComponentSystem
 	{
-		private EntityQuery m_FindQuery;
-		private Mesh        m_SphereMesh;
-		private Material m_Material;
-
-		private static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
+		private static readonly int         BaseColor = Shader.PropertyToID("_BaseColor");
+		private                 EntityQuery m_FindQuery;
+		private                 Material    m_Material;
+		private                 Mesh        m_SphereMesh;
 
 		protected override void OnCreate()
 		{
@@ -78,7 +79,7 @@ namespace StormiumTeam.GameBase
 
 			var tempGo = GameObject.CreatePrimitive(PrimitiveType.Sphere);
 			m_SphereMesh = Object.Instantiate(tempGo.GetComponent<MeshFilter>().mesh);
-			m_Material = Object.Instantiate(tempGo.GetComponent<Renderer>().sharedMaterial);
+			m_Material   = Object.Instantiate(tempGo.GetComponent<Renderer>().sharedMaterial);
 
 			Object.Destroy(tempGo);
 		}
@@ -108,7 +109,7 @@ namespace StormiumTeam.GameBase
 				{
 					renderMesh.color = debugRender.Color;
 					renderMesh.material.SetColor(BaseColor, debugRender.Color);
-					
+
 					PostUpdateCommands.SetSharedComponent(e, renderMesh);
 				}
 

@@ -11,20 +11,20 @@ namespace StormiumTeam.GameBase.Components
 		public Entity Destination;
 
 		/// <summary>
-		/// The position of the impulsion origin
+		///     The position of the impulsion origin
 		/// </summary>
 		public float3 Position;
 
 		/// <summary>
-		/// The impulse force
+		///     The impulse force
 		/// </summary>
 		public float3 Force;
 
 		/// <summary>
-		/// How much velocity from the destination should we keep? (range: [0-1], where 0 is no velocity kept)
+		///     How much velocity from the destination should we keep? (range: [0-1], where 0 is no velocity kept)
 		/// </summary>
 		public float3 Momentum;
-		
+
 		[UpdateInGroup(typeof(OrderGroup.Simulation.SpawnEntities.SpawnEvent))]
 		public class Provider : BaseProviderBatch<TargetImpulseEvent>
 		{
@@ -46,7 +46,7 @@ namespace StormiumTeam.GameBase.Components
 			protected override void OnUpdate()
 			{
 				EntityManager.DestroyEntity(Entities.WithAll<GameEvent, TargetImpulseEvent>().ToEntityQuery());
-				
+
 				base.OnUpdate();
 			}
 		}

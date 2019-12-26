@@ -1,9 +1,9 @@
 using Revolution;
-using Unity.NetCode;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
+using Unity.NetCode;
 using Unity.Networking.Transport;
 using UnityEngine;
 
@@ -13,10 +13,11 @@ namespace StormiumTeam.GameBase
 	public struct PlayerConnectedRpc : IRpcCommand
 	{
 		public class RequestSystem : RpcCommandRequestSystem<PlayerConnectedRpc>
-		{}
-		
+		{
+		}
+
 		public int ServerId;
-		
+
 		public void Serialize(DataStreamWriter writer)
 		{
 			writer.Write(ServerId);
@@ -76,90 +77,6 @@ namespace StormiumTeam.GameBase
 	[UpdateAfter(typeof(SnapshotReceiveSystem))]
 	public class PlayerConnectedEventCreationSystem : JobComponentSystem
 	{
-		[BurstCompile]
-		public struct FindFirstNetworkIdJob : IJobForEach<NetworkIdComponent>
-		{
-			public NativeArray<NetworkIdComponent> PlayerIds;
-
-			[BurstDiscard]
-			private void NonBurst_ThrowWarning()
-			{
-				Debug.LogWarning("PlayerIds[0] already assigned to " + PlayerIds[0].Value);
-			}
-
-			public void Execute(ref NetworkIdComponent networkId)
-			{
-				if (PlayerIds[0].Value == default)
-				{
-					PlayerIds[0] = networkId;
-				}
-				else
-				{
-					NonBurst_ThrowWarning();
-				}
-			}
-		}
-
-		[RequireComponentTag(typeof(ReplicatedEntity))]
-		public struct FindPlayerJob : IJobForEachWithEntity<GamePlayer>
-		{
-			[ReadOnly]
-			public ComponentDataFromEntity<GamePlayerReadyTag> PlayerReadyTag;
-
-			[ReadOnly]
-			public NativeArray<NetworkIdComponent> PlayerIds;
-
-			public EntityCommandBuffer.Concurrent CommandBuffer;
-
-			[ReadOnly] public NativeArray<Entity>                  DelayedEntities;
-			[ReadOnly] public NativeArray<DelayedPlayerConnection> DelayedData;
-
-			public void Execute(Entity entity, int jobIndex, ref GamePlayer gamePlayer)
-			{
-				var count = DelayedEntities.Length;
-				for (var ent = 0; ent != count; ent++)
-				{
-					if (DelayedData[ent].ServerId == gamePlayer.ServerId)
-					{
-						if (!PlayerReadyTag.Exists(entity))
-						{
-							CommandBuffer.AddComponent(jobIndex, entity, default(GamePlayerReadyTag));
-
-							// Create connect event
-							var evEnt = CommandBuffer.CreateEntity(jobIndex);
-							CommandBuffer.AddComponent(jobIndex, evEnt, new PlayerConnectedEvent {Player = entity, Connection = DelayedData[ent].Connection, ServerId = gamePlayer.ServerId});
-						}
-						else
-						{
-							Debug.LogWarning($"{entity} already had a 'GamePlayerReadyTag'");
-						}
-
-						// this is our player
-						if (PlayerIds.Length > 0 && PlayerIds[0].Value == gamePlayer.ServerId)
-						{
-							CommandBuffer.AddComponent(jobIndex, entity, default(GamePlayerLocalTag));
-							CommandBuffer.AddComponent(jobIndex, entity, default(WorldOwnedTag));
-							CommandBuffer.SetComponent(jobIndex, DelayedData[ent].Connection, new CommandTargetComponent {targetEntity = entity});
-						}
-
-						CommandBuffer.DestroyEntity(jobIndex, DelayedEntities[ent]);
-					}
-				}
-			}
-		}
-
-		private struct DisposeJob : IJob
-		{
-			[DeallocateOnJobCompletion] public NativeArray<NetworkIdComponent>      PlayerIds;
-			[DeallocateOnJobCompletion] public NativeArray<Entity>                  DelayedEntities;
-			[DeallocateOnJobCompletion] public NativeArray<DelayedPlayerConnection> DelayedData;
-
-			public void Execute()
-			{
-
-			}
-		}
-
 		private BeginSimulationEntityCommandBufferSystem m_Barrier;
 		private EntityQuery                              m_DelayedQuery;
 		private EntityQuery                              m_PreviousEventQuery;
@@ -176,10 +93,7 @@ namespace StormiumTeam.GameBase
 		protected override JobHandle OnUpdate(JobHandle inputDeps)
 		{
 			var peLength = m_PreviousEventQuery.CalculateEntityCount();
-			if (peLength > 0)
-			{
-				EntityManager.DestroyEntity(m_PreviousEventQuery);
-			}
+			if (peLength > 0) EntityManager.DestroyEntity(m_PreviousEventQuery);
 
 			var playerIds = new NativeArray<NetworkIdComponent>(1, Allocator.TempJob);
 			inputDeps = new FindFirstNetworkIdJob
@@ -212,6 +126,83 @@ namespace StormiumTeam.GameBase
 			//inputDeps.Complete();
 
 			return inputDeps;
+		}
+
+		[BurstCompile]
+		public struct FindFirstNetworkIdJob : IJobForEach<NetworkIdComponent>
+		{
+			public NativeArray<NetworkIdComponent> PlayerIds;
+
+			[BurstDiscard]
+			private void NonBurst_ThrowWarning()
+			{
+				Debug.LogWarning("PlayerIds[0] already assigned to " + PlayerIds[0].Value);
+			}
+
+			public void Execute(ref NetworkIdComponent networkId)
+			{
+				if (PlayerIds[0].Value == default)
+					PlayerIds[0] = networkId;
+				else
+					NonBurst_ThrowWarning();
+			}
+		}
+
+		[RequireComponentTag(typeof(ReplicatedEntity))]
+		public struct FindPlayerJob : IJobForEachWithEntity<GamePlayer>
+		{
+			[ReadOnly]
+			public ComponentDataFromEntity<GamePlayerReadyTag> PlayerReadyTag;
+
+			[ReadOnly]
+			public NativeArray<NetworkIdComponent> PlayerIds;
+
+			public EntityCommandBuffer.Concurrent CommandBuffer;
+
+			[ReadOnly] public NativeArray<Entity>                  DelayedEntities;
+			[ReadOnly] public NativeArray<DelayedPlayerConnection> DelayedData;
+
+			public void Execute(Entity entity, int jobIndex, ref GamePlayer gamePlayer)
+			{
+				var count = DelayedEntities.Length;
+				for (var ent = 0; ent != count; ent++)
+					if (DelayedData[ent].ServerId == gamePlayer.ServerId)
+					{
+						if (!PlayerReadyTag.Exists(entity))
+						{
+							CommandBuffer.AddComponent(jobIndex, entity, default(GamePlayerReadyTag));
+
+							// Create connect event
+							var evEnt = CommandBuffer.CreateEntity(jobIndex);
+							CommandBuffer.AddComponent(jobIndex, evEnt, new PlayerConnectedEvent {Player = entity, Connection = DelayedData[ent].Connection, ServerId = gamePlayer.ServerId});
+						}
+						else
+						{
+							Debug.LogWarning($"{entity} already had a 'GamePlayerReadyTag'");
+						}
+
+						// this is our player
+						if (PlayerIds.Length > 0 && PlayerIds[0].Value == gamePlayer.ServerId)
+						{
+							CommandBuffer.AddComponent(jobIndex, entity, default(GamePlayerLocalTag));
+							CommandBuffer.AddComponent(jobIndex, entity, default(WorldOwnedTag));
+							CommandBuffer.SetComponent(jobIndex, DelayedData[ent].Connection, new CommandTargetComponent {targetEntity = entity});
+						}
+
+						CommandBuffer.DestroyEntity(jobIndex, DelayedEntities[ent]);
+					}
+			}
+		}
+
+		private struct DisposeJob : IJob
+		{
+			[DeallocateOnJobCompletion] public NativeArray<NetworkIdComponent>      PlayerIds;
+			[DeallocateOnJobCompletion] public NativeArray<Entity>                  DelayedEntities;
+			[DeallocateOnJobCompletion] public NativeArray<DelayedPlayerConnection> DelayedData;
+
+			public void Execute()
+			{
+			}
 		}
 	}
 }

@@ -9,44 +9,16 @@ namespace StormiumTeam.GameBase.Modules
 	public class GetAllBackendModule<T> : BaseSystemModule
 		where T : MonoBehaviour
 	{
-		public override ModuleUpdateType UpdateType => ModuleUpdateType.Job;
-
-		[BurstCompile]
-		private struct FindBackend : IJobForEachWithEntity<ModelParent>
-		{
-			public NativeList<Entity> MissingTargets;
-
-			public NativeList<Entity>      BackendWithoutModel;
-			public NativeList<Entity>      AttachedBackendEntities;
-			public NativeList<ModelParent> AttachedBackendDestination;
-
-			public void Execute(Entity entity, int index, ref ModelParent parent)
-			{
-				var count = MissingTargets.Length;
-				for (var i = 0; i != count; i++)
-				{
-					if (MissingTargets[i] == parent.Parent)
-					{
-						AttachedBackendEntities.Add(entity);
-						AttachedBackendDestination.Add(parent);
-
-						MissingTargets.RemoveAtSwapBack(i);
-						return;
-					}
-				}
-
-				BackendWithoutModel.Add(entity);
-			}
-		}
-
-		public NativeArray<Entity> TargetEntities;
-		public NativeList<Entity>  MissingTargets;
-
-		public NativeList<Entity>      BackendWithoutModel;
-		public NativeList<Entity>      AttachedBackendEntities;
 		public NativeList<ModelParent> AttachedBackendDestination;
+		public NativeList<Entity>      AttachedBackendEntities;
 
-		private EntityQuery m_BackendQuery;
+		public NativeList<Entity> BackendWithoutModel;
+
+		private EntityQuery        m_BackendQuery;
+		public  NativeList<Entity> MissingTargets;
+
+		public          NativeArray<Entity> TargetEntities;
+		public override ModuleUpdateType    UpdateType => ModuleUpdateType.Job;
 
 		protected override void OnEnable()
 		{
@@ -82,6 +54,32 @@ namespace StormiumTeam.GameBase.Modules
 		{
 			AttachedBackendDestination.Dispose();
 			AttachedBackendEntities.Dispose();
+		}
+
+		[BurstCompile]
+		private struct FindBackend : IJobForEachWithEntity<ModelParent>
+		{
+			public NativeList<Entity> MissingTargets;
+
+			public NativeList<Entity>      BackendWithoutModel;
+			public NativeList<Entity>      AttachedBackendEntities;
+			public NativeList<ModelParent> AttachedBackendDestination;
+
+			public void Execute(Entity entity, int index, ref ModelParent parent)
+			{
+				var count = MissingTargets.Length;
+				for (var i = 0; i != count; i++)
+					if (MissingTargets[i] == parent.Parent)
+					{
+						AttachedBackendEntities.Add(entity);
+						AttachedBackendDestination.Add(parent);
+
+						MissingTargets.RemoveAtSwapBack(i);
+						return;
+					}
+
+				BackendWithoutModel.Add(entity);
+			}
 		}
 	}
 }

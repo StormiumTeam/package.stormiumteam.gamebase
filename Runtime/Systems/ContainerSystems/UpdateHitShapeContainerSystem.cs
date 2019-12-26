@@ -13,7 +13,7 @@ namespace StormiumTeam.GameBase
 
 		public HitShapeContainer(Entity value, bool attachedToParent = false)
 		{
-			Value = value;
+			Value            = value;
 			AttachedToParent = attachedToParent;
 		}
 	}
@@ -25,6 +25,38 @@ namespace StormiumTeam.GameBase
 	[UpdateInGroup(typeof(OrderGroup.Simulation.ConfigureSpawnedEntities))]
 	public class UpdateHitShapeContainerSystem : JobGameBaseSystem
 	{
+		private EntityQuery m_DataQuery;
+
+
+		private EntityQuery m_OwnerQuery;
+
+		protected override void OnCreate()
+		{
+			base.OnCreate();
+
+			m_OwnerQuery = GetEntityQuery(typeof(HitShapeContainer));
+			m_DataQuery  = GetEntityQuery(typeof(Owner), typeof(HitShapeDescription));
+		}
+
+		protected override JobHandle OnUpdate(JobHandle inputDeps)
+		{
+			m_OwnerQuery.AddDependency(inputDeps);
+
+			inputDeps = new ClearBufferJob
+			{
+				Entities                    = m_OwnerQuery.ToEntityArray(Allocator.TempJob, out var dep1),
+				HitShapeContainerFromEntity = GetBufferFromEntity<HitShapeContainer>()
+			}.Schedule(JobHandle.CombineDependencies(inputDeps, dep1));
+
+			inputDeps = new UpdateBufferJob
+			{
+				HitShapeContainerFromEntity = GetBufferFromEntity<HitShapeContainer>(),
+				FollowTagFromEntity         = GetComponentDataFromEntity<HitShapeFollowParentTag>(true)
+			}.ScheduleSingle(m_DataQuery, inputDeps);
+
+			return inputDeps;
+		}
+
 		[BurstCompile]
 		private struct ClearBufferJob : IJob
 		{
@@ -70,37 +102,6 @@ namespace StormiumTeam.GameBase
 					AttachedToParent = FollowTagFromEntity.Exists(entity)
 				});
 			}
-		}
-
-
-		private EntityQuery m_OwnerQuery;
-		private EntityQuery m_DataQuery;
-
-		protected override void OnCreate()
-		{
-			base.OnCreate();
-
-			m_OwnerQuery = GetEntityQuery(typeof(HitShapeContainer));
-			m_DataQuery  = GetEntityQuery(typeof(Owner), typeof(HitShapeDescription));
-		}
-
-		protected override JobHandle OnUpdate(JobHandle inputDeps)
-		{
-			m_OwnerQuery.AddDependency(inputDeps);
-
-			inputDeps = new ClearBufferJob
-			{
-				Entities                    = m_OwnerQuery.ToEntityArray(Allocator.TempJob, out var dep1),
-				HitShapeContainerFromEntity = GetBufferFromEntity<HitShapeContainer>()
-			}.Schedule(JobHandle.CombineDependencies(inputDeps, dep1));
-
-			inputDeps = new UpdateBufferJob
-			{
-				HitShapeContainerFromEntity = GetBufferFromEntity<HitShapeContainer>(),
-				FollowTagFromEntity         = GetComponentDataFromEntity<HitShapeFollowParentTag>(true)
-			}.ScheduleSingle(m_DataQuery, inputDeps);
-
-			return inputDeps;
 		}
 	}
 }

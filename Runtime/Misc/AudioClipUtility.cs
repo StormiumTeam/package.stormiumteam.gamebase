@@ -9,7 +9,7 @@ namespace StormiumTeam.GameBase
 		{
 			if (clips == null || clips.Length == 0)
 				return null;
-			
+
 			Debug.Log("Combine with " + clips.Length + " clips.");
 
 			var length = 0;
@@ -40,12 +40,9 @@ namespace StormiumTeam.GameBase
 					var status = clips[i].LoadAudioData();
 					Debug.Log($"Tried to load clip ({clips[i].name}), current status=" + clips[i].loadState);
 				}
-				
+
 				var buffer = new float[clips[i].samples * clips[i].channels];
-				if (!clips[i].GetData(buffer, 0))
-				{
-					Debug.Log("Couldn't get data from clip...");
-				}
+				if (!clips[i].GetData(buffer, 0)) Debug.Log("Couldn't get data from clip...");
 
 				data.AddRange(buffer);
 			}

@@ -14,6 +14,14 @@ namespace StormiumTeam.GameBase.Components
 		// todo: we should make a group for pre-health systems
 		public class System : HealthProcessSystem
 		{
+			protected override JobHandle Process(JobHandle jobHandle)
+			{
+				return new Job
+				{
+					ModifyHealthEventList = ModifyHealthEventList
+				}.Schedule(this, jobHandle);
+			}
+
 			private struct Job : IJobForEachWithEntity<RedirectHealth>
 			{
 				[NativeDisableParallelForRestriction]
@@ -35,14 +43,6 @@ namespace StormiumTeam.GameBase.Components
 						ModifyHealthEventList.Add(ev);
 					}
 				}
-			}
-
-			protected override JobHandle Process(JobHandle jobHandle)
-			{
-				return new Job
-				{
-					ModifyHealthEventList = ModifyHealthEventList
-				}.Schedule(this, jobHandle);
 			}
 		}
 	}

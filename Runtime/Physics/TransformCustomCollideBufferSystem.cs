@@ -13,46 +13,6 @@ namespace StormiumTeam.GameBase
 {
 	public unsafe class TransformCustomCollideBufferSystem : JobComponentSystem
 	{
-		[BurstCompile]
-		private struct ProcessJob : IJobParallelFor
-		{
-			[DeallocateOnJobCompletion]
-			[ReadOnly]
-			public NativeArray<Entity> Entities;
-
-			[NativeDisableParallelForRestriction]
-			public BufferFromEntity<CustomCollide>            CollideWithFromEntity;
-			[ReadOnly]
-			public ComponentDataFromEntity<PhysicsCollider> Colliders;
-			[ReadOnly]
-			public ComponentDataFromEntity<Translation>     Translations;
-			[ReadOnly]
-			public ComponentDataFromEntity<Rotation>        Rotations;
-
-			[ReadOnly]
-			public PhysicsWorld PhysicsWorld; //< only used to get rigidbody index
-
-			public void Execute(int index)
-			{
-				var entity       = Entities[index];
-				var buffer       = CollideWithFromEntity[entity];
-				var bufferPtr    = buffer.GetUnsafePtr();
-				var bufferLength = buffer.Length;
-				for (var i = 0; i != bufferLength; i++)
-				{
-					ref var cw = ref UnsafeUtilityEx.ArrayElementAsRef<CustomCollide>(bufferPtr, i);
-
-					var r               = Rotations[cw.Target];
-					var t               = Translations[cw.Target];
-					var worldFromEntity = new RigidTransform(r.Value, t.Value);
-
-					cw.Collider  = Colliders[cw.Target].ColliderPtr;
-					cw.RigidBodyIndex = PhysicsWorld.GetRigidBodyIndex(cw.Target);
-					cw.WorldFromMotion = worldFromEntity;
-				}
-			}
-		}
-
 		private EntityQuery m_Group;
 
 		protected override void OnCreate()
@@ -76,7 +36,7 @@ namespace StormiumTeam.GameBase
 				Colliders             = GetComponentDataFromEntity<PhysicsCollider>(),
 				Translations          = GetComponentDataFromEntity<Translation>(),
 				Rotations             = GetComponentDataFromEntity<Rotation>(),
-				
+
 				PhysicsWorld = physicsWorld
 			};
 
@@ -84,13 +44,13 @@ namespace StormiumTeam.GameBase
 
 			return jobHandle;
 		}
-		
+
 		public JobHandle ScheduleJob(JobHandle jobHandle)
 		{
 			m_Group.AddDependency(jobHandle);
-			
+
 			var physicsWorld = World.GetExistingSystem<BuildPhysicsWorld>().PhysicsWorld;
-			
+
 			return new ProcessJob
 			{
 				Entities = m_Group.ToEntityArray(Allocator.TempJob, out jobHandle),
@@ -99,9 +59,52 @@ namespace StormiumTeam.GameBase
 				Colliders             = GetComponentDataFromEntity<PhysicsCollider>(),
 				Translations          = GetComponentDataFromEntity<Translation>(),
 				Rotations             = GetComponentDataFromEntity<Rotation>(),
-				
+
 				PhysicsWorld = physicsWorld
 			}.Schedule(m_Group.CalculateEntityCount(), 8, jobHandle);
+		}
+
+		[BurstCompile]
+		private struct ProcessJob : IJobParallelFor
+		{
+			[DeallocateOnJobCompletion]
+			[ReadOnly]
+			public NativeArray<Entity> Entities;
+
+			[NativeDisableParallelForRestriction]
+			public BufferFromEntity<CustomCollide> CollideWithFromEntity;
+
+			[ReadOnly]
+			public ComponentDataFromEntity<PhysicsCollider> Colliders;
+
+			[ReadOnly]
+			public ComponentDataFromEntity<Translation> Translations;
+
+			[ReadOnly]
+			public ComponentDataFromEntity<Rotation> Rotations;
+
+			[ReadOnly]
+			public PhysicsWorld PhysicsWorld; //< only used to get rigidbody index
+
+			public void Execute(int index)
+			{
+				var entity       = Entities[index];
+				var buffer       = CollideWithFromEntity[entity];
+				var bufferPtr    = buffer.GetUnsafePtr();
+				var bufferLength = buffer.Length;
+				for (var i = 0; i != bufferLength; i++)
+				{
+					ref var cw = ref UnsafeUtilityEx.ArrayElementAsRef<CustomCollide>(bufferPtr, i);
+
+					var r               = Rotations[cw.Target];
+					var t               = Translations[cw.Target];
+					var worldFromEntity = new RigidTransform(r.Value, t.Value);
+
+					cw.Collider        = Colliders[cw.Target].ColliderPtr;
+					cw.RigidBodyIndex  = PhysicsWorld.GetRigidBodyIndex(cw.Target);
+					cw.WorldFromMotion = worldFromEntity;
+				}
+			}
 		}
 	}
 }

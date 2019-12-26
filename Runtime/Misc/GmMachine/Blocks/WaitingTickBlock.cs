@@ -10,8 +10,8 @@ namespace Misc.GmMachine.Blocks
 
 	public class WaitingTickBlock : Block
 	{
-		public ITickGetter TickGetter;
 		public UTick       Target;
+		public ITickGetter TickGetter;
 
 		public WaitingTickBlock(string name) : base(name)
 		{

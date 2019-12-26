@@ -11,11 +11,11 @@ namespace StormiumTeam.GameBase.Modules
 	public class ModuleGetAssetFromGuid : BaseSystemModule
 	{
 		public delegate void OnLoad(object asset, bool isSceneObject);
-		
-		public override ModuleUpdateType UpdateType => ModuleUpdateType.MainThread;
 
 		private List<(AsyncOperationHandle, OnLoad)> m_Handles;
-		
+
+		public override ModuleUpdateType UpdateType => ModuleUpdateType.MainThread;
+
 		protected override void OnEnable()
 		{
 			m_Handles = new List<(AsyncOperationHandle, OnLoad)>(16);
@@ -42,7 +42,7 @@ namespace StormiumTeam.GameBase.Modules
 		{
 			GetGameObject(guid.value, onLoad);
 		}
-		
+
 		public void GetGameObject(ReplicatedGuid guid, OnLoad onLoad)
 		{
 			GameObject sceneGameObject = null;
@@ -51,7 +51,7 @@ namespace StormiumTeam.GameBase.Modules
 				onLoad(sceneGameObject, true);
 				return;
 			}
-			
+
 			m_Handles.Add((Addressables.LoadAssetAsync<GameObject>(guid), onLoad));
 		}
 	}

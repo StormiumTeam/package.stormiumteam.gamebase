@@ -1,207 +1,198 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace StormiumTeam.GameBase.Misc
 {
-    public enum ShaderPropertyType
-    {
-        Color  = 0,
-        Vector = 1,
-        Float  = 2,
-        Range  = 3,
-        TexEnv = 4
-    }
+	public enum ShaderPropertyType
+	{
+		Color  = 0,
+		Vector = 1,
+		Float  = 2,
+		Range  = 3,
+		TexEnv = 4
+	}
 
-    [ExecuteInEditMode]
-    public class MaterialPropertyOverride : MonoBehaviour
-    {
-        [System.Serializable]
-        public class ShaderPropertyValue
-        {
+	[ExecuteInEditMode]
+	public class MaterialPropertyOverride : MonoBehaviour
+	{
+		// List of materials we want to touch
+		public List<Material> m_Materials = new List<Material>();
 
-            public string             propertyName;
-            public ShaderPropertyType type;
-            public Color              colValue;
-            public Vector4            vecValue;
-            public float              floatValue;
-            public Texture            texValue;
-        }
+		// List of renderers we are affecting
+		public List<Renderer> m_Renderers = new List<Renderer>();
 
-        [System.Serializable]
-        public class MaterialOverride
-        {
-            public bool active;
+		public List<MaterialOverride> materialOverrides = new List<MaterialOverride>();
 
-            [System.NonSerialized]
-            public bool showAll;
+		private void OnEnable()
+		{
+			Apply();
+		}
 
-            public Material                      material;
-            public MaterialPropertyOverrideAsset propertyOverrideAsset = null;
-            public List<ShaderPropertyValue>     propertyOverrides     = new List<ShaderPropertyValue>();
-        }
+		private void OnDisable()
+		{
+			Clear();
+		}
 
-        public List<MaterialOverride> materialOverrides = new List<MaterialOverride>();
+		private void OnValidate()
+		{
+			Clear();
+			Apply();
+		}
 
-        // List of renderers we are affecting
-        public List<Renderer> m_Renderers = new List<Renderer>();
+		// Try to do something reasonable when component is added
+		private void Reset()
+		{
+			Clear();
+			m_Renderers.Clear();
+			m_Renderers.AddRange(GetComponents<Renderer>());
+			if (m_Renderers.Count == 0)
+			{
+				// Fall back, try LODGroup
+				var lg = GetComponent<LODGroup>();
+				if (lg != null)
+					foreach (var l in lg.GetLODs())
+						m_Renderers.AddRange(l.renderers);
+			}
 
-        // List of materials we want to touch
-        public List<Material> m_Materials = new List<Material>();
+			Apply();
+		}
 
-        private void OnEnable()
-        {
-            Apply();
-        }
+		public void Clear()
+		{
+			foreach (var r in m_Renderers)
+			{
+				if (r == null)
+					continue;
+				r.SetPropertyBlock(null);
+				for (int i = 0, c = r.sharedMaterials.Length; i < c; i++) r.SetPropertyBlock(null, i);
+			}
+		}
 
-        private void OnDisable()
-        {
-            Clear();
-        }
+		public void Populate()
+		{
+			m_Renderers.Clear();
+			var childRenderers = GetComponentsInChildren<Renderer>();
+			if (childRenderers.Length > 100)
+			{
+				Debug.LogError("Too many renderers.");
+				return;
+			}
 
-        private void OnValidate()
-        {
-            Clear();
-            Apply();
-        }
+			m_Renderers.AddRange(childRenderers);
+		}
 
-        // Try to do something reasonable when component is added
-        private void Reset()
-        {
-            Clear();
-            m_Renderers.Clear();
-            m_Renderers.AddRange(GetComponents<Renderer>());
-            if (m_Renderers.Count == 0)
-            {
-                // Fall back, try LODGroup
-                var lg = GetComponent<LODGroup>();
-                if (lg != null)
-                {
-                    foreach (var l in lg.GetLODs())
-                        m_Renderers.AddRange(l.renderers);
-                }
-            }
+		public void Apply()
+		{
+			// Apply overrides
+			var mpb = new MaterialPropertyBlock();
+			foreach (var renderer in m_Renderers)
+			{
+				// Can happen when you are editing the list
+				if (renderer == null)
+					continue;
 
-            Apply();
-        }
+				if (renderer.sharedMaterials.Length == 0)
+					continue;
 
-        public void Clear()
-        {
-            foreach (var r in m_Renderers)
-            {
-                if (r == null)
-                    continue;
-                r.SetPropertyBlock(null);
-                for (int i = 0, c = r.sharedMaterials.Length; i < c; i++)
-                {
-                    r.SetPropertyBlock(null, i);
-                }
+				// Two cases.
+				// A) there are only one type of material on this renderer. Then we 
+				//    can use the master material property block.
+				// B) different materials; then we use the per material property blocks
 
-            }
-        }
+				var allSame = true;
 
-        public void Populate()
-        {
-            m_Renderers.Clear();
-            var childRenderers = GetComponentsInChildren<Renderer>();
-            if (childRenderers.Length > 100)
-            {
-                Debug.LogError("Too many renderers.");
-                return;
-            }
+				// Check if multiple materials on this renderer
+				for (int i = 1, c = renderer.sharedMaterials.Length; i < c; i++)
+					if (renderer.sharedMaterials[i] != renderer.sharedMaterials[0])
+						allSame = false;
 
-            m_Renderers.AddRange(childRenderers);
-        }
+				if (allSame)
+				{
+					// Set master MaterialPropertyBlock
+					mpb.Clear();
+					var o = materialOverrides.Find(x => x.material == renderer.sharedMaterials[0]);
+					if (o == null || o.active == false)
+					{
+						renderer.SetPropertyBlock(null);
+					}
+					else
+					{
+						if (o.propertyOverrideAsset != null)
+							ApplyOverrides(mpb, o.propertyOverrideAsset.propertyOverrides);
+						ApplyOverrides(mpb, o.propertyOverrides);
+						renderer.SetPropertyBlock(mpb);
+					}
+				}
+				else
+				{
+					// Set specific MaterialPropertyBlocks
+					for (int i = 0, c = renderer.sharedMaterials.Length; i < c; i++)
+					{
+						var o = materialOverrides.Find(x => x.material == renderer.sharedMaterials[i]);
+						if (o == null || o.active == false)
+						{
+							renderer.SetPropertyBlock(null, i);
+						}
+						else
+						{
+							mpb.Clear();
+							if (o.propertyOverrideAsset != null)
+								ApplyOverrides(mpb, o.propertyOverrideAsset.propertyOverrides);
+							ApplyOverrides(mpb, o.propertyOverrides);
+							renderer.SetPropertyBlock(mpb, i);
+						}
+					}
+				}
+			}
+		}
 
-        public void Apply()
-        {
-            // Apply overrides
-            MaterialPropertyBlock mpb = new MaterialPropertyBlock();
-            foreach (var renderer in m_Renderers)
-            {
-                // Can happen when you are editing the list
-                if (renderer == null)
-                    continue;
+		// Applies a list of individual override values to an mpb
+		private void ApplyOverrides(MaterialPropertyBlock mpb, List<ShaderPropertyValue> overrides)
+		{
+			foreach (var spv in overrides)
+				switch (spv.type)
+				{
+					case ShaderPropertyType.Color:
+						mpb.SetColor(spv.propertyName, spv.colValue);
+						break;
+					case ShaderPropertyType.Float:
+					case ShaderPropertyType.Range:
+						mpb.SetFloat(spv.propertyName, spv.floatValue);
+						break;
+					case ShaderPropertyType.Vector:
+						mpb.SetVector(spv.propertyName, spv.vecValue);
+						break;
+					case ShaderPropertyType.TexEnv:
+						if (spv.texValue != null)
+							mpb.SetTexture(spv.propertyName, spv.texValue);
+						break;
+				}
+		}
 
-                if (renderer.sharedMaterials.Length == 0)
-                    continue;
+		[Serializable]
+		public class ShaderPropertyValue
+		{
+			public Color colValue;
+			public float floatValue;
 
-                // Two cases.
-                // A) there are only one type of material on this renderer. Then we 
-                //    can use the master material property block.
-                // B) different materials; then we use the per material property blocks
+			public string             propertyName;
+			public Texture            texValue;
+			public ShaderPropertyType type;
+			public Vector4            vecValue;
+		}
 
-                bool allSame = true;
+		[Serializable]
+		public class MaterialOverride
+		{
+			public bool active;
 
-                // Check if multiple materials on this renderer
-                for (int i = 1, c = renderer.sharedMaterials.Length; i < c; i++)
-                {
-                    if (renderer.sharedMaterials[i] != renderer.sharedMaterials[0])
-                        allSame = false;
-                }
+			public Material                      material;
+			public MaterialPropertyOverrideAsset propertyOverrideAsset;
+			public List<ShaderPropertyValue>     propertyOverrides = new List<ShaderPropertyValue>();
 
-                if (allSame)
-                {
-                    // Set master MaterialPropertyBlock
-                    mpb.Clear();
-                    var o = materialOverrides.Find(x => x.material == renderer.sharedMaterials[0]);
-                    if (o == null || o.active == false)
-                    {
-                        renderer.SetPropertyBlock(null);
-                    }
-                    else
-                    {
-                        if (o.propertyOverrideAsset != null)
-                            ApplyOverrides(mpb, o.propertyOverrideAsset.propertyOverrides);
-                        ApplyOverrides(mpb, o.propertyOverrides);
-                        renderer.SetPropertyBlock(mpb);
-                    }
-                }
-                else
-                {
-                    // Set specific MaterialPropertyBlocks
-                    for (int i = 0, c = renderer.sharedMaterials.Length; i < c; i++)
-                    {
-                        var o = materialOverrides.Find(x => x.material == renderer.sharedMaterials[i]);
-                        if (o == null || o.active == false)
-                        {
-                            renderer.SetPropertyBlock(null, i);
-                        }
-                        else
-                        {
-                            mpb.Clear();
-                            if (o.propertyOverrideAsset != null)
-                                ApplyOverrides(mpb, o.propertyOverrideAsset.propertyOverrides);
-                            ApplyOverrides(mpb, o.propertyOverrides);
-                            renderer.SetPropertyBlock(mpb, i);
-                        }
-                    }
-                }
-            }
-        }
-
-        // Applies a list of individual override values to an mpb
-        void ApplyOverrides(MaterialPropertyBlock mpb, List<ShaderPropertyValue> overrides)
-        {
-            foreach (var spv in overrides)
-            {
-                switch (spv.type)
-                {
-                    case ShaderPropertyType.Color:
-                        mpb.SetColor(spv.propertyName, spv.colValue);
-                        break;
-                    case ShaderPropertyType.Float:
-                    case ShaderPropertyType.Range:
-                        mpb.SetFloat(spv.propertyName, spv.floatValue);
-                        break;
-                    case ShaderPropertyType.Vector:
-                        mpb.SetVector(spv.propertyName, spv.vecValue);
-                        break;
-                    case ShaderPropertyType.TexEnv:
-                        if (spv.texValue != null)
-                            mpb.SetTexture(spv.propertyName, spv.texValue);
-                        break;
-                }
-            }
-        }
-    }
+			[NonSerialized]
+			public bool showAll;
+		}
+	}
 }

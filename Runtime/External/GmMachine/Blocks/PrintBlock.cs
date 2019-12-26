@@ -6,7 +6,7 @@ namespace GmMachine.Blocks
 	public class PrintBlock : Block
 	{
 		public Variable<string> Target;
-			
+
 		public PrintBlock(string name, Variable<string> variable) : base(name)
 		{
 			Target = variable;
@@ -18,15 +18,15 @@ namespace GmMachine.Blocks
 			return true;
 		}
 	}
-		
+
 	public class PrintBlock<T> : Block
 		where T : IEquatable<T>
 	{
-		private T      m_PreviousTarget;
 		private string m_PreviousString;
-			
+		private T      m_PreviousTarget;
+
 		public Variable<T> Target;
-			
+
 		public PrintBlock(string name, Variable<T> variable) : base(name)
 		{
 			Target = variable;
@@ -40,7 +40,7 @@ namespace GmMachine.Blocks
 				m_PreviousTarget = newVal;
 				m_PreviousString = newVal.ToString();
 			}
-				
+
 			Debug.Log(m_PreviousString);
 			return true;
 		}

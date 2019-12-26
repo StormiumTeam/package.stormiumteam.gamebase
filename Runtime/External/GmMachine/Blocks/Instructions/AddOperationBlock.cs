@@ -13,8 +13,9 @@ namespace GmMachine.Blocks.Instructions
 			return Expression.Lambda<Func<T, T, T>>(body, paramA, paramB).Compile();
 		});
 
+		public T Modifier;
+
 		public VariableBlock<T> Variable;
-		public T                Modifier;
 
 		public AddOperationBlock(string name) : base(name)
 		{

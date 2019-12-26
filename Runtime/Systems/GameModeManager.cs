@@ -71,7 +71,6 @@ namespace StormiumTeam.GameBase
 
 		protected override void OnUpdate()
 		{
-
 		}
 
 		public void SetGameMode<T>(T data, string name = null, bool serialize = true)
@@ -112,21 +111,19 @@ namespace StormiumTeam.GameBase
 	public abstract class GameModeSystem<TGameMode> : GameBaseSystem
 		where TGameMode : struct, IGameMode
 	{
-		private EntityQuery m_GameModeQuery;
 		private EntityQuery m_ExecutingMapQuery;
+		private EntityQuery m_GameModeQuery;
+
+		private Entity      m_LoopEntity;
 		private EntityQuery m_MapLoadQuery;
 
-		private MapManager m_MapManager;
-
-		private Entity m_LoopEntity;
-
-		protected MapManager MapManager => m_MapManager;
+		protected MapManager MapManager { get; private set; }
 
 		protected override void OnCreate()
 		{
 			base.OnCreate();
 
-			m_MapManager = World.GetOrCreateSystem<MapManager>();
+			MapManager = World.GetOrCreateSystem<MapManager>();
 
 			m_GameModeQuery     = GetEntityQuery(typeof(ExecutingGameMode), typeof(TGameMode));
 			m_ExecutingMapQuery = GetEntityQuery(typeof(ExecutingMapData));
@@ -187,18 +184,18 @@ namespace StormiumTeam.GameBase
 	public abstract class GameModeAsyncSystem<TGameMode> : GameBaseSystem
 		where TGameMode : struct, IGameMode
 	{
-		private EntityQuery m_GameModeQuery;
 		private EntityQuery m_ExecutingMapQuery;
+		private EntityQuery m_GameModeQuery;
+
+		private Entity      m_LoopEntity;
+		private Machine     m_Machine;
 		private EntityQuery m_MapLoadQuery;
 
-		private Entity m_LoopEntity;
-		private Machine m_Machine;
-
-		protected Machine Machine => m_Machine;
+		protected Machine    Machine    => m_Machine;
 		protected MapManager MapManager { get; private set; }
-		
+
 		protected abstract void OnCreateMachine(ref Machine machine);
-		protected abstract void OnLoop(Entity gameModeEntity);
+		protected abstract void OnLoop(Entity               gameModeEntity);
 
 		protected override void OnCreate()
 		{

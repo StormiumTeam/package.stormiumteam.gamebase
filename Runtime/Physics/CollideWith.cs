@@ -22,7 +22,7 @@ namespace StormiumTeam.GameBase
 			for (var i = 0; i != cwBuffer.Length; i++)
 			{
 				var rigidBodyIndex = cwBuffer[i].RigidBodyIndex;
-				var rigidBody = rigidBodies[rigidBodyIndex];
+				var rigidBody      = rigidBodies[rigidBodyIndex];
 
 				array[i] = new CustomCollide
 				{
@@ -35,13 +35,13 @@ namespace StormiumTeam.GameBase
 
 			return array;
 		}
-		
+
 		public static void UpdateFilterRecursion(Collider* collider, CollisionFilter filter)
 		{
 			while (true)
 			{
 				// we need to force the change
-				((BoxCollider*)collider)->Filter = filter;
+				((BoxCollider*) collider)->Filter = filter;
 				if (collider->CollisionType == CollisionType.Composite)
 				{
 					var key = new ColliderKey();
@@ -62,9 +62,9 @@ namespace StormiumTeam.GameBase
 			for (var i = 0; i != count; i++)
 			{
 				var rigidBodyIndex = cwBuffer[i].RigidBodyIndex;
-				var collider = physicsWorld.Bodies[rigidBodyIndex].Collider;
-				var filter = collider->Filter;
-				
+				var collider       = physicsWorld.Bodies[rigidBodyIndex].Collider;
+				var filter         = collider->Filter;
+
 				MainBit.SetBitAt(ref filter.BelongsTo, 31, true);
 
 				UpdateFilterRecursion(collider, filter);
@@ -79,7 +79,7 @@ namespace StormiumTeam.GameBase
 				var rigidBodyIndex = cwBuffer[i].RigidBodyIndex;
 				var collider       = physicsWorld.Bodies[rigidBodyIndex].Collider;
 				var filter         = collider->Filter;
-				
+
 				MainBit.SetBitAt(ref filter.BelongsTo, 31, false);
 
 				UpdateFilterRecursion(collider, filter);

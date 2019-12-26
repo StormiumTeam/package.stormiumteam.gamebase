@@ -1,8 +1,8 @@
 using Revolution;
 using StormiumTeam.GameBase.Snapshots;
-using Unity.NetCode;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.NetCode;
 using Unity.Networking.Transport;
 
 [assembly: RegisterGenericComponentType(typeof(Predicted<ActionAmmoSnapshot>))]
@@ -51,11 +51,12 @@ namespace StormiumTeam.GameBase.Snapshots
 		{
 			public override ComponentType ExcludeComponent => typeof(Exclude);
 		}
-		
+
 		public class Update : ComponentUpdateSystemInterpolated<ActionAmmo, ActionAmmoSnapshot>
 		{
 			public Update() : base(true)
-			{}
+			{
+			}
 		}
 
 
@@ -66,7 +67,7 @@ namespace StormiumTeam.GameBase.Snapshots
 
 		public void PredictDelta(uint tick, ref ActionAmmoSnapshot baseline1, ref ActionAmmoSnapshot baseline2)
 		{
-			var predictor = new GhostDeltaPredictor(tick, this.Tick, baseline1.Tick, baseline2.Tick);
+			var predictor = new GhostDeltaPredictor(tick, Tick, baseline1.Tick, baseline2.Tick);
 			Value = predictor.PredictInt(Value, baseline1.Value, baseline2.Value);
 		}
 	}

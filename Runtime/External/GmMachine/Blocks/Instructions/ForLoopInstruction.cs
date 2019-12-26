@@ -5,7 +5,7 @@ namespace GmMachine.Blocks.Instructions
 	public class ForLoopInstruction : InstructionCollection
 	{
 		public int Loop, Count;
-		
+
 		public ForLoopInstruction(string name, int count, List<Block> collections) : base(name, collections)
 		{
 			Count = count;

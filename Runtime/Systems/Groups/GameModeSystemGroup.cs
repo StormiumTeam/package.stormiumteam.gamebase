@@ -1,5 +1,5 @@
-using Unity.NetCode;
 using Unity.Entities;
+using Unity.NetCode;
 
 namespace StormiumTeam.GameBase
 {
@@ -18,12 +18,13 @@ namespace StormiumTeam.GameBase
 		protected override void OnUpdate()
 		{
 			m_GameModeManager.Update();
-			
+
 			base.OnUpdate();
 		}
 	}
-	
+
 	[UpdateInGroup(typeof(ClientSimulationSystemGroup))]
 	public class ClientGameModeSystemGroup : ComponentSystemGroup
-	{}
+	{
+	}
 }

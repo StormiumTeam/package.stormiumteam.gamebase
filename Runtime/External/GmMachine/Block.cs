@@ -6,13 +6,24 @@ namespace GmMachine
 {
 	public class Block
 	{
-		private string m_Name;
-		
 		public Context Context;
-		
-		public Block Executor => Context.Parent;
 
 		public Guid Guid;
+
+		private ProfilerMarker m_Marker;
+		private string         m_Name;
+
+		public Block()
+		{
+			Name = "Empty Block";
+		}
+
+		public Block(string name)
+		{
+			Name = name;
+		}
+
+		public Block Executor => Context.Parent;
 
 		public string Name
 		{
@@ -24,20 +35,9 @@ namespace GmMachine
 					Debug.Log($"Update New Marker {m_Name}");
 					m_Marker = new ProfilerMarker(value);
 				}
+
 				m_Name = value;
 			}
-		}
-
-		private ProfilerMarker m_Marker;
-
-		public Block()
-		{
-			Name = "Empty Block";
-		}
-		
-		public Block(string name)
-		{
-			Name = name;
 		}
 
 		public bool Run(Block executor)
@@ -71,7 +71,7 @@ namespace GmMachine
 		{
 			OnFinished();
 		}
-		
+
 		protected virtual bool OnRun()
 		{
 			return true;
@@ -79,16 +79,14 @@ namespace GmMachine
 
 		protected virtual void OnAfterRun()
 		{
-			
 		}
-		
+
 		protected virtual void OnReset()
 		{
 		}
 
 		protected virtual void OnFinished()
 		{
-			
 		}
 
 		public virtual void SetMachine(Machine machine)

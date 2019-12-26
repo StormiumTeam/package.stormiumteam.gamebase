@@ -6,13 +6,9 @@ namespace GmMachine.Blocks
 {
 	public abstract class BlockCollection : Block
 	{
-		public Block CurrentRunningChild { get; set; }
-
-		public int Index { get; set; }
-		
 		private List<Block>               m_Collections;
 		private Dictionary<string, Block> m_NameToBlock;
-		
+
 		protected BlockCollection(string name) : base(name)
 		{
 			SetCollection(new List<Block>());
@@ -22,6 +18,10 @@ namespace GmMachine.Blocks
 		{
 			SetCollection(collections);
 		}
+
+		public Block CurrentRunningChild { get; set; }
+
+		public int Index { get; set; }
 
 		protected virtual void BeforeChildIsRunning()
 		{
@@ -92,7 +92,6 @@ namespace GmMachine.Blocks
 				CurrentRunningChild = m_Collections[0];
 
 			foreach (var block in m_Collections)
-			{
 				try
 				{
 					block.Reset();
@@ -102,15 +101,11 @@ namespace GmMachine.Blocks
 					Debug.LogError($"[BC '{Name}'] Couldn't reset block '{block?.Name}'");
 					throw;
 				}
-			}
 		}
 
 		public Block GetBlock(string blockName)
 		{
-			if (m_NameToBlock == null || m_NameToBlock.Count != m_Collections.Count)
-			{
-				RegenerateDictionary();
-			}
+			if (m_NameToBlock == null || m_NameToBlock.Count != m_Collections.Count) RegenerateDictionary();
 
 			m_NameToBlock.TryGetValue(blockName, out var block);
 			return block;
@@ -127,15 +122,13 @@ namespace GmMachine.Blocks
 		{
 			RegenerateDictionary();
 			if (Context.Machine != null)
-			{
 				foreach (var block in m_Collections)
 				{
 					if (block == null)
 						throw new InvalidOperationException("Null block");
-					
+
 					Context.Machine.UpdateBlockGuid(block);
 				}
-			}
 		}
 
 		private void RegenerateDictionary()
@@ -143,10 +136,7 @@ namespace GmMachine.Blocks
 			if (m_NameToBlock == null)
 				m_NameToBlock = new Dictionary<string, Block>();
 			m_NameToBlock.Clear();
-			foreach (var block in m_Collections)
-			{
-				m_NameToBlock[block.Name] = block;
-			}
+			foreach (var block in m_Collections) m_NameToBlock[block.Name] = block;
 		}
 
 		public List<Block>.Enumerator GetEnumerator()

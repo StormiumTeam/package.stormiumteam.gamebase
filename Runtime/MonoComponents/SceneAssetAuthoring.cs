@@ -6,10 +6,10 @@ namespace MonoComponents
 {
 	public class SceneAssetAuthoring : MonoBehaviour
 	{
-		public string         id = null;
 		public AssetReference addressableAsset;
 		public string         addressableKey;
 		public ReplicatedGuid assetGuid;
+		public string         id;
 
 		public object GetValidAddressableKey()
 		{

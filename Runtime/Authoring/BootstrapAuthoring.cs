@@ -27,13 +27,9 @@ namespace StormiumTeam.GameBase.Authoring
 			bootstrapEntities.Dispose();
 
 			if (targetBootstrap != default)
-			{
 				dstManager.AddSharedComponentData(entity, new TargetBootstrap {Value = targetBootstrap});
-			}
 			else
-			{
 				Debug.LogError("No Bootstrap found with name: " + Name);
-			}
 		}
 	}
 }

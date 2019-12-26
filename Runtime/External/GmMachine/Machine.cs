@@ -7,11 +7,11 @@ namespace GmMachine
 {
 	public class Machine
 	{
-		private BlockCollection         m_Collection;
-		private Dictionary<Guid, Block> m_GuidToBlock;
-
-		public int                                   Frame;
 		public Dictionary<Type, ExternalContextBase> Contexts;
+
+		public           int                     Frame;
+		private          BlockCollection         m_Collection;
+		private readonly Dictionary<Guid, Block> m_GuidToBlock;
 
 		public Machine()
 		{
@@ -30,7 +30,7 @@ namespace GmMachine
 		{
 			if (m_Collection == null)
 				return true;
-			
+
 			m_Collection.Context.Machine = this;
 
 			var state = m_Collection.Run(null);
@@ -52,9 +52,7 @@ namespace GmMachine
 
 			if (m_GuidToBlock.TryGetValue(block.Guid, out var otherBlock)
 			    && otherBlock != block)
-			{
 				Debug.LogError($"A block was found with the same GUID? [Requested '{block.Name}' T<{block}>][Other '{otherBlock.Name}' T<{otherBlock}>]");
-			}
 
 			m_GuidToBlock[block.Guid] = block;
 		}

@@ -12,16 +12,23 @@ namespace StormiumTeam.GameBase.Systems.Filters
 		public override string Name        => "Livables filter rule.";
 		public override string Description => "Automatically add Livables colliders to collision physics filters";
 
-		[BurstCompile, RequireComponentTag(typeof(LivableDescription))]
+		public override JobHandle Filter(PhysicsWorld physicsWorld, NativeArray<Entity> targets, JobHandle jobHandle)
+		{
+			return FillVariables(new Job()).Schedule(this, jobHandle);
+		}
+
+		protected override JobHandle OnUpdate(JobHandle inputDeps)
+		{
+			return inputDeps;
+		}
+
+		[BurstCompile] [RequireComponentTag(typeof(LivableDescription))]
 		private struct Job : IJobForEachWithEntity<PhysicsCollider>, IFilter
 		{
 			public void Execute(Entity entity, int index, ref PhysicsCollider c0)
 			{
 				var rigidBodyIndex = PhysicsWorld.GetRigidBodyIndex(entity);
-				for (var i = 0; i != Targets.Length; i++)
-				{
-					CollideWithFromEntity[Targets[i]].Add(new CollideWith(rigidBodyIndex));
-				}
+				for (var i = 0; i != Targets.Length; i++) CollideWithFromEntity[Targets[i]].Add(new CollideWith(rigidBodyIndex));
 			}
 
 			[field: NativeDisableParallelForRestriction]
@@ -32,16 +39,6 @@ namespace StormiumTeam.GameBase.Systems.Filters
 
 			[field: ReadOnly]
 			public PhysicsWorld PhysicsWorld { get; set; }
-		}
-
-		public override JobHandle Filter(PhysicsWorld physicsWorld, NativeArray<Entity> targets, JobHandle jobHandle)
-		{
-			return FillVariables(new Job()).Schedule(this, jobHandle);
-		}
-
-		protected override JobHandle OnUpdate(JobHandle inputDeps)
-		{
-			return inputDeps;
 		}
 	}
 }

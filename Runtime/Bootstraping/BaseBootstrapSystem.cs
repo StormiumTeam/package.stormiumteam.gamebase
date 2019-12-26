@@ -4,12 +4,11 @@ namespace StormiumTeam.GameBase.Bootstraping
 {
 	public abstract class BaseBootstrapSystem : ComponentSystem
 	{
-		public Entity Bootstrap { get; private set; }
+		private EntityQuery m_Query;
+		public  Entity      Bootstrap { get; private set; }
 
 		protected abstract void Register(Entity bootstrap);
 		protected abstract void Match(Entity    bootstrapSingleton);
-
-		private EntityQuery m_Query;
 
 		protected override void OnCreate()
 		{
@@ -17,9 +16,9 @@ namespace StormiumTeam.GameBase.Bootstraping
 
 			Bootstrap = EntityManager.CreateEntity(typeof(BootstrapComponent));
 			Register(Bootstrap);
-			#if UNITY_EDITOR
+#if UNITY_EDITOR
 			EntityManager.SetName(Bootstrap, $"Bootstrap '{EntityManager.GetComponentData<BootstrapComponent>(Bootstrap).Name}'");
-			#endif
+#endif
 
 			m_Query = GetEntityQuery(typeof(TargetBootstrap));
 		}

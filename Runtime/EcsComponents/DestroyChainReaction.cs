@@ -17,16 +17,15 @@ namespace StormiumTeam.GameBase.Data
 
 	public abstract class DestroyChainReactionSystemBase : ComponentSystem
 	{
-		private NativeList<Entity> m_ToDestroy;
+		private EntityQueryBuilder.F_ED<DestroyChainReaction> m_ForEachDelegate;
+		private EntityQuery                                   m_Query;
+		private NativeList<Entity>                            m_ToDestroy;
 
 		private void ForEach(Entity e, ref DestroyChainReaction destroyChainReaction)
 		{
 			if (destroyChainReaction.Target == default || !EntityManager.Exists(destroyChainReaction.Target))
 				m_ToDestroy.Add(e);
 		}
-
-		private EntityQueryBuilder.F_ED<DestroyChainReaction> m_ForEachDelegate;
-		private EntityQuery                                   m_Query;
 
 		protected override void OnCreate()
 		{
@@ -60,10 +59,7 @@ namespace StormiumTeam.GameBase.Data
 				}
 			}
 
-			if (m_ToDestroy.Length > 0)
-			{
-				EntityManager.DestroyEntity(m_ToDestroy);
-			}
+			if (m_ToDestroy.Length > 0) EntityManager.DestroyEntity(m_ToDestroy);
 		}
 
 		protected override void OnDestroy()

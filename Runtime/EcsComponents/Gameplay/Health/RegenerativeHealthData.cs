@@ -1,12 +1,12 @@
 using System;
 using Revolution;
-using Unity.NetCode;
 using StormiumTeam.GameBase.Data;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.NetCode;
 using Unity.Networking.Transport;
 
 namespace StormiumTeam.GameBase.Components
@@ -114,6 +114,15 @@ namespace StormiumTeam.GameBase.Components
 		[UpdateInGroup(typeof(HealthProcessGroup))]
 		public class System : HealthProcessSystem
 		{
+			protected override JobHandle Process(JobHandle jobHandle)
+			{
+				return new Job
+				{
+					ModifyHealthEventList = ModifyHealthEventList,
+					Tick                  = ServerTick
+				}.Schedule(this, jobHandle);
+			}
+
 			//[BurstCompile]
 			private unsafe struct Job : IJobForEach<Owner, RegenerativeHealthData, HealthConcreteValue>
 			{
@@ -180,15 +189,6 @@ namespace StormiumTeam.GameBase.Components
 					concrete.Max   = healthData.Max;
 				}
 			}
-
-			protected override JobHandle Process(JobHandle jobHandle)
-			{
-				return new Job
-				{
-					ModifyHealthEventList = ModifyHealthEventList,
-					Tick                  = ServerTick
-				}.Schedule(this, jobHandle);
-			}
 		}
 
 		[UpdateInGroup(typeof(OrderGroup.Simulation.SpawnEntities))]
@@ -203,7 +203,7 @@ namespace StormiumTeam.GameBase.Components
 					ComponentType.ReadWrite<HealthConcreteValue>(),
 					ComponentType.ReadWrite<Owner>(),
 					ComponentType.ReadWrite<DestroyChainReaction>(),
-					typeof(PlayEntityTag),
+					typeof(PlayEntityTag)
 				};
 			}
 
