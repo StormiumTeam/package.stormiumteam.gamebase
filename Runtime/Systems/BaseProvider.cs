@@ -207,8 +207,6 @@ namespace StormiumTeam.GameBase
                     (
                         patternName + ".Model", EntityComponents, ProviderSpawnEntity, ProviderDestroyEntity
                     );
-
-                    World.GetOrCreateSystem<AppEventSystem>().SubscribeToAll(this);
                 }
             }
 

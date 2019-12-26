@@ -121,7 +121,7 @@ namespace StormiumTeam.GameBase
 
     public static class Relative
     {
-        public interface ISyncEvent : IAppEvent
+        public interface ISyncEvent
         {
             void SyncRelativeToEntity(Entity origin, Entity owner);
             void AddChildren(Entity          origin, Entity owner);
@@ -224,11 +224,6 @@ namespace StormiumTeam.GameBase
         where T : struct, IEntityDescription
     {
         public ComponentType ComponentType => ComponentType.ReadWrite<T>();
-
-        protected override void OnCreate()
-        {
-            World.GetOrCreateSystem<AppEventSystem>().SubscribeToAll(this);
-        }
 
         protected override JobHandle OnUpdate(JobHandle _)
         {
