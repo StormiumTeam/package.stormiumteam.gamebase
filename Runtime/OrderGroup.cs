@@ -1,5 +1,6 @@
 using Unity.Entities;
 using Unity.NetCode;
+using Unity.Transforms;
 
 namespace StormiumTeam.GameBase
 {
@@ -87,6 +88,15 @@ namespace StormiumTeam.GameBase
 			[UpdateInGroup(typeof(Simulation))]
 			[UpdateAfter(typeof(ConfigureSpawnedEntities))]
 			public class ProcessEvents : ComponentSystemGroup
+			{
+			}
+		}
+		
+		public class Presentation
+		{
+			[UpdateInGroup(typeof(PresentationSystemGroup))]
+			[UpdateAfter(typeof(TransformSystemGroup))]
+			public class UpdateCamera : ComponentSystemGroup
 			{
 			}
 		}

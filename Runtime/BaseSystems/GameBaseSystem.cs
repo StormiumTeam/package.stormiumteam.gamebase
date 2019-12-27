@@ -8,7 +8,12 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace StormiumTeam.GameBase
 {
-	public abstract class GameBaseSystem : BaseComponentSystem
+	public interface IGameBaseSystem
+	{
+		EntityQuery GetPlayerGroup();
+	}
+	
+	public abstract class GameBaseSystem : BaseComponentSystem, IGameBaseSystem
 	{
 		private ClientSimulationSystemGroup m_ClientComponentGroup;
 		private ComponentSystemGroup        m_ClientPresentationGroup;
@@ -62,57 +67,10 @@ namespace StormiumTeam.GameBase
 			module.Enable(this);
 		}
 
-		public Entity GetFirstSelfGamePlayer()
-		{
-			if (m_LocalPlayerGroup.CalculateEntityCount() > 0)
-				return m_LocalPlayerGroup.GetSingletonEntity();
-
-			return default;
-		}
-
-		public bool TryGetCurrentCameraState(Entity gamePlayer, out CameraState cameraState)
-		{
-			cameraState = default;
-			if (gamePlayer == default)
-				return false;
-
-			var comps = EntityManager.GetChunk(gamePlayer).Archetype.GetComponentTypes();
-			if (!comps.Contains(ComponentType.ReadWrite<ServerCameraState>()))
-				return false;
-
-			var serverCamera = EntityManager.GetComponentData<ServerCameraState>(gamePlayer);
-			if (serverCamera.Mode == CameraMode.Forced || !comps.Contains(ComponentType.ReadWrite<LocalCameraState>()))
-			{
-				cameraState = serverCamera.Data;
-				return true;
-			}
-
-			var localCamera = EntityManager.GetComponentData<LocalCameraState>(gamePlayer);
-			if (localCamera.Mode == CameraMode.Forced)
-			{
-				cameraState = localCamera.Data;
-				return true;
-			}
-
-			cameraState = serverCamera.Data;
-			return true;
-		}
-
-		public World GetActiveClientWorld()
-		{
-#if UNITY_SERVER
-			throw new Exeception("GetActiveClientWorld() shouldn't be called on server.");
-#else
-			foreach (var world in World.AllWorlds)
-				if (world.GetExistingSystem<ClientPresentationSystemGroup>()?.Enabled == true)
-					return world;
-
-			return null;
-#endif
-		}
+		EntityQuery IGameBaseSystem.GetPlayerGroup() => m_PlayerGroup;
 	}
 
-	public abstract class JobGameBaseSystem : JobComponentSystem
+	public abstract class JobGameBaseSystem : JobComponentSystem, IGameBaseSystem
 	{
 		private ClientSimulationSystemGroup m_ClientComponentGroup;
 		private ComponentSystemGroup        m_ClientPresentationGroup;
@@ -165,50 +123,8 @@ namespace StormiumTeam.GameBase
 			module = new TModule();
 			module.Enable(this);
 		}
-
-		public Entity GetFirstSelfGamePlayer()
-		{
-			if (m_LocalPlayerGroup.CalculateEntityCount() > 0)
-				return m_LocalPlayerGroup.GetSingletonEntity();
-
-			return default;
-		}
-
-		public CameraState GetCurrentCameraState(Entity gamePlayer)
-		{
-			if (gamePlayer == default)
-				return default;
-
-			var comps = EntityManager.GetChunk(gamePlayer).Archetype.GetComponentTypes();
-			if (!comps.Contains(ComponentType.ReadWrite<ServerCameraState>()))
-				return default;
-
-			var serverCamera = EntityManager.GetComponentData<ServerCameraState>(gamePlayer);
-			if (serverCamera.Mode == CameraMode.Forced)
-				return serverCamera.Data;
-
-			if (!comps.Contains(ComponentType.ReadWrite<LocalCameraState>()))
-				return serverCamera.Data;
-
-			var localCamera = EntityManager.GetComponentData<LocalCameraState>(gamePlayer);
-			if (localCamera.Mode == CameraMode.Forced)
-				return localCamera.Data;
-
-			return serverCamera.Data;
-		}
-
-		public World GetActiveClientWorld()
-		{
-#if UNITY_SERVER
-			throw new Exeception("GetActiveClientWorld() shouldn't be called on server.");
-#else
-			foreach (var world in World.AllWorlds)
-				if (world.GetExistingSystem<ClientPresentationSystemGroup>()?.Enabled == true)
-					return world;
-
-			return null;
-#endif
-		}
+		
+		EntityQuery IGameBaseSystem.GetPlayerGroup() => m_PlayerGroup;
 	}
 
 	[Flags]

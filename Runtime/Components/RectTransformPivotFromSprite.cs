@@ -8,8 +8,8 @@ namespace StormiumTeam.GameBase
 	[ExecuteAlways]
 	public class RectTransformPivotFromSprite : MonoBehaviour
 	{
-		private RectTransform m_RectTransform;
 		private Image         m_Image;
+		private RectTransform m_RectTransform;
 
 		private void OnEnable()
 		{

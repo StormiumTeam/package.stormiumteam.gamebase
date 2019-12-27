@@ -28,6 +28,14 @@ namespace StormiumTeam.GameBase
 		public RigidTransform Offset;
 	}
 
+	/// <summary>
+	/// Useful for a CameraState that need to modify another camera than the default one.
+	/// </summary>
+	public struct CameraStateCameraTarget : IComponentData
+	{
+		public Entity Value;
+	}
+
 	public struct LocalCameraState : IComponentData
 	{
 		public CameraState Data;

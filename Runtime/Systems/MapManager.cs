@@ -38,7 +38,7 @@ namespace StormiumTeam.GameBase.Systems
 			return m_LoadOperations;
 		}
 
-		public JMapFormat GetMapFormat(string id)
+		public JMapFormat GetMapFormat(string id)	
 		{
 			return m_MapCatalog[id];
 		}

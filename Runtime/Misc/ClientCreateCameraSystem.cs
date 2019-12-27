@@ -69,9 +69,13 @@ namespace StormiumTeam.GameBase.Misc
 				EntityManager.SetOrAddComponentData(e, new Rotation());
 				EntityManager.SetOrAddComponentData(e, new LocalToWorld());
 				EntityManager.SetOrAddComponentData(e, new CopyTransformToGameObject());
+				EntityManager.AddComponent(e, typeof(DefaultCamera));
 			}
 		}
 	}
+	
+	public struct DefaultCamera : IComponentData
+	{}
 
 	[UpdateBefore(typeof(TickClientPresentationSystem))]
 	[UpdateInWorld(UpdateInWorld.TargetWorld.Default)]
@@ -80,6 +84,8 @@ namespace StormiumTeam.GameBase.Misc
 	{
 		private Camera      m_Camera;
 		private EntityQuery m_GameCameraQuery;
+
+		public Camera Current => m_Camera;
 
 		protected override void OnCreate()
 		{
