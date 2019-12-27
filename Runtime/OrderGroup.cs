@@ -99,6 +99,12 @@ namespace StormiumTeam.GameBase
 			public class UpdateCamera : ComponentSystemGroup
 			{
 			}
+
+			[UpdateInGroup(typeof(PresentationSystemGroup))]
+			[UpdateAfter(typeof(UpdateCamera))]
+			public class InterfaceRendering : ComponentSystemGroup
+			{
+			}
 		}
 	}
 }
