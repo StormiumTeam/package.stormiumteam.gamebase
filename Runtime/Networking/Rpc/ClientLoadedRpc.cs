@@ -49,9 +49,11 @@ namespace StormiumTeam.GameBase
 	}
 
 	[UpdateInGroup(typeof(OrderGroup.Simulation.SpawnEntities))]
+	[UpdateInWorld(UpdateInWorld.TargetWorld.Server)]
 	public class CreateGamePlayerSystem : JobComponentSystem
 	{
 		private BeginSimulationEntityCommandBufferSystem m_Barrier;
+		private EndSimulationEntityCommandBufferSystem m_EndBarrier;
 		private EntityQuery                              m_PreviousEventQuery;
 
 		protected override void OnCreate()
@@ -59,6 +61,7 @@ namespace StormiumTeam.GameBase
 			base.OnCreate();
 
 			m_Barrier            = World.GetOrCreateSystem<BeginSimulationEntityCommandBufferSystem>();
+			m_EndBarrier = World.GetOrCreateSystem<EndSimulationEntityCommandBufferSystem>();
 			m_PreviousEventQuery = GetEntityQuery(typeof(PlayerConnectedEvent));
 
 			GetEntityQuery(typeof(ClientLoadedRpc));
@@ -66,8 +69,10 @@ namespace StormiumTeam.GameBase
 
 		protected override JobHandle OnUpdate(JobHandle inputDeps)
 		{
+			Debug.Log(m_PreviousEventQuery.CalculateEntityCount());
+			
 			var peLength = m_PreviousEventQuery.CalculateEntityCount();
-			if (peLength > 0) EntityManager.DestroyEntity(m_PreviousEventQuery);
+			if (peLength > 0) m_EndBarrier.CreateCommandBuffer().DestroyEntity(m_PreviousEventQuery);
 
 			inputDeps = new CreateJob
 			{

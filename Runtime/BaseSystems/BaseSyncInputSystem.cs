@@ -1,13 +1,21 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace StormiumTeam.GameBase.Systems
 {
+	public struct InputEvent
+	{
+		public InputAction.CallbackContext Context;
+
+		public InputActionPhase Phase;
+	}
+
 	public abstract class BaseSyncInputSystem : GameBaseSystem
 	{
-		protected List<InputAction.CallbackContext> InputEvents = new List<InputAction.CallbackContext>();
-		public    InputActionAsset                  Asset { get; private set; }
+		protected List<InputEvent> InputEvents = new List<InputEvent>();
+		public    InputActionAsset Asset { get; private set; }
 
 		protected bool Refresh(InputActionAsset asset)
 		{
@@ -41,15 +49,18 @@ namespace StormiumTeam.GameBase.Systems
 
 		protected virtual void InputActionEvent(InputAction.CallbackContext ctx)
 		{
-			InputEvents.Add(ctx);
+			InputEvents.Add(new InputEvent
+			{
+				Context = ctx,
+				Phase   = ctx.phase
+			});
 		}
 
-		protected void AddActionEvents(InputAction action, Action<InputAction.CallbackContext> customCallback = null)
+		protected void AddActionEvents(InputAction action)
 		{
-			var c = customCallback ?? InputActionEvent;
-			action.started   += c;
-			action.performed += c;
-			action.canceled  += c;
+			action.started   += InputActionEvent;
+			action.performed += InputActionEvent;
+			action.canceled  += InputActionEvent;
 		}
 	}
 

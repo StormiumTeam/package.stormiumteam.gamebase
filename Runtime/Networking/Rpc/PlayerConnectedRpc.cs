@@ -73,11 +73,13 @@ namespace StormiumTeam.GameBase
 	public struct GamePlayerLocalTag : IComponentData
 	{
 	}
-
-	[UpdateAfter(typeof(SnapshotReceiveSystem))]
+	
+	[UpdateInGroup(typeof(OrderGroup.Simulation.SpawnEntities))]
+	[UpdateInWorld(UpdateInWorld.TargetWorld.Client)]
 	public class PlayerConnectedEventCreationSystem : JobComponentSystem
 	{
 		private BeginSimulationEntityCommandBufferSystem m_Barrier;
+		private EndSimulationEntityCommandBufferSystem m_EndBarrier;
 		private EntityQuery                              m_DelayedQuery;
 		private EntityQuery                              m_PreviousEventQuery;
 
@@ -86,6 +88,7 @@ namespace StormiumTeam.GameBase
 			base.OnCreate();
 
 			m_Barrier            = World.GetOrCreateSystem<BeginSimulationEntityCommandBufferSystem>();
+			m_EndBarrier = World.GetOrCreateSystem<EndSimulationEntityCommandBufferSystem>();
 			m_DelayedQuery       = GetEntityQuery(typeof(DelayedPlayerConnection));
 			m_PreviousEventQuery = GetEntityQuery(typeof(PlayerConnectedEvent));
 		}
@@ -93,7 +96,7 @@ namespace StormiumTeam.GameBase
 		protected override JobHandle OnUpdate(JobHandle inputDeps)
 		{
 			var peLength = m_PreviousEventQuery.CalculateEntityCount();
-			if (peLength > 0) EntityManager.DestroyEntity(m_PreviousEventQuery);
+			if (peLength > 0) m_EndBarrier.CreateCommandBuffer().DestroyEntity(m_PreviousEventQuery);
 
 			var playerIds = new NativeArray<NetworkIdComponent>(1, Allocator.TempJob);
 			inputDeps = new FindFirstNetworkIdJob
@@ -121,10 +124,9 @@ namespace StormiumTeam.GameBase
 			}.Schedule(inputDeps);
 
 			m_Barrier.AddJobHandleForProducer(inputDeps);
+			m_EndBarrier.AddJobHandleForProducer(inputDeps);
 			m_DelayedQuery.CompleteDependency();
-
-			//inputDeps.Complete();
-
+			
 			return inputDeps;
 		}
 
