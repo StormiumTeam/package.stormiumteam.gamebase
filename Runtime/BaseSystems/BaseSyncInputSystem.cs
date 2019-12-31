@@ -5,17 +5,25 @@ using UnityEngine.InputSystem;
 
 namespace StormiumTeam.GameBase.Systems
 {
-	public struct InputEvent
+	public struct InputEvent<TData>
+		where TData : struct, IInitializeInputEventData
 	{
 		public InputAction.CallbackContext Context;
+		public TData Data;
 
 		public InputActionPhase Phase;
 	}
 
-	public abstract class BaseSyncInputSystem : GameBaseSystem
+	public interface IInitializeInputEventData
 	{
-		protected List<InputEvent> InputEvents = new List<InputEvent>();
-		public    InputActionAsset Asset { get; private set; }
+		void Initialize(InputAction.CallbackContext ctx);
+	}
+
+	public abstract class BaseSyncInputSystem<TData> : GameBaseSystem
+		where TData : struct, IInitializeInputEventData
+	{
+		protected List<InputEvent<TData>> InputEvents = new List<InputEvent<TData>>(4);
+		public    InputActionAsset        Asset { get; private set; }
 
 		protected bool Refresh(InputActionAsset asset)
 		{
@@ -49,10 +57,14 @@ namespace StormiumTeam.GameBase.Systems
 
 		protected virtual void InputActionEvent(InputAction.CallbackContext ctx)
 		{
-			InputEvents.Add(new InputEvent
+			var data = default(TData);
+			data.Initialize(ctx);
+
+			InputEvents.Add(new InputEvent<TData>
 			{
 				Context = ctx,
-				Phase   = ctx.phase
+				Phase   = ctx.phase,
+				Data    = data
 			});
 		}
 

@@ -170,6 +170,7 @@ namespace StormiumTeam.GameBase
 		}
 	}
 
+	[RequireComponent(typeof(GameObjectEntity))] // todo: use the new Converting system
 	public abstract class RuntimeAssetPresentation<TMonoPresentation> : MonoBehaviour
 		where TMonoPresentation : RuntimeAssetPresentation<TMonoPresentation>
 	{
@@ -434,6 +435,8 @@ namespace StormiumTeam.GameBase
 		public TMonoPresentation Presentation            { get; protected set; }
 		public bool              HasIncomingPresentation => m_IncomingPresentation || Presentation != null;
 
+		public virtual bool PresentationWorldTransformStayOnSpawn => true;
+		
 		public override object GetPresentationBoxed()
 		{
 			return Presentation;
@@ -457,7 +460,7 @@ namespace StormiumTeam.GameBase
 				World.Active = DstEntityManager.World;
 
 			var opResult = result;
-			opResult.transform.SetParent(transform, true);
+			opResult.transform.SetParent(transform, PresentationWorldTransformStayOnSpawn);
 			opResult.SetActive(true);
 
 			m_IncomingPresentation = false;

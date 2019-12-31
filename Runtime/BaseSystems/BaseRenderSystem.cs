@@ -1,5 +1,7 @@
+using System.Linq;
 using Unity.Entities;
 using Unity.Jobs;
+using Unity.NetCode;
 using UnityEngine;
 
 namespace StormiumTeam.GameBase.Systems
@@ -23,32 +25,58 @@ namespace StormiumTeam.GameBase.Systems
 	}
 
 	public class OrderInterfaceSystemGroup : OrderSystemGroup
-	{}
-	
+	{
+	}
+
 	public abstract class OrderSystemGroup : ComponentSystemGroup
 	{
 		protected override void OnUpdate()
 		{
+			var order = 0;
 			foreach (var componentSystemBase in Systems)
 			{
 				var system = (OrderingSystem) componentSystemBase;
-				system.IncreaseOrder();
+				system.SetOrder(order++);
 			}
 		}
 	}
-	
+
 	public abstract class OrderingSystem : ComponentSystem
 	{
-		public int Order { get; private set; }
+		private bool m_Initialized;
+		private int  m_Order;
+
+		public int Order
+		{
+			get
+			{
+				if (!m_Initialized)
+				{
+					m_Initialized = true;
+					foreach (var system in World.Systems)
+					{
+						if (system is OrderSystemGroup @group
+						    && group.Systems.Contains(this))
+						{
+							system.Update();
+						}
+					}
+				}
+
+				return m_Order;
+			}
+		}
 
 		public void Reset()
 		{
-			Order = 0;
+			m_Initialized = true;
+			m_Order       = 0;
 		}
-		
-		public void IncreaseOrder()
+
+		public void SetOrder(int order)
 		{
-			Order = Order += 1;
+			m_Initialized = true;
+			m_Order       = order;
 		}
 
 		protected override void OnUpdate()

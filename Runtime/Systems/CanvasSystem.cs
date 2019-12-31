@@ -91,6 +91,8 @@ namespace Systems
 			Current.gameObject.SetActive(state);
 		}
 
+		private string hack0;
+		private int hack1;
 		public Canvas CreateCanvas(out int listIndex, string name = "UICustomCanvas", bool defaultInitialization = false)
 		{
 			var gameObject = new GameObject($"(World: {World.Name}) {name}#{Canvas.Count}",
@@ -98,11 +100,13 @@ namespace Systems
 				typeof(CanvasScaler),
 				typeof(GraphicRaycaster));
 			var canvas = gameObject.GetComponent<Canvas>();
+			hack1 = canvas.sortingOrder;
+			hack0 = canvas.sortingLayerName;
 
 			listIndex = Canvas.Count;
 			if (!defaultInitialization)
 				return canvas;
-
+			
 			canvas.renderMode = RenderMode.ScreenSpaceOverlay;
 
 			var canvasScaler = gameObject.GetComponent<CanvasScaler>();

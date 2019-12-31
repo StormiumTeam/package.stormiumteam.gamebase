@@ -5,6 +5,7 @@ using UnityEngine.InputSystem;
 namespace Systems
 {
 	[UpdateInWorld(UpdateInWorld.TargetWorld.Default)]
+	[UpdateInGroup(typeof(SimulationSystemGroup))]
 	public class UpdateInputSystem : ComponentSystem
 	{
 		protected override void OnCreate()
