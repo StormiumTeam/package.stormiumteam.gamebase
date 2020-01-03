@@ -32,7 +32,25 @@ namespace StormiumTeam.GameBase
 		public override ComponentType ExcludeComponent => typeof(ExcludeRelativeFromSnapshot);
 	}
 
-    /// <summary>
+	// An entity may have multiple description, this component help to decide which is the main description
+	public struct EntityDescription : IComponentData
+	{
+		public ComponentType Value { get; private set; }
+
+		public bool Is<TDescription>()
+			where TDescription : IEntityDescription
+		{
+			return Value == ComponentType.ReadWrite<TDescription>();
+		}
+
+		public static EntityDescription New<TDescription>()
+			where TDescription : IEntityDescription
+		{
+			return new EntityDescription {Value = ComponentType.ReadWrite<TDescription>()};
+		}
+	}
+
+	/// <summary>
     ///     All entities that can be hit/damaged (eg: character hitshape entities (not the character itself!))
     /// </summary>
     public struct HitShapeDescription : IEntityDescription

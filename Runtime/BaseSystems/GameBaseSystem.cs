@@ -79,7 +79,7 @@ namespace StormiumTeam.GameBase
 		private EntityQuery                 m_PlayerGroup;
 		private ServerSimulationSystemGroup m_ServerComponentGroup;
 
-		public UTick ServerTick => GetTick(false);
+		public UTick ServerTick => GetTick(true);
 
 		public bool IsServer             => m_ServerComponentGroup != null;
 		public bool IsPresentationActive => m_ClientPresentationGroup != null && m_ClientPresentationGroup.Enabled;

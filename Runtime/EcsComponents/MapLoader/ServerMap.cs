@@ -3,6 +3,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.NetCode;
 using Unity.Networking.Transport;
+using UnityEngine;
 using Utilities;
 
 namespace StormiumTeam.GameBase.Data

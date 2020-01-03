@@ -1,3 +1,4 @@
+using package.stormiumteam.shared.ecs;
 using StormiumTeam.GameBase;
 using Unity.Burst;
 using Unity.Collections;
@@ -40,9 +41,10 @@ namespace Systems
 
 			inputDeps = new UpdateBufferJob
 			{
-				OwnerChildFromEntity = GetBufferFromEntity<OwnerChild>(),
-				EntityCommandBuffer  = m_EndBarrier.CreateCommandBuffer(),
-				OwnerChildType       = typeof(OwnerChild)
+				EntityDescriptionFromEntity = GetComponentDataFromEntity<EntityDescription>(true),
+				OwnerChildFromEntity        = GetBufferFromEntity<OwnerChild>(),
+				EntityCommandBuffer         = m_EndBarrier.CreateCommandBuffer(),
+				OwnerChildType              = typeof(OwnerChild)
 			}.ScheduleSingle(m_DataQuery, inputDeps);
 
 			m_EndBarrier.AddJobHandleForProducer(inputDeps);
@@ -71,6 +73,8 @@ namespace Systems
 		[BurstCompile]
 		private struct UpdateBufferJob : IJobForEachWithEntity<Owner>
 		{
+			[ReadOnly] public ComponentDataFromEntity<EntityDescription> EntityDescriptionFromEntity;
+
 			public BufferFromEntity<OwnerChild> OwnerChildFromEntity;
 			public EntityCommandBuffer          EntityCommandBuffer;
 			public ComponentType                OwnerChildType;
@@ -93,7 +97,11 @@ namespace Systems
 					return;
 				}
 
-				OwnerChildFromEntity[owner.Target].Add(new OwnerChild {TypeId = 0, Child = entity});
+				var typeId = EntityDescriptionFromEntity.TryGet(entity, out var desc)
+					? desc.Value.TypeIndex
+					: 0;
+
+				OwnerChildFromEntity[owner.Target].Add(new OwnerChild {TypeId = typeId, Child = entity});
 			}
 		}
 	}
