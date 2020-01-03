@@ -143,12 +143,18 @@ namespace StormiumTeam.GameBase.Systems
 
 			EntityManager.CreateEntity(typeof(AsyncMapOperation), typeof(OperationMapLoadTag));
 			EntityManager.SetComponentData(mapEntity, new ExecutingMapData {Key = new NativeString512(strKey)});
+
+			m_LazyFrame = 1;
 		}
 
+		private int m_LazyFrame;
 		private void SynchronizeMapLoad()
 		{
 			if (m_LoadOperations.Count <= 0)
+			{
+				m_LazyFrame = 1;
 				return;
+			}
 
 			var loaded = 0;
 			foreach (var op in m_LoadOperations)
@@ -161,6 +167,9 @@ namespace StormiumTeam.GameBase.Systems
 			if (loaded < m_LoadOperations.Count)
 				return;
 
+			if (m_LazyFrame-- > 0)
+				return;
+			
 			var entity      = m_ExecutingQuery.GetSingletonEntity();
 			var sceneBuffer = EntityManager.GetBuffer<MapScene>(entity);
 			Debug.Assert(sceneBuffer.Length == 0, "sceneBuffer.Length == 0");

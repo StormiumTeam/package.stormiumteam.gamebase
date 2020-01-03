@@ -1,6 +1,7 @@
 using package.stormiumteam.shared.ecs;
 using StormiumTeam.GameBase.Components;
 using Unity.Entities;
+using Unity.Mathematics;
 using Unity.NetCode;
 using Unity.Transforms;
 using UnityEngine;
@@ -68,9 +69,21 @@ namespace StormiumTeam.GameBase.Misc
 				EntityManager.SetOrAddComponentData(e, new Translation());
 				EntityManager.SetOrAddComponentData(e, new Rotation());
 				EntityManager.SetOrAddComponentData(e, new LocalToWorld());
-				EntityManager.SetOrAddComponentData(e, new CopyTransformToGameObject());
 				EntityManager.AddComponent(e, typeof(DefaultCamera));
 			}
+		}
+	}
+
+	[UpdateInGroup(typeof(OrderGroup.Presentation.CopyToGameObject))]
+	public class CopyCameraTranslationToTransform : ComponentSystem
+	{
+		protected override void OnUpdate()
+		{
+			Entities.ForEach((GameCamera camera, ref Translation translation) =>
+			{
+				camera.transform.position = translation.Value;
+				Debug.DrawRay(translation.Value + new float3(0, 0, 10), Vector3.up * 4, Color.red);
+			});
 		}
 	}
 	

@@ -91,9 +91,15 @@ namespace StormiumTeam.GameBase
 			{
 			}
 		}
-		
+
 		public class Presentation
 		{
+			[UpdateInGroup(typeof(PresentationSystemGroup))]
+			[UpdateAfter(typeof(TransformSystemGroup))]
+			public class CharacterAnimation : ComponentSystemGroup
+			{
+			}
+
 			[UpdateInGroup(typeof(PresentationSystemGroup))]
 			[UpdateAfter(typeof(TransformSystemGroup))]
 			public class UpdateCamera : ComponentSystemGroup
@@ -102,6 +108,12 @@ namespace StormiumTeam.GameBase
 
 			[UpdateInGroup(typeof(PresentationSystemGroup))]
 			[UpdateAfter(typeof(UpdateCamera))]
+			public class CopyToGameObject : ComponentSystemGroup
+			{
+			}
+
+			[UpdateInGroup(typeof(PresentationSystemGroup))]
+			[UpdateAfter(typeof(CopyToGameObject))]
 			public class InterfaceRendering : ComponentSystemGroup
 			{
 			}
