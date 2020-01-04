@@ -79,9 +79,7 @@ namespace StormiumTeam.GameBase
 
 		public class Synchronize : ComponentUpdateSystemInterpolated<Velocity, SnapshotData>
 		{
-			public Synchronize() : base(true)
-			{
-			}
+			protected override bool IsPredicted => true;
 		}
 	}
 }

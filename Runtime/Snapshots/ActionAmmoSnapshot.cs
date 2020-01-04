@@ -54,9 +54,7 @@ namespace StormiumTeam.GameBase.Snapshots
 
 		public class Update : ComponentUpdateSystemInterpolated<ActionAmmo, ActionAmmoSnapshot>
 		{
-			public Update() : base(true)
-			{
-			}
+			protected override bool IsPredicted => true;
 		}
 
 

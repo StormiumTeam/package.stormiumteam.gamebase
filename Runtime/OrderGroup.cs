@@ -95,13 +95,20 @@ namespace StormiumTeam.GameBase
 		public class Presentation
 		{
 			[UpdateInGroup(typeof(PresentationSystemGroup))]
+			[UpdateAfter(typeof(RenderInterpolationSystem))]
 			[UpdateAfter(typeof(TransformSystemGroup))]
+			public class AfterSimulation : ComponentSystemGroup
+			{
+			}
+			
+			[UpdateInGroup(typeof(PresentationSystemGroup))]
+			[UpdateAfter(typeof(AfterSimulation))]
 			public class CharacterAnimation : ComponentSystemGroup
 			{
 			}
 
 			[UpdateInGroup(typeof(PresentationSystemGroup))]
-			[UpdateAfter(typeof(TransformSystemGroup))]
+			[UpdateAfter(typeof(CharacterAnimation))]
 			public class UpdateCamera : ComponentSystemGroup
 			{
 			}

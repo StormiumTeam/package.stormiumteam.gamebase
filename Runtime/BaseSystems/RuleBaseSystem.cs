@@ -29,6 +29,9 @@ namespace StormiumTeam.GameBase.BaseSystems
 			var memberInfo = ((MemberExpression) expression.Body).Member;
 			if (memberInfo is FieldInfo fieldInfo)
 			{
+				if (string.IsNullOrEmpty(name))
+					name = fieldInfo.Name;
+				
 				var property = new Property<TValue> {Name = name, WriteOffset = UnsafeUtility.GetFieldOffset(fieldInfo), Base = this};
 				Properties.Add(property);
 
