@@ -11,6 +11,7 @@ namespace StormiumTeam.GameBase
 	public interface IGameBaseSystem
 	{
 		EntityQuery GetPlayerGroup();
+		EntityQuery GetLocalPlayerGroup();
 	}
 	
 	public abstract class GameBaseSystem : BaseComponentSystem, IGameBaseSystem
@@ -68,6 +69,7 @@ namespace StormiumTeam.GameBase
 		}
 
 		EntityQuery IGameBaseSystem.GetPlayerGroup() => m_PlayerGroup;
+		EntityQuery IGameBaseSystem.GetLocalPlayerGroup() => m_LocalPlayerGroup;
 	}
 
 	public abstract class JobGameBaseSystem : JobComponentSystem, IGameBaseSystem
@@ -125,6 +127,7 @@ namespace StormiumTeam.GameBase
 		}
 		
 		EntityQuery IGameBaseSystem.GetPlayerGroup() => m_PlayerGroup;
+		EntityQuery IGameBaseSystem.GetLocalPlayerGroup() => m_LocalPlayerGroup;
 	}
 
 	[Flags]

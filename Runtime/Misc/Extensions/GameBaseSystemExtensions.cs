@@ -10,7 +10,7 @@ namespace Misc.Extensions
 		public static Entity GetFirstSelfGamePlayer<TSystem>(this TSystem system)
 			where TSystem : ComponentSystemBase, IGameBaseSystem
 		{
-			var query = system.GetPlayerGroup();
+			var query = system.GetLocalPlayerGroup();
 			if (query.CalculateEntityCount() > 0)
 				return query.GetSingletonEntity();
 
