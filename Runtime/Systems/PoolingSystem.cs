@@ -11,7 +11,7 @@ namespace StormiumTeam.GameBase.Systems
 		where TPresentation : RuntimeAssetPresentation<TPresentation>
 	{
 		private AssetPool<GameObject>         m_BackendPool;
-		private GetAllBackendModule<TBackend> m_Module;
+		protected GetAllBackendModule<TBackend> Module;
 
 		private AsyncAssetPool<GameObject> m_PresentationPool;
 
@@ -52,7 +52,7 @@ namespace StormiumTeam.GameBase.Systems
 		{
 			base.OnCreate();
 
-			GetModule(out m_Module);
+			GetModule(out Module);
 			CreatePoolBackend(out m_BackendPool);
 			CreatePoolPresentation(out m_PresentationPool);
 
@@ -64,23 +64,23 @@ namespace StormiumTeam.GameBase.Systems
 			if (m_Query.IsEmptyIgnoreFilter)
 				return;
 
-			m_Module.TargetEntities = m_Query.ToEntityArray(Allocator.TempJob);
-			m_Module.Update(default).Complete();
-			m_Module.TargetEntities.Dispose();
+			Module.TargetEntities = m_Query.ToEntityArray(Allocator.TempJob);
+			Module.Update(default).Complete();
+			Module.TargetEntities.Dispose();
 
-			foreach (var backendWithoutModel in m_Module.BackendWithoutModel) ReturnBackend(EntityManager.GetComponentObject<TBackend>(backendWithoutModel));
+			foreach (var backendWithoutModel in Module.BackendWithoutModel) ReturnBackend(EntityManager.GetComponentObject<TBackend>(backendWithoutModel));
 
-			foreach (var entityWithoutBackend in m_Module.MissingTargets) SpawnBackend(entityWithoutBackend);
+			foreach (var entityWithoutBackend in Module.MissingTargets) SpawnBackend(entityWithoutBackend);
 		}
 
 		protected override void OnStopRunning()
 		{
 			base.OnStopRunning();
 
-			m_Module.TargetEntities = m_Query.ToEntityArray(Allocator.TempJob);
-			m_Module.Update(default).Complete();
-			m_Module.TargetEntities.Dispose();
-			foreach (var entityWithBackend in m_Module.AttachedBackendEntities)
+			Module.TargetEntities = m_Query.ToEntityArray(Allocator.TempJob);
+			Module.Update(default).Complete();
+			Module.TargetEntities.Dispose();
+			foreach (var entityWithBackend in Module.AttachedBackendEntities)
 			{
 				ReturnBackend(EntityManager.GetComponentObject<TBackend>(entityWithBackend));
 			}

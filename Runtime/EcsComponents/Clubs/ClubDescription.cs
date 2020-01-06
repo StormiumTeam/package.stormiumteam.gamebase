@@ -16,6 +16,7 @@ namespace StormiumTeam.GameBase.Components
 {
 	public struct ClubDescription : IEntityDescription
 	{
+		public class RelativeSync : RelativeSynchronize<ClubDescription> {}
 	}
 
 	public struct ClubInformation : IComponentData
