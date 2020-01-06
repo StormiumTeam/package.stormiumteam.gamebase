@@ -73,6 +73,19 @@ namespace StormiumTeam.GameBase.Systems
 			foreach (var entityWithoutBackend in m_Module.MissingTargets) SpawnBackend(entityWithoutBackend);
 		}
 
+		protected override void OnStopRunning()
+		{
+			base.OnStopRunning();
+
+			m_Module.TargetEntities = m_Query.ToEntityArray(Allocator.TempJob);
+			m_Module.Update(default).Complete();
+			m_Module.TargetEntities.Dispose();
+			foreach (var entityWithBackend in m_Module.AttachedBackendEntities)
+			{
+				ReturnBackend(EntityManager.GetComponentObject<TBackend>(entityWithBackend));
+			}
+		}
+
 		protected virtual void ReturnBackend(TBackend backend)
 		{
 			backend.Return(true, true);

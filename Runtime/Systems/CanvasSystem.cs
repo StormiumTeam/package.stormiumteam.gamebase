@@ -93,7 +93,7 @@ namespace Systems
 
 		private string hack0;
 		private int hack1;
-		public Canvas CreateCanvas(out int listIndex, string name = "UICustomCanvas", bool defaultInitialization = false)
+		public Canvas CreateCanvas(out int listIndex, string name = "UICustomCanvas", bool defaultInitialization = false, bool defaultAddRaycaster = true)
 		{
 			var gameObject = new GameObject($"(World: {World.Name}) {name}#{Canvas.Count}",
 				typeof(Canvas),
@@ -116,9 +116,12 @@ namespace Systems
 			canvasScaler.matchWidthOrHeight     = 0;
 			canvasScaler.referencePixelsPerUnit = 100;
 
-			var graphicRaycaster = gameObject.GetComponent<GraphicRaycaster>();
-			graphicRaycaster.ignoreReversedGraphics = true;
-			graphicRaycaster.blockingObjects        = GraphicRaycaster.BlockingObjects.None;
+			if (defaultAddRaycaster)
+			{
+				var graphicRaycaster = gameObject.GetComponent<GraphicRaycaster>();
+				graphicRaycaster.ignoreReversedGraphics = true;
+				graphicRaycaster.blockingObjects        = GraphicRaycaster.BlockingObjects.None;
+			}
 
 			return canvas;
 		}
