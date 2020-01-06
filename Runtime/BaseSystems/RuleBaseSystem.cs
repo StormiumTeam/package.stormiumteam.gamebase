@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq.Expressions;
 using System.Reflection;
 using Unity.Collections.LowLevel.Unsafe;
@@ -11,17 +12,28 @@ namespace StormiumTeam.GameBase.BaseSystems
 {
 	public abstract class RulePropertiesBase : IDisposable
 	{
+		public int                 Size;
+		public ComponentSystemBase System;
+		
+		public event PropertyChangedEventHandler OnPropertyChanged; 
+		
 		public virtual void Dispose()
 		{
+			OnPropertyChanged = null;
 		}
+
+		public abstract object GetDataObject();
 	}
 
 	public class RuleProperties<TData> : RulePropertiesBase
 		where TData : struct, IComponentData
 	{
 		public List<Property>      Properties = new List<Property>();
-		public int                 Size;
-		public ComponentSystemBase System;
+
+		public override object GetDataObject()
+		{
+			return System.GetSingleton<TData>();
+		}
 
 		public Property<TValue> Add<TValue>(string name, Expression<Func<TData, TValue>> expression)
 			where TValue : struct
