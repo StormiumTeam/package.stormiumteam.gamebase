@@ -1,8 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
 using StormiumTeam.GameBase.BaseSystems;
+using UnityEngine;
 
 namespace Misc
 {
@@ -14,6 +19,13 @@ namespace Misc
 		public int TargetVersion;
 		public int FileVersion;
 
+		public BaseRuleConfiguration(RulePropertiesBase rule, RuleBaseSystem system, int version) : this(rule,
+			version,
+			$"{Application.streamingAssetsPath}/rules/{(string.IsNullOrEmpty(system.Name) ? system.GetType().Name : system.Name)}.json")
+		{
+
+		}
+
 		public BaseRuleConfiguration(RulePropertiesBase rule, int targetVersion, string filePath)
 		{
 			m_Rule        = rule;
@@ -22,20 +34,33 @@ namespace Misc
 			rule.OnPropertyChanged += OnPropertyChanged;
 
 			m_FileInfo = new FileInfo(filePath);
-			var exists   = m_FileInfo.Exists;
+			var exists = m_FileInfo.Exists;
 			m_FileInfo.Directory.Create();
 
 			if (!exists)
 			{
+				Debug.Log("Save");
 				m_FileInfo.Create().Dispose();
 				Save(); // copy current data to new file...
 			}
 			else
 			{
-				var str          = File.ReadAllText(filePath);
-				var deserialized = JsonConvert.DeserializeObject<Data>(str);
-				
-				FileVersion = deserialized.Version;
+				Debug.Log("Load");
+				var str = File.ReadAllText(filePath);
+				var deserialized = JsonConvert.DeserializeObject<Data>(str, new JsonSerializerSettings
+				{
+					ContractResolver = new WritablePropertiesOnlyResolver()
+				});
+
+				if (deserialized != null)
+				{
+					FileVersion = deserialized.Version;
+					rule.SetDataObject(deserialized.Value);
+				}
+				else
+				{
+					Save();
+				}
 			}
 		}
 
@@ -46,12 +71,16 @@ namespace Misc
 
 		public void Save()
 		{
+			Debug.Log("Saved!");
 			var data = m_Rule.GetDataObject();
 			File.WriteAllText(m_FileInfo.FullName, JsonConvert.SerializeObject(new Data
 			{
 				Version = TargetVersion,
 				Value   = data
-			}, Formatting.Indented));
+			}, Formatting.Indented, new JsonSerializerSettings
+			{
+				ContractResolver = new WritablePropertiesOnlyResolver()
+			}));
 		}
 
 		public void SaveAndDispose()
@@ -59,7 +88,7 @@ namespace Misc
 			Save();
 			Dispose();
 		}
-		
+
 		public void Dispose()
 		{
 			m_Rule.OnPropertyChanged -= OnPropertyChanged;
@@ -69,6 +98,15 @@ namespace Misc
 		{
 			public int    Version;
 			public object Value;
+		}
+		
+		class WritablePropertiesOnlyResolver : DefaultContractResolver
+		{
+			protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)
+			{
+				IList<JsonProperty> props = base.CreateProperties(type, memberSerialization);
+				return props.Where(p => p.Writable).ToList();
+			}
 		}
 	}
 }

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq.Expressions;
 using System.Reflection;
+using Misc;
+using Newtonsoft.Json.Linq;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
@@ -22,7 +24,13 @@ namespace StormiumTeam.GameBase.BaseSystems
 			OnPropertyChanged = null;
 		}
 
+		public void InvokePropertyChanged(PropertyChangedEventArgs args)
+		{
+			OnPropertyChanged?.Invoke(this, args);
+		}
+
 		public abstract object GetDataObject();
+		public abstract void SetDataObject(object data);
 	}
 
 	public class RuleProperties<TData> : RulePropertiesBase
@@ -35,6 +43,28 @@ namespace StormiumTeam.GameBase.BaseSystems
 			return System.GetSingleton<TData>();
 		}
 
+		public override void SetDataObject(object data)
+		{
+			if (data is TData cast)
+				System.SetSingleton(cast);
+			else
+			{
+				if (data is JObject jsonObject)
+				{
+					System.SetSingleton(jsonObject.ToObject<TData>());
+					return;
+				}
+				
+				throw new Exception($"Invalid cast! {data.GetType()} -> {typeof(TData)}");
+			}
+		}
+
+		public Property<TValue> Add<TValue>(Expression<Func<TData, TValue>> expression)
+			where TValue : struct
+		{
+			return Add(null, expression);
+		}
+		
 		public Property<TValue> Add<TValue>(string name, Expression<Func<TData, TValue>> expression)
 			where TValue : struct
 		{
@@ -118,6 +148,7 @@ namespace StormiumTeam.GameBase.BaseSystems
 					UnsafeUtility.CopyStructureToPtr(ref value, (void*) (ptr + WriteOffset));
 
 					Base.System.SetSingleton(data);
+					Base.InvokePropertyChanged(new PropertyChangedEventArgs(Name));
 				}
 			}
 
@@ -129,6 +160,7 @@ namespace StormiumTeam.GameBase.BaseSystems
 			public override void SetValue(object v)
 			{
 				Value = (T) v;
+				Base.InvokePropertyChanged(new PropertyChangedEventArgs(Name));
 			}
 		}
 	}
@@ -182,7 +214,7 @@ namespace StormiumTeam.GameBase.BaseSystems
 	{
 		public List<RulePropertiesBase> PropertiesCollection;
 
-		public virtual string Name        => "NoName";
+		public virtual string Name        => GetType().Name;
 		public virtual string Description => "NoDescription";
 
 		protected internal RuleSystemBarrier Barrier { get; internal set; }
@@ -236,5 +268,44 @@ namespace StormiumTeam.GameBase.BaseSystems
 			data = GetSingleton<TData>();
 			return properties;
 		}
+	}
+
+	public abstract class RuleBaseSystem<TData> : RuleBaseSystem
+		where TData : struct, IComponentData
+	{
+		public RuleProperties<TData> Rule;
+		protected BaseRuleConfiguration Configuration;
+
+		public virtual int Version => 1;
+
+		protected override void OnCreate()
+		{
+			base.OnCreate();
+
+			Rule = AddRule<TData>();
+			AddRuleProperties();
+			SetDefaultProperties();
+			Configuration = new BaseRuleConfiguration(Rule, this, Version);
+			if (Configuration.FileVersion != Configuration.TargetVersion)
+			{
+				OnUpgrade(Configuration.FileVersion);
+			}
+		}
+
+		protected override JobHandle OnUpdate(JobHandle inputDeps)
+		{
+			return inputDeps;
+		}
+
+		protected override void OnDestroy()
+		{
+			base.OnDestroy();
+			Configuration.Dispose();
+			Rule.Dispose();
+		}
+
+		protected abstract void AddRuleProperties();
+		protected abstract void SetDefaultProperties();
+		protected virtual void OnUpgrade(int previousVersion) {}
 	}
 }

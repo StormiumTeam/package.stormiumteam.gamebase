@@ -24,13 +24,15 @@ namespace StormiumTeam.GameBase.Systems
 
 		protected TBackend LastBackend { get; set; }
 
+		protected virtual Type[] AdditionalBackendComponents { get; }
+
 		protected abstract EntityQuery GetQuery();
 
 		protected virtual void CreatePoolBackend(out AssetPool<GameObject> pool)
 		{
 			pool = new AssetPool<GameObject>(p =>
 			{
-				var go = new GameObject($"pooled={GetType().Name}");
+				var go = new GameObject($"pooled={GetType().Name}", AdditionalBackendComponents ?? new Type[0]);
 				go.SetActive(false);
 
 				go.AddComponent<TBackend>();

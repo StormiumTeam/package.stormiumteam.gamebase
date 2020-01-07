@@ -4,8 +4,10 @@ using System.Linq;
 using package.stormiumteam.shared;
 using StormiumTeam.Shared;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
+using Unity.Jobs.LowLevel.Unsafe;
 
 namespace StormiumTeam.GameBase
 {
@@ -87,8 +89,8 @@ namespace StormiumTeam.GameBase
 	[AlwaysUpdateSystem]
 	public abstract class BaseProvider<TCreateData> : GameBaseSystem
 		where TCreateData : struct
-	{
-		protected NativeList<TCreateData> CreateEntityDelayed;
+	{	
+		protected NativeQueue<TCreateData> CreateEntityDelayed;
 
 		private bool m_CanHaveDelayedEntities;
 
@@ -112,7 +114,10 @@ namespace StormiumTeam.GameBase
 		{
 			base.OnCreate();
 
-			if (m_CanHaveDelayedEntities = typeof(TCreateData) != typeof(BaseProvider.NoData)) CreateEntityDelayed = new NativeList<TCreateData>(32, Allocator.Persistent);
+			if (m_CanHaveDelayedEntities = typeof(TCreateData) != typeof(BaseProvider.NoData))
+			{
+				CreateEntityDelayed = new NativeQueue<TCreateData>(Allocator.Persistent);
+			}
 
 			GetManager();
 		}
@@ -131,7 +136,7 @@ namespace StormiumTeam.GameBase
 				CreateEntityDelayed.Dispose();
 		}
 
-		public NativeList<TCreateData> GetEntityDelayedList()
+		public NativeQueue<TCreateData> GetEntityDelayedStream()
 		{
 			if (!m_CanHaveDelayedEntities)
 				throw new NotImplementedException();
@@ -144,22 +149,28 @@ namespace StormiumTeam.GameBase
 			m_ProducerHandle = JobHandle.CombineDependencies(m_ProducerHandle, inputDeps);
 		}
 
-		public void FlushDelayedEntities()
+		public unsafe void FlushDelayedEntities()
 		{
 			m_ProducerHandle.Complete();
 
-			if (CreateEntityDelayed.Length == 0)
+			var itemCount = CreateEntityDelayed.Count;
+			if (itemCount == 0)
 				return;
 
-			var output  = new NativeList<Entity>(CreateEntityDelayed.Length, Allocator.Temp);
-			var indices = new NativeList<int>(CreateEntityDelayed.Length, Allocator.Temp);
-
-			SpawnBatchEntitiesWithArguments(new UnsafeAllocationLength<TCreateData>(CreateEntityDelayed), output, indices);
-
+			var output  = new NativeList<Entity>(itemCount, Allocator.Temp);
+			var indices = new NativeList<int>(itemCount, Allocator.Temp);
+			
+			var items = new NativeArray<TCreateData>(itemCount, Allocator.Temp);
+			var i = 0;
+			while (CreateEntityDelayed.TryDequeue(out var item))
+			{
+				items[i++] = item;
+			}
+			SpawnBatchEntitiesWithArguments(new UnsafeAllocationLength<TCreateData>((void*) items.GetUnsafePtr(), items.Length), output, indices);
+			items.Dispose();
+			
 			output.Dispose();
 			indices.Dispose();
-
-			CreateEntityDelayed.Clear();
 		}
 
 		public EntityModelManager GetManager()
