@@ -1,3 +1,4 @@
+using System;
 using Revolution;
 using Unity.Entities;
 using Unity.Networking.Transport;
@@ -28,9 +29,11 @@ namespace StormiumTeam.GameBase.Components
 				EntityManager.SetComponentData(entity, data);
 			}
 
+			private EntityQuery m_Query;
 			protected override void OnUpdate()
 			{
-				EntityManager.DestroyEntity(Entities.WithAll<GameEvent, TargetDamageEvent>().ToEntityQuery());
+				m_Query = m_Query ?? GetEntityQuery(typeof(GameEvent), typeof(TargetDamageEvent));
+				EntityManager.DestroyEntity(m_Query);
 
 				base.OnUpdate();
 			}

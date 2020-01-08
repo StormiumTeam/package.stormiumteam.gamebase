@@ -10,7 +10,7 @@ namespace StormiumTeam.GameBase.Systems
 		where TBackend : RuntimeAssetBackend<TPresentation>
 		where TPresentation : RuntimeAssetPresentation<TPresentation>
 	{
-		private AssetPool<GameObject>         m_BackendPool;
+		private   AssetPool<GameObject>         m_BackendPool;
 		protected GetAllBackendModule<TBackend> Module;
 
 		private AsyncAssetPool<GameObject> m_PresentationPool;
@@ -64,7 +64,10 @@ namespace StormiumTeam.GameBase.Systems
 		protected override void OnUpdate()
 		{
 			if (m_Query.IsEmptyIgnoreFilter)
+			{
+				OnStopRunning();
 				return;
+			}
 
 			Module.TargetEntities = m_Query.ToEntityArray(Allocator.TempJob);
 			Module.Update(default).Complete();
@@ -86,6 +89,11 @@ namespace StormiumTeam.GameBase.Systems
 			{
 				ReturnBackend(EntityManager.GetComponentObject<TBackend>(entityWithBackend));
 			}
+
+			foreach (var backendWithoutModel in Module.BackendWithoutModel)
+			{
+				ReturnBackend(EntityManager.GetComponentObject<TBackend>(backendWithoutModel));
+			}
 		}
 
 		protected virtual void ReturnBackend(TBackend backend)
@@ -101,6 +109,7 @@ namespace StormiumTeam.GameBase.Systems
 			gameObject.name = $"{target} '{GetType().Name}' Backend";
 
 			var backend = gameObject.GetComponent<TBackend>();
+			backend.OnReset();
 			backend.SetTarget(EntityManager, target);
 			backend.SetPresentationFromPool(m_PresentationPool);
 

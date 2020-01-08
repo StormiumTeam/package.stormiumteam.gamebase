@@ -214,7 +214,11 @@ namespace StormiumTeam.GameBase
 				}
 
 				if (!entityManager.HasComponent(owner, typeof(LinkedEntityGroup)))
-					entityManager.AddBuffer<LinkedEntityGroup>(owner);
+				{
+					// todo: check in future if LinkedEntityGroup behavior change!
+					entityManager.AddBuffer<LinkedEntityGroup>(owner)
+					             .Add(new LinkedEntityGroup {Value = owner});
+				}
 
 				var linkedEntityGroup = entityManager.GetBuffer<LinkedEntityGroup>(owner);
 				linkedEntityGroup.Add(entity);

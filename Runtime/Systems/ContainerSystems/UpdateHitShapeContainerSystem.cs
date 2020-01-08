@@ -51,7 +51,8 @@ namespace StormiumTeam.GameBase
 			inputDeps = new UpdateBufferJob
 			{
 				HitShapeContainerFromEntity = GetBufferFromEntity<HitShapeContainer>(),
-				FollowTagFromEntity         = GetComponentDataFromEntity<HitShapeFollowParentTag>(true)
+				FollowTagFromEntity         = GetComponentDataFromEntity<HitShapeFollowParentTag>(true),
+				IsServer = IsServer
 			}.ScheduleSingle(m_DataQuery, inputDeps);
 
 			return inputDeps;
@@ -80,13 +81,14 @@ namespace StormiumTeam.GameBase
 		{
 			public            BufferFromEntity<HitShapeContainer>              HitShapeContainerFromEntity;
 			[ReadOnly] public ComponentDataFromEntity<HitShapeFollowParentTag> FollowTagFromEntity;
+			public bool IsServer;
 
 			[BurstDiscard]
 			private void NonBurst_ErrorNoHitShapeContainer(Entity hitShape, Entity owner)
 			{
 				if (owner == default)
 					return;
-				Debug.LogError($"No HitShapeContainer found on owner={owner}, hitShape={hitShape}");
+				Debug.LogError($"{IsServer} No HitShapeContainer found on owner={owner}, hitShape={hitShape}");
 			}
 
 			public void Execute(Entity entity, int i, ref Owner owner)
