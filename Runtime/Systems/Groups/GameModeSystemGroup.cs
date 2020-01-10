@@ -7,7 +7,8 @@ namespace StormiumTeam.GameBase
 	public class BeginGameModeEntityCommandBufferSystem : EntityCommandBufferSystem
 	{}
 	
-	[UpdateInGroup(typeof(ServerSimulationSystemGroup))]
+	[UpdateInGroup(typeof(OrderGroup.Simulation.UpdateEntities.GameMode))]
+	[UpdateInWorld(UpdateInWorld.TargetWorld.Server)]
 	public class GameModeSystemGroup : ComponentSystemGroup
 	{
 		private GameModeManager m_GameModeManager;

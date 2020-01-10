@@ -2,6 +2,7 @@ using System;
 using Revolution;
 using Unity.Entities;
 using Unity.Networking.Transport;
+using UnityEngine;
 
 namespace StormiumTeam.GameBase.Components
 {
@@ -36,6 +37,8 @@ namespace StormiumTeam.GameBase.Components
 				EntityManager.DestroyEntity(m_Query);
 
 				base.OnUpdate();
+				if (m_Query.CalculateEntityCount() != 0)
+					m_Query.CompleteDependency();
 			}
 		}
 

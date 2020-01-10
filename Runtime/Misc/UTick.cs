@@ -282,5 +282,14 @@ namespace StormiumTeam.GameBase
 
 			return tick;
 		}
+		
+		public static UTick GetServerInterpolatedTick(this ClientSimulationSystemGroup system)
+		{
+			UTick tick;
+			tick.Value = system.InterpolationTick;
+			tick.Delta = system.ServerTickDeltaTime;
+
+			return tick;
+		}
 	}
 }

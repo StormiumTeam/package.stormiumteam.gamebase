@@ -8,6 +8,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Jobs.LowLevel.Unsafe;
+using UnityEngine;
 
 namespace StormiumTeam.GameBase
 {
@@ -93,6 +94,7 @@ namespace StormiumTeam.GameBase
 		protected NativeQueue<TCreateData> CreateEntityDelayed;
 
 		private bool m_CanHaveDelayedEntities;
+		private List<EntityCommandBuffer> m_DelayedEntityCommandBuffers;
 
 		private ComponentType[]    m_EntityComponents;
 		private GameManager        m_GameManager;
@@ -117,6 +119,7 @@ namespace StormiumTeam.GameBase
 			if (m_CanHaveDelayedEntities = typeof(TCreateData) != typeof(BaseProvider.NoData))
 			{
 				CreateEntityDelayed = new NativeQueue<TCreateData>(Allocator.Persistent);
+				m_DelayedEntityCommandBuffers = new List<EntityCommandBuffer>();
 			}
 
 			GetManager();
@@ -133,7 +136,19 @@ namespace StormiumTeam.GameBase
 			base.OnDestroy();
 
 			if (m_CanHaveDelayedEntities)
+			{
 				CreateEntityDelayed.Dispose();
+				foreach (var buffer in m_DelayedEntityCommandBuffers)
+					buffer.Dispose();
+			}
+		}
+
+		public EntityCommandBuffer CreateEntityCommandBuffer()
+		{
+			var ecb = new EntityCommandBuffer(Allocator.TempJob);
+			m_DelayedEntityCommandBuffers.Add(ecb);
+
+			return ecb;
 		}
 
 		public NativeQueue<TCreateData> GetEntityDelayedStream()
@@ -152,6 +167,26 @@ namespace StormiumTeam.GameBase
 		public unsafe void FlushDelayedEntities()
 		{
 			m_ProducerHandle.Complete();
+
+			foreach (var buffer in m_DelayedEntityCommandBuffers)
+			{
+				if (!buffer.IsCreated)
+					return;
+
+				try
+				{
+					buffer.Playback(EntityManager);
+				}
+				catch (Exception ex)
+				{
+					Debug.LogException(new Exception("Error on ECB playback:", ex));
+				}
+				finally
+				{
+					buffer.Dispose();
+				}
+			}
+			m_DelayedEntityCommandBuffers.Clear();
 
 			var itemCount = CreateEntityDelayed.Count;
 			if (itemCount == 0)

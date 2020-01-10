@@ -1,3 +1,4 @@
+using Revolution;
 using Unity.Entities;
 
 namespace StormiumTeam.GameBase
@@ -10,5 +11,8 @@ namespace StormiumTeam.GameBase
 		{
 			Value = isGrounded;
 		}
+		
+		public class NetSynchronize : ComponentSnapshotSystemTag<GroundState>
+		{}
 	}
 }

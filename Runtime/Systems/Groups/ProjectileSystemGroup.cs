@@ -18,8 +18,6 @@ namespace StormiumTeam.GameBase
 
 		protected override void OnUpdate()
 		{
-			World.GetOrCreateSystem<BuildPhysicsWorld>().Update();
-
 			base.OnUpdate();
 
 			m_EndBarrier.Update();

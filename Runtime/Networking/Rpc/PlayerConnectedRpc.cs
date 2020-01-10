@@ -91,6 +91,9 @@ namespace StormiumTeam.GameBase
 			m_EndBarrier = World.GetOrCreateSystem<EndSimulationEntityCommandBufferSystem>();
 			m_DelayedQuery       = GetEntityQuery(typeof(DelayedPlayerConnection));
 			m_PreviousEventQuery = GetEntityQuery(typeof(PlayerConnectedEvent));
+			
+			/*RequireForUpdate(m_DelayedQuery);
+			RequireForUpdate(m_PreviousEventQuery);*/
 		}
 
 		protected override JobHandle OnUpdate(JobHandle inputDeps)

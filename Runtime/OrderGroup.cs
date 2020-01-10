@@ -26,31 +26,9 @@ namespace StormiumTeam.GameBase
 			public class Initialization : ComponentSystemGroup
 			{
 			}
-
+			
 			[UpdateInGroup(typeof(Simulation))]
 			[UpdateAfter(typeof(Initialization))]
-			public class UpdateEntities : ComponentSystemGroup
-			{
-				[UpdateInGroup(typeof(UpdateEntities))]
-				public class Interaction : ComponentSystemGroup
-				{
-				}
-
-				[UpdateInGroup(typeof(UpdateEntities))]
-				[UpdateAfter(typeof(Interaction))]
-				public class Rules : ComponentSystemGroup
-				{
-				}
-
-				[UpdateInGroup(typeof(UpdateEntities))]
-				[UpdateAfter(typeof(Rules))]
-				public class GameMode : ComponentSystemGroup
-				{
-				}
-			}
-
-			[UpdateInGroup(typeof(Simulation))]
-			[UpdateAfter(typeof(UpdateEntities))]
 			public class DeleteEntities : ComponentSystemGroup
 			{
 				[UpdateInGroup(typeof(DeleteEntities))]
@@ -89,6 +67,28 @@ namespace StormiumTeam.GameBase
 			[UpdateAfter(typeof(ConfigureSpawnedEntities))]
 			public class ProcessEvents : ComponentSystemGroup
 			{
+			}
+
+			[UpdateInGroup(typeof(Simulation))]
+			[UpdateAfter(typeof(ProcessEvents))]
+			public class UpdateEntities : ComponentSystemGroup
+			{
+				[UpdateInGroup(typeof(UpdateEntities))]
+				public class Interaction : ComponentSystemGroup
+				{
+				}
+
+				[UpdateInGroup(typeof(UpdateEntities))]
+				[UpdateAfter(typeof(Interaction))]
+				public class Rules : ComponentSystemGroup
+				{
+				}
+
+				[UpdateInGroup(typeof(UpdateEntities))]
+				[UpdateAfter(typeof(Rules))]
+				public class GameMode : ComponentSystemGroup
+				{
+				}
 			}
 		}
 

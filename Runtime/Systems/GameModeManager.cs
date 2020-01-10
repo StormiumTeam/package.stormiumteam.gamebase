@@ -6,6 +6,7 @@ using StormiumTeam.GameBase.Data;
 using StormiumTeam.GameBase.Systems;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.NetCode;
 using Unity.Networking.Transport;
 using Utilities;
 
@@ -47,6 +48,16 @@ namespace StormiumTeam.GameBase
 				component.Name = Name;
 			}
 		}
+		
+		public struct Exclude : IComponentData {}
+		
+		public class NetSynchronize : ComponentSnapshotSystemDelta<ExecutingGameMode, Snapshot>
+		{
+			public override ComponentType ExcludeComponent => typeof(Exclude);
+		}
+		
+		public class LocalUpdate : ComponentUpdateSystemDirect<ExecutingGameMode, Snapshot>
+		{}
 	}
 
 	public struct GameModeOnFirstInit : IComponentData

@@ -84,7 +84,7 @@ namespace Systems
 			{
 				if (owner == default)
 					return;
-				Debug.LogError($"No OwnerChild found on owner={owner}, action={action}");
+				//Debug.LogError($"No OwnerChild found on owner={owner}, action={action}");
 			}
 
 			public void Execute(Entity entity, int i, ref Owner owner)
