@@ -1,3 +1,4 @@
+using EcsComponents.MasterServer;
 using Revolution;
 using StormiumTeam.GameBase.EcsComponents;
 using Unity.Burst;
@@ -11,17 +12,29 @@ using UnityEngine;
 namespace StormiumTeam.GameBase
 {
 	[BurstCompile]
-	public struct ClientLoadedRpc : IRpcCommand
+	public unsafe struct ClientLoadedRpc : IRpcCommand
 	{
 		public class RequestSystem : RpcCommandRequestSystem<ClientLoadedRpc>
 		{
 		}
 
-		public int GameVersion;
+		public int            GameVersion;
+		public ulong          MasterServerUserId;
+		public NativeString64 ConnectionToken;
 
 		public void Serialize(DataStreamWriter writer)
 		{
 			writer.Write(GameVersion);
+			writer.Write(MasterServerUserId);
+			writer.Write(ConnectionToken.LengthInBytes);
+			Debug.Log("WWWWW LENGTH: " + writer.Length);
+			fixed (byte* buffer = &ConnectionToken.buffer.byte0000)
+			{
+				for (var i = 0; i != ConnectionToken.LengthInBytes; i++)
+				{
+					writer.Write(buffer[i]);
+				}
+			}
 		}
 
 		public void Deserialize(DataStreamReader reader, ref DataStreamReader.Context ctx)
@@ -33,7 +46,17 @@ namespace StormiumTeam.GameBase
 				return;
 			}
 
-			GameVersion = reader.ReadInt(ref ctx);
+			GameVersion                   = reader.ReadInt(ref ctx);
+			MasterServerUserId            = reader.ReadULong(ref ctx);
+			ConnectionToken.LengthInBytes = reader.ReadUShort(ref ctx);
+			Debug.Log("RRRRRR LENGTH: " + reader.GetBytesRead(ref ctx));
+			fixed (byte* buffer = &ConnectionToken.buffer.byte0000)
+			{
+				for (var i = 0; i != ConnectionToken.LengthInBytes; i++)
+				{
+					buffer[i] = reader.ReadByte(ref ctx);
+				}
+			}
 		}
 
 		[BurstCompile]
@@ -53,42 +76,51 @@ namespace StormiumTeam.GameBase
 	public class CreateGamePlayerSystem : JobComponentSystem
 	{
 		private BeginSimulationEntityCommandBufferSystem m_Barrier;
-		private EndSimulationEntityCommandBufferSystem m_EndBarrier;
+		private EndSimulationEntityCommandBufferSystem   m_EndBarrier;
 		private EntityQuery                              m_PreviousEventQuery;
+
+		public NativeHashMap<ulong, NativeString64> TokenMap;
 
 		protected override void OnCreate()
 		{
 			base.OnCreate();
 
 			m_Barrier            = World.GetOrCreateSystem<BeginSimulationEntityCommandBufferSystem>();
-			m_EndBarrier = World.GetOrCreateSystem<EndSimulationEntityCommandBufferSystem>();
+			m_EndBarrier         = World.GetOrCreateSystem<EndSimulationEntityCommandBufferSystem>();
 			m_PreviousEventQuery = GetEntityQuery(typeof(PlayerConnectedEvent));
+
+			TokenMap = new NativeHashMap<ulong, NativeString64>(1, Allocator.Persistent);
 
 			GetEntityQuery(typeof(ClientLoadedRpc));
 		}
 
 		protected override JobHandle OnUpdate(JobHandle inputDeps)
 		{
-			Debug.Log(m_PreviousEventQuery.CalculateEntityCount());
-			
 			var peLength = m_PreviousEventQuery.CalculateEntityCount();
 			if (peLength > 0) m_EndBarrier.CreateCommandBuffer().DestroyEntity(m_PreviousEventQuery);
 
 			inputDeps = new CreateJob
 			{
-				CurrentVersion = GameStatic.Version,
-
-				Driver                            = World.GetExistingSystem<NetworkStreamReceiveSystem>().Driver,
-				NetworkStreamConnectionFromEntity = GetComponentDataFromEntity<NetworkStreamConnection>(true),
-
+				CurrentVersion      = GameStatic.Version,
 				CommandBuffer       = m_Barrier.CreateCommandBuffer().ToConcurrent(),
 				PlayerArchetype     = World.GetOrCreateSystem<GamePlayerProvider>().EntityArchetype,
-				NetworkIdFromEntity = GetComponentDataFromEntity<NetworkIdComponent>()
+				NetworkIdFromEntity = GetComponentDataFromEntity<NetworkIdComponent>(),
+
+				HasMasterServerConnection = HasSingleton<ConnectedMasterServerClient>(),
+				UserIdToToken             = TokenMap
 			}.ScheduleSingle(this, inputDeps);
 
 			m_Barrier.AddJobHandleForProducer(inputDeps);
 
 			return inputDeps;
+		}
+
+		protected override void OnDestroy()
+		{
+			base.OnDestroy();
+
+			if (TokenMap.IsCreated)
+				TokenMap.Dispose();
 		}
 
 		private struct CreateJob : IJobForEachWithEntity<ClientLoadedRpc, ReceiveRpcCommandRequestComponent>
@@ -99,13 +131,11 @@ namespace StormiumTeam.GameBase
 
 			public int CurrentVersion;
 
-			public UdpNetworkDriver Driver;
-
 			[ReadOnly]
 			public ComponentDataFromEntity<NetworkIdComponent> NetworkIdFromEntity;
 
-			[ReadOnly]
-			public ComponentDataFromEntity<NetworkStreamConnection> NetworkStreamConnectionFromEntity;
+			public bool                                 HasMasterServerConnection;
+			public NativeHashMap<ulong, NativeString64> UserIdToToken;
 
 			public void Execute(Entity entity, int jobIndex, ref ClientLoadedRpc create, [ReadOnly] ref ReceiveRpcCommandRequestComponent receive)
 			{
@@ -114,14 +144,31 @@ namespace StormiumTeam.GameBase
 				if (create.GameVersion != CurrentVersion)
 				{
 					Debug.Log($"bye bye [player version:{create.GameVersion}, current: {CurrentVersion}]");
-					NetworkStreamConnectionFromEntity[receive.SourceConnection].Value.Disconnect(Driver);
+					CommandBuffer.AddComponent(jobIndex, receive.SourceConnection, new NetworkStreamRequestDisconnect {Reason = NetworkStreamDisconnectReason.ConnectionClose});
 					return;
+				}
+
+				if (HasMasterServerConnection)
+				{
+					if (!UserIdToToken.TryGetValue(create.MasterServerUserId, out var tokenFromMasterServer))
+					{
+						Debug.LogError("No token found for " + create.MasterServerUserId);
+						CommandBuffer.AddComponent(jobIndex, receive.SourceConnection, new NetworkStreamRequestDisconnect {Reason = NetworkStreamDisconnectReason.ConnectionClose});
+						return;
+					}
+
+					if (!tokenFromMasterServer.Equals(create.ConnectionToken))
+					{
+						Debug.LogError($"Invalid token (id={create.MasterServerUserId}, curr={create.ConnectionToken.ToString()}, req={tokenFromMasterServer.ToString()})");
+						CommandBuffer.AddComponent(jobIndex, receive.SourceConnection, new NetworkStreamRequestDisconnect {Reason = NetworkStreamDisconnectReason.ConnectionClose});
+						return;
+					}
 				}
 
 				var networkId = NetworkIdFromEntity[receive.SourceConnection];
 
 				var geEnt = CommandBuffer.CreateEntity(jobIndex, PlayerArchetype);
-				CommandBuffer.SetComponent(jobIndex, geEnt, new GamePlayer(0) {ServerId = networkId.Value});
+				CommandBuffer.SetComponent(jobIndex, geEnt, new GamePlayer(0) {ServerId = networkId.Value, MasterServerId = create.MasterServerUserId});
 				CommandBuffer.AddComponent(jobIndex, geEnt, new NetworkOwner {Value     = receive.SourceConnection});
 				CommandBuffer.AddComponent(jobIndex, geEnt, new GamePlayerReadyTag());
 				CommandBuffer.AddComponent(jobIndex, geEnt, new GhostEntity());

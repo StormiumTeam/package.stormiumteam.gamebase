@@ -145,6 +145,8 @@ namespace StormiumTeam.GameBase
 		public ComponentSystemBase System    { get; private set; }
 		public bool                IsEnabled => System != null;
 
+		public EntityManager EntityManager => System.EntityManager;
+
 		public void Enable(ComponentSystemBase system)
 		{
 			System = system;
