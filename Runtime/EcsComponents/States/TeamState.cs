@@ -22,28 +22,13 @@ namespace StormiumTeam.GameBase
 	{
 		public Entity Value;
 	}
-
-	public class TeamEmptySystem : ComponentSnapshotSystemEmpty<TeamDescription>
-	{
-		public override NativeArray<ComponentType> EntityComponents =>
-			new NativeArray<ComponentType>(1, Allocator.Temp, NativeArrayOptions.UninitializedMemory)
-			{
-				[0] = typeof(TeamDescription)
-			};
-
-		public override ComponentType ExcludeComponent => typeof(Exclude);
-
-		public struct Exclude : IComponentData
-		{
-		}
-	}
-
+	
 	public class TeamUpdateContainerSystem : JobComponentSystem
 	{
 		private EntityQuery m_EntityWithTeam;
 		private EntityQuery m_TeamWithContainer;
 
-		private EntityQuery m_TeamWithoutContainer;
+		private EntityQuery m_TeamWithoutContainer; 
 
 		protected override void OnCreate()
 		{

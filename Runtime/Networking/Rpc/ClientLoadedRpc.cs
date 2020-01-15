@@ -27,7 +27,6 @@ namespace StormiumTeam.GameBase
 			writer.Write(GameVersion);
 			writer.Write(MasterServerUserId);
 			writer.Write(ConnectionToken.LengthInBytes);
-			Debug.Log("WWWWW LENGTH: " + writer.Length);
 			fixed (byte* buffer = &ConnectionToken.buffer.byte0000)
 			{
 				for (var i = 0; i != ConnectionToken.LengthInBytes; i++)
@@ -49,7 +48,6 @@ namespace StormiumTeam.GameBase
 			GameVersion                   = reader.ReadInt(ref ctx);
 			MasterServerUserId            = reader.ReadULong(ref ctx);
 			ConnectionToken.LengthInBytes = reader.ReadUShort(ref ctx);
-			Debug.Log("RRRRRR LENGTH: " + reader.GetBytesRead(ref ctx));
 			fixed (byte* buffer = &ConnectionToken.buffer.byte0000)
 			{
 				for (var i = 0; i != ConnectionToken.LengthInBytes; i++)

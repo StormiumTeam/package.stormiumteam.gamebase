@@ -169,6 +169,9 @@ namespace StormiumTeam.GameBase.Systems
 
 			if (m_LazyFrame-- > 0)
 				return;
+
+			if (!HasSingleton<MapMetadata>())
+				return;
 			
 			var entity      = m_ExecutingQuery.GetSingletonEntity();
 			var sceneBuffer = EntityManager.GetBuffer<MapScene>(entity);

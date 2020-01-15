@@ -72,14 +72,14 @@ namespace StormiumTeam.GameBase
 			Value = value;
 		}
 
-		public class System : ComponentSnapshotSystemBasicPredicted<Velocity, SnapshotData>
+		public class System : ComponentSnapshotSystemBasic<Velocity, SnapshotData>
 		{
 			public override ComponentType ExcludeComponent => typeof(Exclude);
 		}
 
 		public class Synchronize : ComponentUpdateSystemInterpolated<Velocity, SnapshotData>
 		{
-			protected override bool IsPredicted => true;
+			protected override bool IsPredicted => false;
 		}
 	}
 }

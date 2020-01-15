@@ -7,17 +7,21 @@ namespace StormiumTeam.GameBase
 	[UpdateAfter(typeof(ActionSystemGroup))]
 	public class ProjectileSystemGroup : ComponentSystemGroup
 	{
-		private EndProjectileEntityCommandBufferSystem m_EndBarrier;
+		private BeginProjectileEntityCommandBufferSystem m_BeginBarrier;
+		private EndProjectileEntityCommandBufferSystem   m_EndBarrier;
 
 		protected override void OnCreate()
 		{
 			base.OnCreate();
 
-			m_EndBarrier = World.GetOrCreateSystem<EndProjectileEntityCommandBufferSystem>();
+			m_BeginBarrier = World.GetOrCreateSystem<BeginProjectileEntityCommandBufferSystem>();
+			m_EndBarrier   = World.GetOrCreateSystem<EndProjectileEntityCommandBufferSystem>();
 		}
 
 		protected override void OnUpdate()
 		{
+			m_BeginBarrier.Update();
+
 			base.OnUpdate();
 
 			m_EndBarrier.Update();
@@ -29,8 +33,14 @@ namespace StormiumTeam.GameBase
 	{
 	}
 
-	[UpdateInGroup(typeof(ProjectileSystemGroup))] [UpdateAfter(typeof(ProjectilePhysicIterationSystemGroup))]
+	[UpdateInGroup(typeof(ProjectileSystemGroup))] 
+	[UpdateAfter(typeof(ProjectilePhysicIterationSystemGroup))]
 	public class ProjectilePhysicCollisionEventSystemGroup : ComponentSystemGroup
+	{
+	}
+
+	[DisableAutoCreation]
+	public class BeginProjectileEntityCommandBufferSystem : EntityCommandBufferSystem
 	{
 	}
 

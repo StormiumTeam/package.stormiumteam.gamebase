@@ -1,6 +1,7 @@
 using System.Linq;
 using package.stormiumteam.shared.ecs;
 using Revolution;
+using Scripts.Utilities;
 using StormiumTeam.GameBase;
 using Unity.Collections;
 using Unity.Entities;
@@ -121,7 +122,7 @@ namespace StormiumTeam.GameBase
 		}
 	}
 
-	public struct Owner : IReadWriteComponentSnapshot<Owner, GhostSetup>
+	public struct Owner : IReadWriteComponentSnapshot<Owner, GhostSetup>, ISnapshotDelta<Owner>
 	{
 		public struct Exclude : IComponentData
 		{
@@ -140,9 +141,14 @@ namespace StormiumTeam.GameBase
 			jobData.GhostToEntityMap.TryGetValue(ghostId, out Target);
 		}
 
-		public class Sync : MixedComponentSnapshotSystem<Owner, GhostSetup>
+		public class Sync : MixedComponentSnapshotSystemDelta<Owner, GhostSetup>
 		{
 			public override ComponentType ExcludeComponent => typeof(Exclude);
+		}
+
+		public bool DidChange(Owner baseline)
+		{
+			return UnsafeUtilityOp.AreNotEquals(ref this, ref baseline);
 		}
 	}
 

@@ -475,6 +475,12 @@ namespace StormiumTeam.GameBase
 			var gameObjectEntity                    = opResult.GetComponent<GameObjectEntity>();
 			if (!gameObjectEntity) gameObjectEntity = opResult.AddComponent<GameObjectEntity>();
 
+			if (gameObjectEntity.EntityManager != DstEntityManager)
+			{
+				gameObjectEntity.enabled = false;
+				gameObjectEntity.enabled = true;
+			}
+
 			World.Active = previousWorld;
 
 			if (gameObjectEntity.Entity != default)
