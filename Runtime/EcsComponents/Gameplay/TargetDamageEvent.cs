@@ -29,14 +29,17 @@ namespace StormiumTeam.GameBase.Components
 			{
 				EntityManager.SetComponentData(entity, data);
 			}
-
+		}
+		
+		[UpdateInGroup(typeof(OrderGroup.PreFrame))]
+		public class Destroyer : ComponentSystem
+		{
 			private EntityQuery m_Query;
+
 			protected override void OnUpdate()
 			{
-				m_Query = m_Query ?? GetEntityQuery(typeof(GameEvent), typeof(TargetDamageEvent));
+				m_Query = m_Query ?? GetEntityQuery(typeof(GameEvent), typeof(TargetDamageEvent), ComponentType.Exclude<ReplicatedEntity>());
 				EntityManager.DestroyEntity(m_Query);
-
-				base.OnUpdate();
 				if (m_Query.CalculateEntityCount() != 0)
 					m_Query.CompleteDependency();
 			}

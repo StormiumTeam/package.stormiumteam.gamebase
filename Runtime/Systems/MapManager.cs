@@ -5,6 +5,7 @@ using StormiumTeam.GameBase.Data;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.NetCode;
+using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -12,7 +13,7 @@ using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.SceneManagement;
 
 namespace StormiumTeam.GameBase.Systems
-{
+{	
 	[UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
 	[AlwaysUpdateSystem]
 	public class MapManager : ComponentSystem
@@ -27,6 +28,8 @@ namespace StormiumTeam.GameBase.Systems
 		private EntityQuery                               m_RequestLoadQuery;
 		private EntityQuery                               m_RequestUnloadQuery;
 		private List<AsyncOperationHandle<SceneInstance>> m_UnloadOperations;
+
+		private EntityQuery m_MapComponentQuery;
 
 		public bool IsMapLoaded      => m_ExecutingQuery.CalculateEntityCount() > 0 && !IsMapBeingLoaded;
 		public bool AnyMapQueued     => m_RequestLoadQuery.CalculateEntityCount() > 0 || m_ForceDataQuery.CalculateEntityCount() > 0;
@@ -57,6 +60,7 @@ namespace StormiumTeam.GameBase.Systems
 			m_LoadOperationQuery = GetEntityQuery(typeof(AsyncMapOperation), typeof(OperationMapLoadTag));
 			m_OperationQuery     = GetEntityQuery(typeof(AsyncMapOperation));
 			m_ForceDataQuery     = GetEntityQuery(typeof(ForceMapData));
+			m_MapComponentQuery = GetEntityQuery(typeof(MapComponent));
 
 			var mapDirectory = Application.streamingAssetsPath + "/maps/";
 			if (!Directory.Exists(mapDirectory)) Directory.CreateDirectory(mapDirectory);
@@ -104,10 +108,32 @@ namespace StormiumTeam.GameBase.Systems
 			var entity = m_ExecutingQuery.GetSingletonEntity();
 
 			// Unload scenes...
-			var scenes = EntityManager.GetBuffer<MapScene>(entity);
-			for (int i = 0, length = scenes.Length; i != length; i++) SceneManager.UnloadSceneAsync(scenes[i].Value /*, options?*/);
+			var scenes = EntityManager.GetBuffer<MapScene>(entity).ToNativeArray(Allocator.Temp);
+			for (int i = 0, length = scenes.Length; i != length; i++)
+			{
+				try
+				{
+					SceneManager.UnloadSceneAsync(scenes[i].Value /*, options?*/);
+				}
+				catch (Exception ex)
+				{
+					Debug.LogError($"Error when unloading '{scenes[i].Value.name}' scene");
+					Debug.LogException(ex);
+				}
+			}
 
+			Entities.WithAll<MapComponent>().WithNone<LinkedEntityGroup>().ForEach((Entity e, DynamicBuffer<Child> children) =>
+			{
+				var childrenArray = children.ToNativeArray(Allocator.Temp);
+				for (var i = 0; i != childrenArray.Length; i++) EntityManager.DestroyEntity(childrenArray[i].Value);
+			});
+			Entities.WithAll<MapComponent>().WithAll<LinkedEntityGroup>().ForEach((Entity e, DynamicBuffer<LinkedEntityGroup> group) =>
+			{
+				EntityManager.DestroyEntity(e);
+			});
+			
 			EntityManager.DestroyEntity(m_ExecutingQuery);
+			EntityManager.DestroyEntity(m_MapComponentQuery);
 		}
 
 		private void LoadMap()
@@ -177,7 +203,11 @@ namespace StormiumTeam.GameBase.Systems
 			var sceneBuffer = EntityManager.GetBuffer<MapScene>(entity);
 			Debug.Assert(sceneBuffer.Length == 0, "sceneBuffer.Length == 0");
 
-			for (var i = 0; i != m_LoadOperations.Count; i++) sceneBuffer.Add(new MapScene {Value = m_LoadOperations[i].Result.Scene});
+			for (var i = 0; i != m_LoadOperations.Count; i++)
+			{
+				Debug.Log($"Adding scene: {m_LoadOperations[i].Result.Scene.name}");
+				sceneBuffer.Add(new MapScene {Value = m_LoadOperations[i].Result.Scene});
+			}
 			m_LoadOperations.Clear();
 
 			EntityManager.DestroyEntity(m_LoadOperationQuery);

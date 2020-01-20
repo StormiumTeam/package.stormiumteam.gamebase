@@ -7,7 +7,7 @@ using UnityEngine;
 namespace StormiumTeam.GameBase.Systems
 {
 	public abstract class PoolingSystem<TBackend, TPresentation> : GameBaseSystem
-		where TBackend : RuntimeAssetBackend<TPresentation>
+		where TBackend : RuntimeAssetBackendBase
 		where TPresentation : RuntimeAssetPresentation<TPresentation>
 	{
 		private   AssetPool<GameObject>         m_BackendPool;
@@ -20,11 +20,14 @@ namespace StormiumTeam.GameBase.Systems
 		public  AssetPool<GameObject>      BackendPool      => m_BackendPool;
 		public  AsyncAssetPool<GameObject> PresentationPool => m_PresentationPool;
 
+		public int PoolingVersion { get; private set; }
+
 		protected abstract string AddressableAsset { get; }
 
 		protected TBackend LastBackend { get; set; }
 
 		protected virtual Type[] AdditionalBackendComponents { get; }
+		protected bool RemoveFromDisabled => true;
 
 		protected abstract EntityQuery GetQuery();
 
@@ -47,7 +50,10 @@ namespace StormiumTeam.GameBase.Systems
 			if (AddressableAsset == null)
 				throw new NullReferenceException($"{nameof(AddressableAsset)} is null, did you mean to replace 'CreatePoolPresentation' ?");
 
-			pool = new AsyncAssetPool<GameObject>(AddressableAsset);
+			if (AddressableAsset != string.Empty)
+				pool = new AsyncAssetPool<GameObject>(AddressableAsset);
+			else
+				pool = null;
 		}
 
 		protected override void OnCreate()
@@ -98,11 +104,14 @@ namespace StormiumTeam.GameBase.Systems
 
 		protected virtual void ReturnBackend(TBackend backend)
 		{
-			backend.Return(true, true);
+			PoolingVersion++;
+			backend.Return(true, true, RemoveFromDisabled);
 		}
 
 		protected virtual void SpawnBackend(Entity target)
 		{
+			PoolingVersion++;
+
 			var gameObject = m_BackendPool.Dequeue();
 			gameObject.SetActive(true);
 
@@ -111,7 +120,8 @@ namespace StormiumTeam.GameBase.Systems
 			var backend = gameObject.GetComponent<TBackend>();
 			backend.OnReset();
 			backend.SetTarget(EntityManager, target);
-			backend.SetPresentationFromPool(m_PresentationPool);
+			if (AddressableAsset != string.Empty)
+				backend.SetPresentationFromPool(m_PresentationPool);
 
 			LastBackend = backend;
 		}

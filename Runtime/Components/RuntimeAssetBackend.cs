@@ -243,7 +243,7 @@ namespace StormiumTeam.GameBase
 		internal abstract void OnCompletePoolDequeue(GameObject result);
 		public abstract   void SetSingleModel(string            key, EntityManager em = default, Entity ent = default);
 		internal abstract bool SetPresentation(GameObject       obj);
-		public abstract   void ReturnPresentation();
+		public abstract   void ReturnPresentation(bool unsetChildren = true);
 
 		public virtual void OnComponentEnabled()
 		{
@@ -408,12 +408,12 @@ namespace StormiumTeam.GameBase
 			entityCommandBuffer.AddComponent(gameObject.GetComponent<GameObjectEntity>().Entity, new Disabled());
 		}
 
-		public void Return(bool disable, bool returnPresentation)
+		public void Return(bool disable, bool returnPresentation, bool unsetChildPresentations = false)
 		{
 			if (returnPresentation)
 			{
 				ReturnPresentationToPoolNextFrame = false;
-				ReturnPresentation();
+				ReturnPresentation(unsetChildPresentations);
 			}
 
 			if (disable) gameObject.SetActive(false);
@@ -421,7 +421,8 @@ namespace StormiumTeam.GameBase
 			DisableNextUpdate     = false;
 			ReturnToPoolOnDisable = false;
 
-			rootPool.Enqueue(gameObject);
+			if (rootPool != null)
+				rootPool.Enqueue(gameObject);
 		}
 
 		public virtual void OnPresentationSet()
@@ -442,8 +443,19 @@ namespace StormiumTeam.GameBase
 			return Presentation;
 		}
 
-		public override void ReturnPresentation()
+		public override void ReturnPresentation(bool unsetChildren = true)
 		{
+			if (unsetChildren)
+			{
+				foreach (var childPresentation in GetComponentsInChildren<RuntimeAssetBackendBase>())
+				{
+					if (childPresentation == this)
+						continue;
+					
+					childPresentation.Return(true, true, true);
+				}
+			}
+			
 			ReturnPresentationToPool();
 		}
 
@@ -460,7 +472,8 @@ namespace StormiumTeam.GameBase
 				World.Active = DstEntityManager.World;
 
 			var opResult = result;
-			opResult.transform.SetParent(transform, PresentationWorldTransformStayOnSpawn);
+			if (opResult.transform.parent != transform)
+				opResult.transform.SetParent(transform, PresentationWorldTransformStayOnSpawn);
 			opResult.SetActive(true);
 
 			m_IncomingPresentation = false;
@@ -538,7 +551,7 @@ namespace StormiumTeam.GameBase
 			if (Presentation != null)
 			{
 				var tr = Presentation.transform;
-				tr.parent = null;
+				tr.SetParent(null, PresentationWorldTransformStayOnSpawn);
 
 				Presentation.gameObject.SetActive(false);
 

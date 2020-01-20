@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using StormiumTeam.GameBase.BaseSystems;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Misc
@@ -21,7 +22,7 @@ namespace Misc
 
 		public BaseRuleConfiguration(RulePropertiesBase rule, RuleBaseSystem system, int version) : this(rule,
 			version,
-			$"{Application.streamingAssetsPath}/rules/{(string.IsNullOrEmpty(system.Name) ? system.GetType().Name : system.Name)}.json")
+			$"{Application.persistentDataPath}/rules/{(string.IsNullOrEmpty(system.Name) ? system.GetType().Name : system.Name)}.json")
 		{
 
 		}
@@ -79,7 +80,8 @@ namespace Misc
 				Value   = data
 			}, Formatting.Indented, new JsonSerializerSettings
 			{
-				ContractResolver = new WritablePropertiesOnlyResolver()
+				ContractResolver = new WritablePropertiesOnlyResolver(),
+				Converters = new List<JsonConverter> {new NativeStringConverter()}
 			}));
 		}
 
@@ -99,7 +101,20 @@ namespace Misc
 			public int    Version;
 			public object Value;
 		}
-		
+
+		class NativeStringConverter : JsonConverter<NativeString64>
+		{
+			public override void WriteJson(JsonWriter writer, NativeString64 value, JsonSerializer serializer)
+			{
+				writer.WriteValue(value.ToString());
+			}
+
+			public override NativeString64 ReadJson(JsonReader reader, Type objectType, NativeString64 existingValue, bool hasExistingValue, JsonSerializer serializer)
+			{
+				return new NativeString64(reader.ReadAsString());
+			}
+		}
+
 		class WritablePropertiesOnlyResolver : DefaultContractResolver
 		{
 			protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)

@@ -121,7 +121,8 @@ namespace StormiumTeam.GameBase.Misc
 				{
 					var presentationSystemGroup = world.GetExistingSystem<ClientPresentationSystemGroup>();
 					var cameraSystem            = world.GetExistingSystem<ClientCreateCameraSystem>();
-					cameraSystem.InternalSetActive(presentationSystemGroup.Enabled);
+					if (cameraSystem != null)
+						cameraSystem.InternalSetActive(presentationSystemGroup.Enabled);
 
 					clientWorldCount++;
 				}

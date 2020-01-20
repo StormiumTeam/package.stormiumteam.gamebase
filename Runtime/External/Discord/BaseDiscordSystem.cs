@@ -45,11 +45,18 @@ namespace StormiumTeam.GameBase.External.Discord
 			
 			Instance = this;
 			
+			#if UNITY_EDITOR
+			System.Environment.SetEnvironmentVariable("DISCORD_INSTANCE_ID", "0");
+			#endif
+			
+			Debug.Log("Creating Discord Instance...");
 			m_Discord = new global::Discord.Discord(ClientId, (uint) global::Discord.CreateFlags.Default);
 			m_Discord.SetLogHook(LogLevel.Debug, HookResult);
 			IsUserReady = false;
 
+			Debug.Log("GetUserManager() start");
 			m_Discord.GetUserManager().OnCurrentUserUpdate += CurrentUserUpdateResult;
+			Debug.Log("GetUserManager() end");
 		}
 
 		protected override void OnUpdate()
@@ -99,6 +106,7 @@ namespace StormiumTeam.GameBase.External.Discord
 
 		protected virtual void CurrentUserUpdateResult()
 		{
+			Debug.Log("UpdateResult() start");
 			IsUserReady = true;
 
 			EntityQuery query = GetEntityQuery(typeof(DiscordLocalUser));
@@ -108,11 +116,17 @@ namespace StormiumTeam.GameBase.External.Discord
 				: query.GetSingletonEntity();
 
 			EntityManager.SetComponentData(localUser, new DiscordLocalUser {User = m_Discord.GetUserManager().GetCurrentUser()});
+			Debug.Log("UpdateResult() end");
 		}
 
 		public virtual User GetLocalUser()
 		{
 			return m_Discord.GetUserManager().GetCurrentUser();
+		}
+
+		public virtual void GetUser(long id, UserManager.GetUserHandler onUser)
+		{
+			m_Discord.GetUserManager().GetUser(id, onUser);
 		}
 	}
 }

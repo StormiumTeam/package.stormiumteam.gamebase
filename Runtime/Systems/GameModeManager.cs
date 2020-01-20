@@ -64,7 +64,7 @@ namespace StormiumTeam.GameBase
 	{
 	}
 
-	public interface IGameMode : ISystemStateComponentData
+	public interface IGameMode : IComponentData
 	{
 	}
 

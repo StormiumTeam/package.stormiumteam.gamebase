@@ -128,6 +128,10 @@ namespace StormiumTeam.GameBase.BaseSystems
 			where T : struct
 		{
 			public override Type Type => typeof(T);
+			
+			public delegate bool OnVerifyDelegate(ref T value);
+
+			public event OnVerifyDelegate OnVerify;
 
 			public unsafe T Value
 			{
@@ -135,13 +139,16 @@ namespace StormiumTeam.GameBase.BaseSystems
 				{
 					var data = Base.System.GetSingleton<TData>();
 					var ptr  = new IntPtr(UnsafeUtility.AddressOf(ref data));
-
+					
 					UnsafeUtility.CopyPtrToStructure<T>((void*) (ptr + WriteOffset), out var value);
 
 					return value;
 				}
 				set
 				{
+					if (OnVerify != null && !OnVerify.Invoke(ref value))
+						return;
+					
 					var data = Base.System.GetSingleton<TData>();
 					var ptr  = new IntPtr(UnsafeUtility.AddressOf(ref data));
 
@@ -160,7 +167,6 @@ namespace StormiumTeam.GameBase.BaseSystems
 			public override void SetValue(object v)
 			{
 				Value = (T) v;
-				Base.InvokePropertyChanged(new PropertyChangedEventArgs(Name));
 			}
 		}
 	}

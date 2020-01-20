@@ -31,7 +31,7 @@ namespace StormiumTeam.GameBase
 
 		public void Dispose()
 		{
-			for (var i = 0; i != m_Colliders.Length; i++) m_Colliders[i].Release();
+			for (var i = 0; i != m_Colliders.Length; i++) m_Colliders[i].Dispose();
 
 			m_Colliders.Dispose();
 		}
