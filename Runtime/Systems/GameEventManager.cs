@@ -4,7 +4,6 @@ namespace StormiumTeam.GameBase
 {
 	public struct GameEvent : IComponentData
 	{
-		public uint SnapshotTick;
-		public int  SimulationTick;
+		public UTick Tick;
 	}
 }

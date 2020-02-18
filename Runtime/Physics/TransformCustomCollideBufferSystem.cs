@@ -30,7 +30,7 @@ namespace StormiumTeam.GameBase
 
 			var job = new ProcessJob
 			{
-				Entities = m_Group.ToEntityArray(Allocator.TempJob, out jobHandle),
+				Entities = m_Group.ToEntityArrayAsync(Allocator.TempJob, out jobHandle),
 
 				CollideWithFromEntity = GetBufferFromEntity<CustomCollide>(),
 				Colliders             = GetComponentDataFromEntity<PhysicsCollider>(),
@@ -53,7 +53,7 @@ namespace StormiumTeam.GameBase
 
 			return new ProcessJob
 			{
-				Entities = m_Group.ToEntityArray(Allocator.TempJob, out jobHandle),
+				Entities = m_Group.ToEntityArrayAsync(Allocator.TempJob, out jobHandle),
 
 				CollideWithFromEntity = GetBufferFromEntity<CustomCollide>(),
 				Colliders             = GetComponentDataFromEntity<PhysicsCollider>(),

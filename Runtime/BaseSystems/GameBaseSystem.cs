@@ -13,8 +13,8 @@ namespace StormiumTeam.GameBase
 		EntityQuery GetPlayerGroup();
 		EntityQuery GetLocalPlayerGroup();
 	}
-	
-	public abstract class GameBaseSystem : BaseComponentSystem, IGameBaseSystem
+
+	public abstract class GameBaseSystem : SystemBase, IGameBaseSystem
 	{
 		private ClientSimulationSystemGroup m_ClientComponentGroup;
 		private ComponentSystemGroup        m_ClientPresentationGroup;
@@ -23,7 +23,7 @@ namespace StormiumTeam.GameBase
 		private EntityQuery                 m_PlayerGroup;
 		private ServerSimulationSystemGroup m_ServerComponentGroup;
 
-		public UTick ServerTick => GetTick(false);
+		public UTick ServerTick => GetTick(true);
 
 		public bool IsServer             => m_ServerComponentGroup != null;
 		public bool IsPresentationActive => m_ClientPresentationGroup != null && m_ClientPresentationGroup.Enabled;
@@ -68,65 +68,7 @@ namespace StormiumTeam.GameBase
 			module.Enable(this);
 		}
 
-		EntityQuery IGameBaseSystem.GetPlayerGroup() => m_PlayerGroup;
-		EntityQuery IGameBaseSystem.GetLocalPlayerGroup() => m_LocalPlayerGroup;
-	}
-
-	public abstract class JobGameBaseSystem : JobComponentSystem, IGameBaseSystem
-	{
-		private ClientSimulationSystemGroup m_ClientComponentGroup;
-		private ComponentSystemGroup        m_ClientPresentationGroup;
-		private EntityQuery                 m_LocalPlayerGroup;
-
-		private EntityQuery                 m_PlayerGroup;
-		private ServerSimulationSystemGroup m_ServerComponentGroup;
-
-		public UTick ServerTick => GetTick(true);
-
-		public bool IsServer             => m_ServerComponentGroup != null;
-		public bool IsPresentationActive => m_ClientPresentationGroup != null && m_ClientPresentationGroup.Enabled;
-
-		public UTick GetTick(bool predicted)
-		{
-			var isClient = m_ClientComponentGroup != null;
-			var isServer = m_ServerComponentGroup != null;
-			if (!isClient && !isServer)
-				throw new InvalidOperationException("Can only be called on client or server world.");
-
-			return isClient
-				? m_ClientComponentGroup.GetServerTick()
-				: m_ServerComponentGroup.GetServerTick();
-		}
-
-		protected override void OnCreate()
-		{
-			m_LocalPlayerGroup = GetEntityQuery
-			(
-				typeof(GamePlayer), typeof(GamePlayerLocalTag)
-			);
-
-			m_PlayerGroup = GetEntityQuery
-			(
-				typeof(GamePlayer)
-			);
-
-#if !UNITY_CLIENT
-			m_ServerComponentGroup = World.GetExistingSystem<ServerSimulationSystemGroup>();
-#endif
-#if !UNITY_SERVER
-			m_ClientComponentGroup    = World.GetExistingSystem<ClientSimulationSystemGroup>();
-			m_ClientPresentationGroup = World.GetExistingSystem<ClientPresentationSystemGroup>();
-#endif
-		}
-
-		public void GetModule<TModule>(out TModule module)
-			where TModule : BaseSystemModule, new()
-		{
-			module = new TModule();
-			module.Enable(this);
-		}
-		
-		EntityQuery IGameBaseSystem.GetPlayerGroup() => m_PlayerGroup;
+		EntityQuery IGameBaseSystem.GetPlayerGroup()      => m_PlayerGroup;
 		EntityQuery IGameBaseSystem.GetLocalPlayerGroup() => m_LocalPlayerGroup;
 	}
 
@@ -147,6 +89,8 @@ namespace StormiumTeam.GameBase
 
 		public EntityManager EntityManager => System.EntityManager;
 
+		protected ModuleUpdateType CurrentUpdateType;
+
 		public void Enable(ComponentSystemBase system)
 		{
 			System = system;
@@ -161,6 +105,8 @@ namespace StormiumTeam.GameBase
 			if (!IsEnabled)
 				throw new InvalidOperationException();
 
+			CurrentUpdateType = ModuleUpdateType.MainThread;
+			
 			var tmp = default(JobHandle);
 			OnUpdate(ref tmp);
 		}
@@ -172,6 +118,8 @@ namespace StormiumTeam.GameBase
 
 			if (!IsEnabled)
 				throw new InvalidOperationException();
+
+			CurrentUpdateType = ModuleUpdateType.Job;
 
 			OnUpdate(ref jobHandle);
 			return jobHandle;
@@ -209,7 +157,7 @@ namespace StormiumTeam.GameBase
 		{
 			ConnectedEntities.Clear();
 			ConnectedQuery.AddDependency(jobHandle);
-			var connectionChunks = ConnectedQuery.CreateArchetypeChunkArray(Allocator.TempJob, out jobHandle);
+			var connectionChunks = ConnectedQuery.CreateArchetypeChunkArrayAsync(Allocator.TempJob, out jobHandle);
 			jobHandle.Complete();
 			for (var chunk = 0; chunk != connectionChunks.Length; chunk++)
 			{

@@ -44,7 +44,7 @@ namespace StormiumTeam.GameBase
 
 			inputDeps = new ClearBufferJob
 			{
-				Entities                    = m_OwnerQuery.ToEntityArray(Allocator.TempJob, out var dep1),
+				Entities                    = m_OwnerQuery.ToEntityArrayAsync(Allocator.TempJob, out var dep1),
 				HitShapeContainerFromEntity = GetBufferFromEntity<HitShapeContainer>()
 			}.Schedule(JobHandle.CombineDependencies(inputDeps, dep1));
 

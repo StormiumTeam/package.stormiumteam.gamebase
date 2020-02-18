@@ -15,7 +15,7 @@ namespace StormiumTeam.GameBase
 
 		public bool TargetValid()
 		{
-			return World.Active.EntityManager.Exists(Target);
+			return World.DefaultGameObjectInjectionWorld.EntityManager.Exists(Target);
 		}
 	}
 

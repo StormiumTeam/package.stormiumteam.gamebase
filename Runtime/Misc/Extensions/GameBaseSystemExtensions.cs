@@ -1,5 +1,6 @@
 using System.Linq;
 using StormiumTeam.GameBase;
+using StormiumTeam.GameBase.Misc;
 using Unity.Entities;
 using Unity.NetCode;
 
@@ -17,7 +18,7 @@ namespace Misc.Extensions
 			return default;
 		}
 
-		public static bool TryGetCurrentCameraState<TSystem>(this TSystem system, Entity gamePlayer, out CameraState cameraState)
+		/*public static bool TryGetCurrentCameraState<TSystem>(this TSystem system, Entity gamePlayer, out CameraState cameraState)
 			where TSystem : ComponentSystemBase, IGameBaseSystem
 		{
 			cameraState = default;
@@ -44,6 +45,12 @@ namespace Misc.Extensions
 
 			cameraState = serverCamera.Data;
 			return true;
+		}*/
+
+		public static ComputedCameraState GetComputedCameraState<TSystem>(this TSystem system)
+			where TSystem : ComponentSystemBase, IGameBaseSystem
+		{
+			return system.EntityManager.GetComponentData<ComputedCameraState>(system.GetSingletonEntity<DefaultCamera>());
 		}
 
 		public static World GetActiveClientWorld(this ComponentSystemBase system)

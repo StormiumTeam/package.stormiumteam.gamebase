@@ -28,6 +28,26 @@ namespace StormiumTeam.GameBase
 		public RigidTransform Offset;
 	}
 
+	public struct ComputedCameraState : IComponentData
+	{
+		public bool UseModifier;
+		
+		/// <summary>
+		/// Entity from final camera state
+		/// </summary>
+		public Entity      StateEntity;
+		
+		/// <summary>
+		/// Camera state data
+		/// </summary>
+		public CameraState StateData;
+
+		/// <summary>
+		/// Field Of View.
+		/// </summary>
+		public float Focus;
+	}
+
 	/// <summary>
 	/// Useful for a CameraState that need to modify another camera than the default one.
 	/// </summary>

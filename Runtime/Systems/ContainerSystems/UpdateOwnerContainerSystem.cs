@@ -35,7 +35,7 @@ namespace Systems
 
 			inputDeps = new ClearBufferJob
 			{
-				Entities             = m_OwnerQuery.ToEntityArray(Allocator.TempJob, out var dep1),
+				Entities             = m_OwnerQuery.ToEntityArrayAsync(Allocator.TempJob, out var dep1),
 				OwnerChildFromEntity = GetBufferFromEntity<OwnerChild>()
 			}.Schedule(JobHandle.CombineDependencies(inputDeps, dep1));
 

@@ -1,3 +1,4 @@
+using System;
 using package.stormiumteam.shared.ecs;
 using StormiumTeam.GameBase.Components;
 using Unity.Entities;
@@ -5,6 +6,7 @@ using Unity.Mathematics;
 using Unity.NetCode;
 using Unity.Transforms;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace StormiumTeam.GameBase.Misc
 {
@@ -14,6 +16,7 @@ namespace StormiumTeam.GameBase.Misc
 		private bool m_PreviousState;
 
 		public Camera Camera { get; private set; }
+		public AudioListener AudioListener { get; private set; }
 
 		protected override void OnCreate()
 		{
@@ -25,7 +28,6 @@ namespace StormiumTeam.GameBase.Misc
 				gameObject = new GameObject($"(World: {World.Name}) GameCamera",
 					typeof(Camera),
 					typeof(GameCamera),
-					typeof(AudioListener),
 					typeof(GameObjectEntity));
 				Camera                  = gameObject.GetComponent<Camera>();
 				Camera.orthographicSize = 10;
@@ -33,6 +35,9 @@ namespace StormiumTeam.GameBase.Misc
 				Camera.nearClipPlane    = 0.025f;
 
 				gameObject.transform.position = new Vector3(0, 0, -100);
+				
+				var listenerGo = new GameObject($"(World: {World.Name}) AudioListener", typeof(AudioListener));
+				AudioListener = listenerGo.GetComponent<AudioListener>();
 			}
 
 			gameObject.SetActive(false);
@@ -82,8 +87,18 @@ namespace StormiumTeam.GameBase.Misc
 			Entities.ForEach((GameCamera camera, ref Translation translation) =>
 			{
 				camera.transform.position = translation.Value;
+				if (Math.Abs(camera.Camera.orthographicSize) < 0.1f)
+					camera.Camera.orthographicSize = 0.25f;
 				Debug.DrawRay(translation.Value + new float3(0, 0, 10), Vector3.up * 4, Color.red);
 			});
+
+			var cam = World.GetExistingSystem<ClientCreateCameraSystem>();
+			cam.AudioListener.transform.position = new Vector3
+			{
+				x = cam.Camera.transform.position.x,
+				y = 0,
+				z = 0
+			};
 		}
 	}
 	
@@ -129,7 +144,7 @@ namespace StormiumTeam.GameBase.Misc
 
 			if (clientWorldCount == 0 && m_Camera != null)
 				m_Camera.gameObject.SetActive(true);
-			else if (clientWorldCount > 0) m_Camera.gameObject.SetActive(false);
+			else if (clientWorldCount > 0 && m_Camera != null) m_Camera.gameObject.SetActive(false);
 		}
 	}
 }

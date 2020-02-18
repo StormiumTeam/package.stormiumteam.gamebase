@@ -113,8 +113,8 @@ namespace StormiumTeam.GameBase
 				PlayerReadyTag = GetComponentDataFromEntity<GamePlayerReadyTag>(),
 				CommandBuffer  = m_Barrier.CreateCommandBuffer().ToConcurrent(),
 
-				DelayedEntities = m_DelayedQuery.ToEntityArray(Allocator.TempJob, out var dep1),
-				DelayedData     = m_DelayedQuery.ToComponentDataArray<DelayedPlayerConnection>(Allocator.TempJob, out var dep2),
+				DelayedEntities = m_DelayedQuery.ToEntityArrayAsync(Allocator.TempJob, out var dep1),
+				DelayedData     = m_DelayedQuery.ToComponentDataArrayAsync<DelayedPlayerConnection>(Allocator.TempJob, out var dep2),
 				PlayerIds       = playerIds
 			};
 

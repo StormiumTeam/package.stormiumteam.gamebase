@@ -3,7 +3,7 @@
     "references": [
         "package.guerro.shared",
         "Revolution.NetCode",
-        "Revolution.Snapshot", 
+        "Revolution.Snapshot",
         "Unity.TextMeshPro",
         "Unity.ugui",
         "Unity.Networking.Transport",
@@ -21,8 +21,15 @@
         "Unity.Jobs",
         "Unity.Burst"
     ],
-    "optionalUnityReferences": [],
     "includePlatforms": [],
     "excludePlatforms": [],
-    "allowUnsafeCode": true
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Newtonsoft.Json.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

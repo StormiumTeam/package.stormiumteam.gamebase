@@ -16,7 +16,7 @@ namespace StormiumTeam.GameBase.Systems
 {	
 	[UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
 	[AlwaysUpdateSystem]
-	public class MapManager : ComponentSystem
+	public class MapManager : GameBaseSystem
 	{
 		private EntityQuery                               m_ExecutingQuery;
 		private EntityQuery                               m_ForceDataQuery;
@@ -189,7 +189,7 @@ namespace StormiumTeam.GameBase.Systems
 					continue;
 				loaded++;
 			}
-
+			
 			if (loaded < m_LoadOperations.Count)
 				return;
 
@@ -208,9 +208,10 @@ namespace StormiumTeam.GameBase.Systems
 				Debug.Log($"Adding scene: {m_LoadOperations[i].Result.Scene.name}");
 				sceneBuffer.Add(new MapScene {Value = m_LoadOperations[i].Result.Scene});
 			}
-			m_LoadOperations.Clear();
-
+			
 			EntityManager.DestroyEntity(m_LoadOperationQuery);
+			
+			m_LoadOperations.Clear();
 		}
 
 		public void AddMapToCatalog(string id, JMapFormat mapFormat)

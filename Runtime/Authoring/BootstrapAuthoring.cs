@@ -8,6 +8,7 @@ namespace StormiumTeam.GameBase.Authoring
 	public class BootstrapAuthoring : MonoBehaviour, IConvertGameObjectToEntity
 	{
 		public string Name;
+		public string[] Parameters;
 
 		public void Convert(Entity entity, EntityManager dstManager, GameObjectConversionSystem conversionSystem)
 		{
@@ -27,7 +28,16 @@ namespace StormiumTeam.GameBase.Authoring
 			bootstrapEntities.Dispose();
 
 			if (targetBootstrap != default)
-				dstManager.AddSharedComponentData(entity, new TargetBootstrap {Value = targetBootstrap});
+			{
+				dstManager.AddSharedComponentData(entity, new TargetBootstrap
+				{
+					Value      = targetBootstrap
+				});
+				dstManager.AddComponentData(entity, new BootstrapParameters
+				{
+					Values = Parameters ?? new string[0]
+				});
+			}
 			else
 				Debug.LogError("No Bootstrap found with name: " + Name);
 		}

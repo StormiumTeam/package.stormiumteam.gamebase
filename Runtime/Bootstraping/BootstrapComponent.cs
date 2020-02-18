@@ -27,4 +27,9 @@ namespace StormiumTeam.GameBase.Bootstraping
 			return Value.GetHashCode();
 		}
 	}
+
+	public class BootstrapParameters : IComponentData
+	{
+		public string[] Values;
+	}
 }

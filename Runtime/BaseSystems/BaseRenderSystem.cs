@@ -36,7 +36,10 @@ namespace StormiumTeam.GameBase.Systems
 			// Prepare the values that is needed for the UI elements...
 			PrepareValues();
 			// Process the UI elements...
-			Entities.ForEach((TDefinition definition) => { Render(definition); });
+			Entities.ForEach((TDefinition definition) =>
+			{
+				Render(definition);
+			});
 			// Clear values that were prepared.
 			ClearValues();
 		}

@@ -37,8 +37,8 @@ namespace StormiumTeam.GameBase.Authoring
 				return;
 			}
 
-			destroyOnClient &= (DestroyOnTarget & DestroyTargetType.Client) != 0 && ClientServerBootstrap.clientWorld.Contains(World.Active);
-			destroyOnServer &= (DestroyOnTarget & DestroyTargetType.Server) != 0 && ClientServerBootstrap.serverWorld == World.Active;
+			destroyOnClient &= (DestroyOnTarget & DestroyTargetType.Client) != 0 && ClientServerBootstrap.clientWorld.Contains(World.DefaultGameObjectInjectionWorld);
+			destroyOnServer &= (DestroyOnTarget & DestroyTargetType.Server) != 0 && ClientServerBootstrap.serverWorld == World.DefaultGameObjectInjectionWorld;
 			
 			if (destroyOnClient || destroyOnServer)
 				Destroy(gameObject);*/

@@ -9,13 +9,13 @@ namespace StormiumTeam.GameBase.Misc
 
 		public SetTemporaryActiveWorld(World newWorld)
 		{
-			m_PreviousWorld = World.Active;
-			World.Active    = newWorld;
+			m_PreviousWorld = World.DefaultGameObjectInjectionWorld;
+			World.DefaultGameObjectInjectionWorld    = newWorld;
 		}
 
 		public void Dispose()
 		{
-			World.Active = m_PreviousWorld;
+			World.DefaultGameObjectInjectionWorld = m_PreviousWorld;
 		}
 	}
 }

@@ -37,27 +37,30 @@ namespace StormiumTeam.GameBase
 
 		public T Dequeue()
 		{
-			if (m_ObjectPool.Count == 0)
-			{
-				T obj;
-				using (new SetTemporaryActiveWorld(m_SpawnWorld ?? World.Active))
-				{
-					obj = m_CreateFunction(this);
+			T obj = null;
+			
+			while (m_ObjectPool.Count > 0 && (obj = m_ObjectPool.Dequeue()) == null)
+			{}
 
-					if (obj is GameObject go)
-						foreach (var component1 in go.GetComponents(typeof(RuntimeAssetBackendBase)))
-						{
-							var component = (RuntimeAssetBackendBase) component1;
-							if (component.rootPool == null)
-								component.SetRootPool(this as AssetPool<GameObject>);
-						}
-				}
-
-				m_Objects.Add(obj);
+			if (m_ObjectPool.Count > 0) 
 				return obj;
+			
+			using (new SetTemporaryActiveWorld(m_SpawnWorld ?? World.DefaultGameObjectInjectionWorld))
+			{
+				obj = m_CreateFunction(this);
+
+				if (obj is GameObject go)
+					foreach (var component1 in go.GetComponents(typeof(RuntimeAssetBackendBase)))
+					{
+						var component = (RuntimeAssetBackendBase) component1;
+						if (component.rootPool == null)
+							component.SetRootPool(this as AssetPool<GameObject>);
+					}
 			}
 
-			return m_ObjectPool.Dequeue();
+			m_Objects.Add(obj);
+			return obj;
+
 		}
 
 		public void AddElements(int size)
@@ -170,25 +173,52 @@ namespace StormiumTeam.GameBase
 		}
 	}
 
+	public interface IBackendReceiver
+	{
+		RuntimeAssetBackendBase Backend { get; set; }
+
+		void OnBackendSet();
+		void OnPresentationSystemUpdate();
+	}
+
 	[RequireComponent(typeof(GameObjectEntity))] // todo: use the new Converting system
 	public abstract class RuntimeAssetPresentation<TMonoPresentation> : MonoBehaviour
 		where TMonoPresentation : RuntimeAssetPresentation<TMonoPresentation>
 	{
 		public RuntimeAssetBackend<TMonoPresentation> Backend { get; protected set; }
 
+		private List<IBackendReceiver> m_Receivers;
+
 		internal void SetBackend(RuntimeAssetBackend<TMonoPresentation> backend)
 		{
-			Backend = backend;
+			Backend     = backend;
+			m_Receivers = new List<IBackendReceiver>();
+			foreach (var receiver in GetComponentsInChildren<IBackendReceiver>())
+			{
+				receiver.Backend = backend;
+				m_Receivers.Add(receiver);
+			}
 
 			OnBackendSet();
 		}
 
 		public virtual void OnBackendSet()
 		{
+			foreach (var r in m_Receivers)
+				r.OnBackendSet();
 		}
 
 		public virtual void OnReset()
 		{
+		}
+
+		/// <summary>
+		/// Call this method from a system...
+		/// </summary>
+		public virtual void OnSystemUpdate()
+		{
+			foreach (var r in m_Receivers)
+				r.OnPresentationSystemUpdate();
 		}
 	}
 
@@ -416,13 +446,17 @@ namespace StormiumTeam.GameBase
 				ReturnPresentation(unsetChildPresentations);
 			}
 
-			if (disable) gameObject.SetActive(false);
+			if (disable)
+				gameObject.SetActive(false);
 
 			DisableNextUpdate     = false;
 			ReturnToPoolOnDisable = false;
 
 			if (rootPool != null)
+			{
 				rootPool.Enqueue(gameObject);
+				//transform.SetParent(null, false);
+			}
 		}
 
 		public virtual void OnPresentationSet()
@@ -467,9 +501,9 @@ namespace StormiumTeam.GameBase
 				return;
 			}
 
-			var previousWorld = World.Active;
+			var previousWorld = World.DefaultGameObjectInjectionWorld;
 			if (DstEntityManager != null)
-				World.Active = DstEntityManager.World;
+				World.DefaultGameObjectInjectionWorld = DstEntityManager.World;
 
 			var opResult = result;
 			if (opResult.transform.parent != transform)
@@ -481,7 +515,7 @@ namespace StormiumTeam.GameBase
 			if (DstEntityManager == null)
 			{
 				SetPresentation(opResult);
-				World.Active = previousWorld;
+				World.DefaultGameObjectInjectionWorld = previousWorld;
 				return;
 			}
 
@@ -494,7 +528,7 @@ namespace StormiumTeam.GameBase
 				gameObjectEntity.enabled = true;
 			}
 
-			World.Active = previousWorld;
+			World.DefaultGameObjectInjectionWorld = previousWorld;
 
 			if (gameObjectEntity.Entity != default)
 				DstEntityManager.SetOrAddComponentData(gameObjectEntity.Entity, new ModelParent {Parent = DstEntity});
@@ -557,7 +591,6 @@ namespace StormiumTeam.GameBase
 
 				if (presentationPool != null && presentationPool.IsValid)
 				{
-					Debug.Log("Enqueue " + Presentation.name);
 					presentationPool.Enqueue(Presentation.gameObject);
 				}
 				else

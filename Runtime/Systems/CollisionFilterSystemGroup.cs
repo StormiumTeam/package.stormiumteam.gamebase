@@ -32,7 +32,7 @@ namespace StormiumTeam.GameBase.Systems
 
 		public JobHandle Filter(EntityQuery query, JobHandle inputDeps)
 		{
-			var entities = query.ToEntityArray(Allocator.TempJob, out var queryDep);
+			var entities = query.ToEntityArrayAsync(Allocator.TempJob, out var queryDep);
 			inputDeps = Filter(entities, JobHandle.CombineDependencies(inputDeps, queryDep));
 			inputDeps = new DisposeJob
 			{
