@@ -216,7 +216,7 @@ namespace StormiumTeam.GameBase.BaseSystems
 	{
 	}
 
-	public abstract class RuleBaseSystem : JobGameBaseSystem
+	public abstract class RuleBaseSystem : AbsGameBaseSystem
 	{
 		public List<RulePropertiesBase> PropertiesCollection;
 
@@ -298,9 +298,8 @@ namespace StormiumTeam.GameBase.BaseSystems
 			}
 		}
 
-		protected override JobHandle OnUpdate(JobHandle inputDeps)
+		protected override void OnUpdate()
 		{
-			return inputDeps;
 		}
 
 		protected override void OnDestroy()

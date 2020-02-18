@@ -5,7 +5,7 @@ namespace StormiumTeam.GameBase
 {
 	[AlwaysSynchronizeSystem]
 	[UpdateInGroup(typeof(OrderGroup.Simulation.ConfigureSpawnedEntities))]
-	public class UpdateActionContainerSystem : JobGameBaseSystem
+	public class UpdateActionContainerSystem : AbsGameBaseSystem
 	{
 		private EndSimulationEntityCommandBufferSystem m_EndBarrier;
 
@@ -15,7 +15,7 @@ namespace StormiumTeam.GameBase
 			m_EndBarrier = World.GetOrCreateSystem<EndSimulationEntityCommandBufferSystem>();
 		}
 
-		protected override JobHandle OnUpdate(JobHandle inputDeps)
+		protected override void OnUpdate()
 		{
 			Entities
 				.WithStructuralChanges()
@@ -43,8 +43,6 @@ namespace StormiumTeam.GameBase
 					bufferFromEntity[owner.Target].Add(new ActionContainer(entity));
 				})
 				.Run();
-
-			return default;
 		}
 	}
 }

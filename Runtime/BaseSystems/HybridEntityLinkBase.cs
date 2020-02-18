@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace StormiumTeam.GameBase.BaseSystems
 {
-	public abstract class HybridEntityLinkBase<TBackend> : GameBaseSystem
+	public abstract class HybridEntityLinkBase<TBackend> : AbsGameBaseSystem
 		where TBackend : MonoBehaviour
 	{
 		private EntityQuery                   m_EntityQuery;

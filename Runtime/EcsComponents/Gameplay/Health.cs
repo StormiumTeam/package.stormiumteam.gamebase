@@ -358,7 +358,7 @@ namespace StormiumTeam.GameBase.Components
 		}
 	}
 
-	public abstract class HealthProcessSystem : GameBaseSystem
+	public abstract class HealthProcessSystem : AbsGameBaseSystem
 	{
 		protected NativeList<ModifyHealthEvent> ModifyHealthEventList;
 

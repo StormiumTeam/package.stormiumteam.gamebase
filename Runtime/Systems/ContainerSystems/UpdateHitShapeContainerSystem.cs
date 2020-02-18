@@ -23,7 +23,7 @@ namespace StormiumTeam.GameBase
 	}
 
 	[UpdateInGroup(typeof(OrderGroup.Simulation.ConfigureSpawnedEntities))]
-	public class UpdateHitShapeContainerSystem : JobGameBaseSystem
+	public class UpdateHitShapeContainerSystem : AbsGameBaseSystem
 	{
 		private EntityQuery m_DataQuery;
 
@@ -38,24 +38,22 @@ namespace StormiumTeam.GameBase
 			m_DataQuery  = GetEntityQuery(typeof(Owner), typeof(HitShapeDescription));
 		}
 
-		protected override JobHandle OnUpdate(JobHandle inputDeps)
+		protected override void OnUpdate()
 		{
-			m_OwnerQuery.AddDependency(inputDeps);
+			m_OwnerQuery.AddDependency(Dependency);
 
-			inputDeps = new ClearBufferJob
+			Dependency = new ClearBufferJob
 			{
 				Entities                    = m_OwnerQuery.ToEntityArrayAsync(Allocator.TempJob, out var dep1),
 				HitShapeContainerFromEntity = GetBufferFromEntity<HitShapeContainer>()
-			}.Schedule(JobHandle.CombineDependencies(inputDeps, dep1));
+			}.Schedule(JobHandle.CombineDependencies(Dependency, dep1));
 
-			inputDeps = new UpdateBufferJob
+			Dependency = new UpdateBufferJob
 			{
 				HitShapeContainerFromEntity = GetBufferFromEntity<HitShapeContainer>(),
 				FollowTagFromEntity         = GetComponentDataFromEntity<HitShapeFollowParentTag>(true),
 				IsServer = IsServer
-			}.ScheduleSingle(m_DataQuery, inputDeps);
-
-			return inputDeps;
+			}.ScheduleSingle(m_DataQuery, Dependency);
 		}
 
 		[BurstCompile]

@@ -5,6 +5,7 @@ using Revolution;
 using StormiumTeam.GameBase.Data;
 using StormiumTeam.GameBase.Systems;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.NetCode;
 using Unity.Networking.Transport;
@@ -119,7 +120,7 @@ namespace StormiumTeam.GameBase
 	}
 
 	[UpdateInGroup(typeof(GameModeSystemGroup))]
-	public abstract class GameModeSystem<TGameMode> : GameBaseSystem
+	public abstract class GameModeSystem<TGameMode> : AbsGameBaseSystem
 		where TGameMode : struct, IGameMode
 	{
 		private EntityQuery m_ExecutingMapQuery;
@@ -143,13 +144,15 @@ namespace StormiumTeam.GameBase
 
 		public abstract void OnGameModeUpdate(Entity entity, ref TGameMode gameMode);
 
-		protected override void OnUpdate()
+		protected override unsafe void OnUpdate()
 		{
-			Entities.ForEach((Entity entity, ref TGameMode gameMode) =>
+			var entityArray = m_GameModeQuery.ToEntityArray(Allocator.TempJob);
+			var gmArray = m_GameModeQuery.ToComponentDataArray<TGameMode>(Allocator.TempJob);
+			for (var i = 0; i != entityArray.Length; i++)
 			{
-				m_LoopEntity = entity;
-				OnGameModeUpdate(entity, ref gameMode);
-			});
+				m_LoopEntity = entityArray[i];
+				OnGameModeUpdate(entityArray[i], ref UnsafeUtilityEx.ArrayElementAsRef<TGameMode>(gmArray.GetUnsafePtr(), i));
+			}
 		}
 
 		public bool IsInitialization()
@@ -192,7 +195,7 @@ namespace StormiumTeam.GameBase
 	}
 
 	[UpdateInGroup(typeof(GameModeSystemGroup))]
-	public abstract class GameModeAsyncSystem<TGameMode> : GameBaseSystem
+	public abstract class GameModeAsyncSystem<TGameMode> : AbsGameBaseSystem
 		where TGameMode : struct, IGameMode
 	{
 		private EntityQuery m_ExecutingMapQuery;

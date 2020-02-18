@@ -46,17 +46,18 @@ namespace StormiumTeam.GameBase.Components
 		}
 
 		[UpdateInGroup(typeof(AfterSnapshotIsAppliedSystemGroup))]
-		public class SetManualEvent : GameBaseSystem
+		public class SetManualEvent : AbsGameBaseSystem
 		{
 			protected override void OnUpdate()
 			{
 				Entities.WithAll<TargetDamageEvent>()
 				        .WithNone<ManualDestroy>()
-				        .ForEach(ent =>
+				        .WithStructuralChanges()
+				        .ForEach((Entity ent) =>
 				        {
 					        EntityManager.AddComponent(ent, typeof(ManualDestroy));
 					        EntityManager.AddComponentData(ent, new GameEvent {Tick = ServerTick});
-				        });
+				        }).Run();
 			}
 		}
 

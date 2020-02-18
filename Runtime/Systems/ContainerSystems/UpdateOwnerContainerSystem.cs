@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace Systems
 {
-	public class UpdateOwnerContainerSystem : JobGameBaseSystem
+	public class UpdateOwnerContainerSystem : AbsGameBaseSystem
 	{
 		private EntityQuery                            m_DataQuery;
 		private EndSimulationEntityCommandBufferSystem m_EndBarrier;
@@ -29,27 +29,25 @@ namespace Systems
 			m_EndBarrier = World.GetOrCreateSystem<EndSimulationEntityCommandBufferSystem>();
 		}
 
-		protected override JobHandle OnUpdate(JobHandle inputDeps)
+		protected override void OnUpdate()
 		{
-			m_OwnerQuery.AddDependency(inputDeps);
+			m_OwnerQuery.AddDependency(Dependency);
 
-			inputDeps = new ClearBufferJob
+			Dependency = new ClearBufferJob
 			{
 				Entities             = m_OwnerQuery.ToEntityArrayAsync(Allocator.TempJob, out var dep1),
 				OwnerChildFromEntity = GetBufferFromEntity<OwnerChild>()
-			}.Schedule(JobHandle.CombineDependencies(inputDeps, dep1));
+			}.Schedule(JobHandle.CombineDependencies(Dependency, dep1));
 
-			inputDeps = new UpdateBufferJob
+			Dependency = new UpdateBufferJob
 			{
 				EntityDescriptionFromEntity = GetComponentDataFromEntity<EntityDescription>(true),
 				OwnerChildFromEntity        = GetBufferFromEntity<OwnerChild>(),
 				EntityCommandBuffer         = m_EndBarrier.CreateCommandBuffer(),
 				OwnerChildType              = typeof(OwnerChild)
-			}.ScheduleSingle(m_DataQuery, inputDeps);
+			}.ScheduleSingle(m_DataQuery, Dependency);
 
-			m_EndBarrier.AddJobHandleForProducer(inputDeps);
-
-			return inputDeps;
+			m_EndBarrier.AddJobHandleForProducer(Dependency);
 		}
 
 		[BurstCompile]

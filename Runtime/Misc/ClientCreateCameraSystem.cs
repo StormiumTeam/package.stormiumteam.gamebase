@@ -11,7 +11,7 @@ using Object = UnityEngine.Object;
 namespace StormiumTeam.GameBase.Misc
 {
 	[UpdateInGroup(typeof(ClientPresentationSystemGroup))]
-	public class ClientCreateCameraSystem : GameBaseSystem
+	public class ClientCreateCameraSystem : AbsGameBaseSystem
 	{
 		private bool m_PreviousState;
 
@@ -108,7 +108,7 @@ namespace StormiumTeam.GameBase.Misc
 	[UpdateBefore(typeof(TickClientPresentationSystem))]
 	[UpdateInWorld(UpdateInWorld.TargetWorld.Default)]
 	[AlwaysUpdateSystem]
-	public class ManageClientCameraSystem : GameBaseSystem
+	public class ManageClientCameraSystem : AbsGameBaseSystem
 	{
 		private Camera      m_Camera;
 		private EntityQuery m_GameCameraQuery;

@@ -14,7 +14,7 @@ namespace StormiumTeam.GameBase
 		EntityQuery GetLocalPlayerGroup();
 	}
 
-	public abstract class GameBaseSystem : SystemBase, IGameBaseSystem
+	public abstract class AbsGameBaseSystem : SystemBase, IGameBaseSystem
 	{
 		private ClientSimulationSystemGroup m_ClientComponentGroup;
 		private ComponentSystemGroup        m_ClientPresentationGroup;

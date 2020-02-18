@@ -19,7 +19,7 @@ namespace StormiumTeam.GameBase.Systems
 		void Initialize(InputAction.CallbackContext ctx);
 	}
 
-	public abstract class BaseSyncInputSystem<TData> : GameBaseSystem
+	public abstract class BaseSyncInputSystem<TData> : AbsGameBaseSystem
 		where TData : struct, IInitializeInputEventData
 	{
 		protected List<InputEvent<TData>> InputEvents = new List<InputEvent<TData>>(4);
@@ -76,7 +76,7 @@ namespace StormiumTeam.GameBase.Systems
 		}
 	}
 
-	public abstract class JobSyncInputSystem : JobGameBaseSystem
+	public abstract class JobSyncInputSystem : AbsGameBaseSystem
 	{
 		protected List<InputAction.CallbackContext> InputEvents = new List<InputAction.CallbackContext>();
 		public    InputActionAsset                  Asset { get; private set; }

@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace StormiumTeam.GameBase.Systems
 {
-	public abstract class BaseRenderSystem<TDefinition> : GameBaseSystem
+	public abstract class BaseRenderSystem<TDefinition> : AbsGameBaseSystem
 		where TDefinition : Component
 	{
 		protected bool HasAnyDefinition { get; private set; }
@@ -36,10 +36,14 @@ namespace StormiumTeam.GameBase.Systems
 			// Prepare the values that is needed for the UI elements...
 			PrepareValues();
 			// Process the UI elements...
-			Entities.ForEach((TDefinition definition) =>
+			if (HasAnyDefinition)
 			{
-				Render(definition);
-			});
+				// todo: remove gc alloc :(
+				var definitionArray = m_DefinitionQuery.ToComponentArray<TDefinition>();
+				for (var i = 0; i != definitionArray.Length; i++)
+					Render(definitionArray[i]);
+			}
+
 			// Clear values that were prepared.
 			ClearValues();
 		}

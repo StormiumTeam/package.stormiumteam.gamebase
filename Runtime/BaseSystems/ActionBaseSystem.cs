@@ -38,7 +38,7 @@ namespace StormiumTeam.GameBase
 	}
 
 	[Obsolete("ActionBaseSystem should not be used anymore", true)]
-	public abstract class ActionBaseSystem : JobGameBaseSystem
+	public abstract class ActionBaseSystem : AbsGameBaseSystem
 	{
 		protected void GetPosition(in Entity livable, out float3 position)
 		{

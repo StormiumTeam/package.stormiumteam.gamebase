@@ -42,7 +42,7 @@ namespace StormiumTeam.GameBase
 
 	[UpdateInGroup(typeof(AfterSnapshotIsAppliedSystemGroup))]
 	[UpdateInWorld(UpdateInWorld.TargetWorld.Client)]
-	public class ApplyOwnerServerIdSystem : JobGameBaseSystem
+	public class ApplyOwnerServerIdSystem : AbsGameBaseSystem
 	{
 		private LazySystem<EndSimulationEntityCommandBufferSystem> m_EndBarrier;
 
@@ -53,26 +53,22 @@ namespace StormiumTeam.GameBase
 			RequireSingletonForUpdate<NetworkIdComponent>();
 		}
 
-		protected override JobHandle OnUpdate(JobHandle inputDeps)
+		protected override void OnUpdate()
 		{
 			var currentId           = GetSingleton<NetworkIdComponent>().Value;
 			var ecb                 = this.L(ref m_EndBarrier).CreateCommandBuffer().ToConcurrent();
 			var authorityFromEntity = GetComponentDataFromEntity<HasAuthorityFromServer>(true);
-			inputDeps = Entities
-			            .ForEach((Entity entity, int nativeThreadIndex, in OwnerServerId ownerId) =>
-			            {
-				            var existence = authorityFromEntity.Exists(entity);
-				            if (ownerId.Value == currentId && !existence)
-					            ecb.AddComponent(nativeThreadIndex, entity, new HasAuthorityFromServer());
-				            else if (ownerId.Value != currentId && existence)
-					            ecb.RemoveComponent<HasAuthorityFromServer>(nativeThreadIndex, entity);
-			            })
-			            .WithReadOnly(authorityFromEntity)
-			            .Schedule(inputDeps);
 
-			m_EndBarrier.Value.AddJobHandleForProducer(inputDeps);
+			Entities.ForEach((Entity entity, int nativeThreadIndex, in OwnerServerId ownerId) =>
+			{
+				var existence = authorityFromEntity.Exists(entity);
+				if (ownerId.Value == currentId && !existence)
+					ecb.AddComponent(nativeThreadIndex, entity, new HasAuthorityFromServer());
+				else if (ownerId.Value != currentId && existence)
+					ecb.RemoveComponent<HasAuthorityFromServer>(nativeThreadIndex, entity);
+			}).WithReadOnly(authorityFromEntity).Schedule();
 
-			return inputDeps;
+			m_EndBarrier.Value.AddJobHandleForProducer(Dependency);
 		}
 	}
 }

@@ -17,9 +17,8 @@ namespace StormiumTeam.GameBase.Systems.Filters
 			return FillVariables(new Job()).Schedule(this, jobHandle);
 		}
 
-		protected override JobHandle OnUpdate(JobHandle inputDeps)
+		protected override void OnUpdate()
 		{
-			return inputDeps;
 		}
 
 		[BurstCompile] [RequireComponentTag(typeof(LivableDescription))]

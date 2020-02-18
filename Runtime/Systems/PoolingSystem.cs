@@ -12,7 +12,7 @@ namespace StormiumTeam.GameBase.Systems
 	{
 	}
 
-	public abstract class PoolingSystem<TBackend, TPresentation, TCheckValidity> : GameBaseSystem
+	public abstract class PoolingSystem<TBackend, TPresentation, TCheckValidity> : AbsGameBaseSystem
 		where TBackend : RuntimeAssetBackendBase
 		where TPresentation : RuntimeAssetPresentation<TPresentation>
 		where TCheckValidity : struct, ICheckValidity

@@ -88,7 +88,7 @@ namespace StormiumTeam.GameBase
 	}
 
 	[AlwaysUpdateSystem]
-	public abstract class BaseProvider<TCreateData> : GameBaseSystem
+	public abstract class BaseProvider<TCreateData> : AbsGameBaseSystem
 		where TCreateData : struct
 	{	
 		protected NativeQueue<TCreateData> CreateEntityDelayed;
