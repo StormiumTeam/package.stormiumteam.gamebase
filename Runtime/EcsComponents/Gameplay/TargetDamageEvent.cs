@@ -1,6 +1,7 @@
 using System;
 using Revolution;
 using Unity.Entities;
+using Unity.NetCode;
 using Unity.Networking.Transport;
 using UnityEngine;
 
@@ -32,7 +33,7 @@ namespace StormiumTeam.GameBase.Components
 		}
 		
 		[UpdateInGroup(typeof(OrderGroup.PreFrame))]
-		public class Destroyer : ComponentSystem
+		public class ClientDestroyer : ComponentSystem
 		{
 			private EntityQuery m_Query;
 
@@ -40,8 +41,19 @@ namespace StormiumTeam.GameBase.Components
 			{
 				m_Query = m_Query ?? GetEntityQuery(typeof(GameEvent), typeof(TargetDamageEvent), ComponentType.Exclude<ReplicatedEntity>());
 				EntityManager.DestroyEntity(m_Query);
-				if (m_Query.CalculateEntityCount() != 0)
-					m_Query.CompleteDependency();
+			}
+		}
+		
+		[UpdateInGroup(typeof(OrderGroup.Simulation.Initialization))]
+		[UpdateInWorld(UpdateInWorld.TargetWorld.Server)]
+		public class ServerDestroyer : ComponentSystem
+		{
+			private EntityQuery m_Query;
+
+			protected override void OnUpdate()
+			{
+				m_Query = m_Query ?? GetEntityQuery(typeof(GameEvent), typeof(TargetDamageEvent), ComponentType.Exclude<ReplicatedEntity>());
+				EntityManager.DestroyEntity(m_Query);
 			}
 		}
 

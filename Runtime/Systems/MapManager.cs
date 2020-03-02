@@ -16,7 +16,7 @@ namespace StormiumTeam.GameBase.Systems
 {	
 	[UpdateInGroup(typeof(ClientAndServerSimulationSystemGroup))]
 	[AlwaysUpdateSystem]
-	public class MapManager : AbsGameBaseSystem
+	public class MapManager : ComponentSystem
 	{
 		private EntityQuery                               m_ExecutingQuery;
 		private EntityQuery                               m_ForceDataQuery;
@@ -126,11 +126,11 @@ namespace StormiumTeam.GameBase.Systems
 			{
 				var childrenArray = children.ToNativeArray(Allocator.Temp);
 				for (var i = 0; i != childrenArray.Length; i++) EntityManager.DestroyEntity(childrenArray[i].Value);
-			}).WithStructuralChanges().Run();
+			});
 			Entities.WithAll<MapComponent>().WithAll<LinkedEntityGroup>().ForEach((Entity e, DynamicBuffer<LinkedEntityGroup> group) =>
 			{
 				EntityManager.DestroyEntity(e);
-			}).WithStructuralChanges().Run();
+			});
 			
 			EntityManager.DestroyEntity(m_ExecutingQuery);
 			EntityManager.DestroyEntity(m_MapComponentQuery);

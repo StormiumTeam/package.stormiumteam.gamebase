@@ -3,6 +3,7 @@ using Misc.GmMachine.Contexts;
 using package.stormiumteam.shared.ecs;
 using Revolution;
 using StormiumTeam.GameBase.Data;
+using StormiumTeam.GameBase.External;
 using StormiumTeam.GameBase.Systems;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -224,6 +225,7 @@ namespace StormiumTeam.GameBase
 			m_Machine = new Machine();
 			m_Machine.AddContext(new WorldContext(World));
 			m_Machine.AddContext(new GameModeContext(MapManager));
+			m_Machine.AddContext(new QueryBuilderContext(World));
 			OnCreateMachine(ref m_Machine);
 		}
 

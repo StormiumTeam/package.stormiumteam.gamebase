@@ -14,6 +14,23 @@ namespace StormiumTeam.GameBase
 		EntityQuery GetLocalPlayerGroup();
 	}
 
+	public class ModuleRegister
+	{
+		public ComponentSystemBase System;
+
+		public ModuleRegister(ComponentSystemBase system)
+		{
+			System = system;
+		}
+		
+		public void GetModule<TModule>(out TModule module)
+			where TModule : BaseSystemModule, new()
+		{
+			module = new TModule();
+			module.Enable(System);
+		}
+	}
+
 	public abstract class AbsGameBaseSystem : SystemBase, IGameBaseSystem
 	{
 		private ClientSimulationSystemGroup m_ClientComponentGroup;
@@ -22,6 +39,8 @@ namespace StormiumTeam.GameBase
 
 		private EntityQuery                 m_PlayerGroup;
 		private ServerSimulationSystemGroup m_ServerComponentGroup;
+
+		private ModuleRegister m_ModuleRegister;
 
 		public UTick ServerTick => GetTick(true);
 
@@ -59,13 +78,14 @@ namespace StormiumTeam.GameBase
 			m_ClientPresentationGroup = World.GetExistingSystem<ClientPresentationSystemGroup>();
 			m_ClientComponentGroup    = World.GetExistingSystem<ClientSimulationSystemGroup>();
 #endif
+			
+			m_ModuleRegister = new ModuleRegister(this);
 		}
 
 		public void GetModule<TModule>(out TModule module)
 			where TModule : BaseSystemModule, new()
 		{
-			module = new TModule();
-			module.Enable(this);
+			m_ModuleRegister.GetModule(out module);
 		}
 
 		EntityQuery IGameBaseSystem.GetPlayerGroup()      => m_PlayerGroup;
