@@ -181,7 +181,7 @@ namespace StormiumTeam.GameBase.Components
 				foreach (var ent in entities)
 				{
 					var buffer = EntityManager.AddBuffer<HealthContainer>(ent);
-					buffer.Reserve(buffer.Capacity + 1);
+					buffer.Capacity = (buffer.Capacity + 1);
 				}
 
 				entities.Dispose();
@@ -192,7 +192,7 @@ namespace StormiumTeam.GameBase.Components
 				{
 					var history = EntityManager.AddBuffer<HealthModifyingHistory>(entity);
 
-					history.Reserve(history.Capacity + 1);
+					history.Capacity = (history.Capacity + 1);
 					history.Clear();
 				});
 

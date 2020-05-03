@@ -62,8 +62,9 @@ namespace Systems
 			{
 				for (var i = 0; i != Entities.Length; i++)
 				{
-					OwnerChildFromEntity[Entities[i]].Clear();
-					OwnerChildFromEntity[Entities[i]].Reserve(8);
+					var ownerChildren = OwnerChildFromEntity[Entities[i]];
+					ownerChildren.Clear();
+					ownerChildren.Capacity = (8);
 				}
 			}
 		}

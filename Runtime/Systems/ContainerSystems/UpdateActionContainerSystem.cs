@@ -22,7 +22,7 @@ namespace StormiumTeam.GameBase
 				.ForEach((Entity entity, ref DynamicBuffer<ActionContainer> buffer) =>
 				{
 					buffer.Clear();
-					buffer.Reserve(8);
+					buffer.Capacity = (8);
 				})
 				.Run();
 

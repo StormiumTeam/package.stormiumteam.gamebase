@@ -44,11 +44,13 @@ namespace StormiumTeam.GameBase.Components
 			}
 
 			private EntityQuery m_Query;
+
 			protected override void OnUpdate()
 			{
-				m_Query = m_Query ?? GetEntityQuery(typeof(GameEvent), typeof(TargetImpulseEvent));
+				if (m_Query == default)
+					m_Query = GetEntityQuery(typeof(GameEvent), typeof(TargetImpulseEvent));
 				EntityManager.DestroyEntity(m_Query);
-				
+
 				base.OnUpdate();
 			}
 		}

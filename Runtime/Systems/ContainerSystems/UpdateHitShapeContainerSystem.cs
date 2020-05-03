@@ -68,8 +68,9 @@ namespace StormiumTeam.GameBase
 			{
 				for (var i = 0; i != Entities.Length; i++)
 				{
-					HitShapeContainerFromEntity[Entities[i]].Clear();
-					HitShapeContainerFromEntity[Entities[i]].Reserve(8);
+					var hitShapeContainers = HitShapeContainerFromEntity[Entities[i]];
+					hitShapeContainers.Clear();
+					hitShapeContainers.Capacity = (8);
 				}
 			}
 		}

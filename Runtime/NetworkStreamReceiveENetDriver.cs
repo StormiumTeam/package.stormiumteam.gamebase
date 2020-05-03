@@ -58,10 +58,10 @@ namespace StormiumTeam.GameBase
             EntityManager.AddComponentData(ent, new NetworkSnapshotAckComponent());
             EntityManager.AddComponentData(ent, new CommandTargetComponent());
 
-            EntityManager.AddBuffer<OutgoingRpcDataStreamBufferComponent>(ent).Reserve(100);
-            EntityManager.AddBuffer<IncomingCommandDataStreamBufferComponent>(ent).Reserve(100);
-            EntityManager.AddBuffer<IncomingSnapshotStreamBufferComponent>(ent).Reserve(100);
-            EntityManager.AddBuffer<IncomingRpcDataStreamBufferComponent>(ent).Reserve(100);
+            EntityManager.AddBuffer<OutgoingRpcDataStreamBufferComponent>(ent).Capacity = (100);
+            EntityManager.AddBuffer<IncomingCommandDataStreamBufferComponent>(ent).Capacity = (100);
+            EntityManager.AddBuffer<IncomingSnapshotStreamBufferComponent>(ent).Capacity = (100);
+            EntityManager.AddBuffer<IncomingRpcDataStreamBufferComponent>(ent).Capacity = (100);
             return ent;
         }
 

@@ -49,7 +49,11 @@ namespace StormiumTeam.GameBase
 			{
 				EntityManager.AddComponent(m_TeamWithoutContainer, typeof(TeamEntityContainer));
 				var entities = m_TeamWithoutContainer.ToEntityArray(Allocator.TempJob);
-				foreach (var ent in entities) EntityManager.GetBuffer<TeamEntityContainer>(ent).Reserve(10);
+				foreach (var ent in entities)
+				{
+					var teamEntityContainers = EntityManager.GetBuffer<TeamEntityContainer>(ent);
+					teamEntityContainers.Capacity = (10);
+				}
 			}
 
 			inputDeps = new JobClearBuffer().Schedule(m_TeamWithContainer, inputDeps);

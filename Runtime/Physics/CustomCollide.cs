@@ -95,7 +95,7 @@ namespace StormiumTeam.GameBase
 
 		public CustomCollide(RigidBody rigidBody)
 		{
-			Collider        = rigidBody.Collider;
+			Collider        = (Collider*) rigidBody.Collider.GetUnsafePtr();
 			WorldFromMotion = rigidBody.WorldFromBody;
 			RigidBodyIndex  = -1;
 			Target          = rigidBody.Entity;
@@ -146,7 +146,6 @@ namespace StormiumTeam.GameBase
 				var fraction = collector.MaxFraction;
 				if (cw.Collider->CastRay(inputLs, ref collector))
 				{
-					collector.TransformNewHits(numHits, fraction, worldFromMotion, cw.RigidBodyIndex);
 					hadHit = true;
 
 					if (collector.EarlyOutOnFirstHit)
@@ -194,7 +193,6 @@ namespace StormiumTeam.GameBase
 				var fraction = collector.MaxFraction;
 				if (cw.Collider->CastCollider(inputLs, ref collector))
 				{
-					collector.TransformNewHits(numHits, fraction, worldFromMotion, cw.RigidBodyIndex);
 					hadHit = true;
 
 					if (collector.EarlyOutOnFirstHit)
@@ -246,8 +244,6 @@ namespace StormiumTeam.GameBase
 
 				if (cw.Collider->CalculateDistance(inputLs, ref collector))
 				{
-					// Transform results back into world space
-					collector.TransformNewHits(numHits, fraction, worldFromMotion, cw.RigidBodyIndex);
 					hadHit = true;
 
 					if (collector.EarlyOutOnFirstHit)
@@ -281,14 +277,9 @@ namespace StormiumTeam.GameBase
 					Position    = Math.Mul(bodyFromWorld, input.Position),
 					MaxDistance = input.MaxDistance
 				};
-
-				var fraction = collector.MaxFraction;
-				var numHits  = collector.NumHits;
-
+				
 				if (cw.Collider->CalculateDistance(inputLs, ref collector))
 				{
-					// Transform results back into world space
-					collector.TransformNewHits(numHits, fraction, worldFromMotion, cw.RigidBodyIndex);
 					hadHit = true;
 
 					if (collector.EarlyOutOnFirstHit) return true;

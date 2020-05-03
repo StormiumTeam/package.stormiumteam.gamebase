@@ -26,7 +26,7 @@ namespace StormiumTeam.GameBase
 
 				array[i] = new CustomCollide
 				{
-					Collider        = rigidBody.Collider,
+					Collider        = (Collider*) rigidBody.Collider.GetUnsafePtr(),
 					RigidBodyIndex  = rigidBodyIndex,
 					Target          = rigidBody.Entity,
 					WorldFromMotion = rigidBody.WorldFromBody
@@ -34,56 +34,6 @@ namespace StormiumTeam.GameBase
 			}
 
 			return array;
-		}
-
-		public static void UpdateFilterRecursion(Collider* collider, CollisionFilter filter)
-		{
-			while (true)
-			{
-				// we need to force the change
-				((BoxCollider*) collider)->Filter = filter;
-				if (collider->CollisionType == CollisionType.Composite)
-				{
-					var key = new ColliderKey();
-					if (collider->GetChild(ref key, out var child))
-					{
-						collider = child.Collider;
-						continue;
-					}
-				}
-
-				break;
-			}
-		}
-
-		public static void Set(DynamicBuffer<CollideWith> cwBuffer, PhysicsWorld physicsWorld)
-		{
-			var count = cwBuffer.Length;
-			for (var i = 0; i != count; i++)
-			{
-				var rigidBodyIndex = cwBuffer[i].RigidBodyIndex;
-				var collider       = physicsWorld.Bodies[rigidBodyIndex].Collider;
-				var filter         = collider->Filter;
-
-				MainBit.SetBitAt(ref filter.BelongsTo, 31, true);
-
-				UpdateFilterRecursion(collider, filter);
-			}
-		}
-
-		public static void Release(DynamicBuffer<CollideWith> cwBuffer, PhysicsWorld physicsWorld)
-		{
-			var count = cwBuffer.Length;
-			for (var i = 0; i != count; i++)
-			{
-				var rigidBodyIndex = cwBuffer[i].RigidBodyIndex;
-				var collider       = physicsWorld.Bodies[rigidBodyIndex].Collider;
-				var filter         = collider->Filter;
-
-				MainBit.SetBitAt(ref filter.BelongsTo, 31, false);
-
-				UpdateFilterRecursion(collider, filter);
-			}
 		}
 	}
 }

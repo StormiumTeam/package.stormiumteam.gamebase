@@ -39,7 +39,8 @@ namespace StormiumTeam.GameBase.Components
 
 			protected override void OnUpdate()
 			{
-				m_Query = m_Query ?? GetEntityQuery(typeof(GameEvent), typeof(TargetDamageEvent), ComponentType.Exclude<ReplicatedEntity>());
+				if (m_Query == default)
+					m_Query = GetEntityQuery(typeof(GameEvent), typeof(TargetDamageEvent), ComponentType.Exclude<ReplicatedEntity>());
 				EntityManager.DestroyEntity(m_Query);
 			}
 		}
@@ -52,7 +53,8 @@ namespace StormiumTeam.GameBase.Components
 
 			protected override void OnUpdate()
 			{
-				m_Query = m_Query ?? GetEntityQuery(typeof(GameEvent), typeof(TargetDamageEvent), ComponentType.Exclude<ReplicatedEntity>());
+				if (m_Query == default)
+					m_Query = GetEntityQuery(typeof(GameEvent), typeof(TargetDamageEvent), ComponentType.Exclude<ReplicatedEntity>());
 				EntityManager.DestroyEntity(m_Query);
 			}
 		}

@@ -307,7 +307,7 @@ namespace StormiumTeam.GameBase
 
 			if (gameObjectEntity.EntityManager != DstEntityManager)
 			{
-				Debug.LogError($"'{gameObject.name}' have a different EntityManager than the destination. [go={gameObjectEntity.EntityManager?.World?.Name ?? "null"}, dst={DstEntityManager?.World?.Name ?? "null"}]");
+				Debug.LogError($"'{gameObject.name}' have a different EntityManager than the destination. [go={gameObjectEntity.EntityManager.World.Name ?? "null"}, dst={DstEntityManager.World.Name ?? "null"}]");
 				return;
 			}
 
@@ -541,7 +541,7 @@ namespace StormiumTeam.GameBase
 			SetPresentation(opResult);
 		}
 
-		public override void SetSingleModel(string key, EntityManager targetEm = null, Entity targetEntity = default)
+		public override void SetSingleModel(string key, EntityManager targetEm = default, Entity targetEntity = default)
 		{
 			if (presentationPool != null) throw new InvalidOperationException("This object is already using pooling, you can't switch to a single operation anymore.");
 

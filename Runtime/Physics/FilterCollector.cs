@@ -74,16 +74,6 @@ namespace StormiumTeam.GameBase
 			return true;
 		}
 
-		public void TransformNewHits(int oldNumHits, float oldFraction, Math.MTransform transform, uint numSubKeyBits, uint subKey)
-		{
-			if (m_ClosestHit.Fraction < oldFraction) m_ClosestHit.Transform(transform, numSubKeyBits, subKey);
-		}
-
-		public void TransformNewHits(int oldNumHits, float oldFraction, Math.MTransform transform, int rigidBodyIndex)
-		{
-			if (m_ClosestHit.Fraction < oldFraction) m_ClosestHit.Transform(transform, rigidBodyIndex);
-		}
-
 		#endregion
 	}
 }

@@ -13,6 +13,11 @@ namespace StormiumTeam.GameBase.Components
 		}
 	}
 
+	public struct BuffDistance : IComponentData
+	{
+		public float Min, Max;
+	}
+
 	public struct BuffSource : IComponentData
 	{
 		public Entity Source;
