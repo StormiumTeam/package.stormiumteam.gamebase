@@ -6,17 +6,17 @@ using Unity.Mathematics;
 using Unity.NetCode;
 using Unity.Networking.Transport;
 
-[assembly: RegisterGenericComponentType(typeof(Predicted<Velocity.SnapshotData>))]
+[assembly: RegisterGenericComponentType(typeof(Predicted<SVelocity.SnapshotData>))]
 
 namespace StormiumTeam.GameBase
 {
-	public struct Velocity : IComponentData
+	public struct SVelocity : IComponentData
 	{
 		public struct Exclude : IComponentData
 		{
 		}
 
-		public struct SnapshotData : IReadWriteSnapshot<SnapshotData>, ISynchronizeImpl<Velocity>, IPredictable<SnapshotData>
+		public struct SnapshotData : IReadWriteSnapshot<SnapshotData>, ISynchronizeImpl<SVelocity>, IPredictable<SnapshotData>
 		{
 			public const int   Quantization   = 100;
 			public const float DeQuantization = 1 / 100f;
@@ -37,12 +37,12 @@ namespace StormiumTeam.GameBase
 					Velocity[i] = reader.ReadPackedIntDelta(ref ctx, baseline.Velocity[i], compressionModel);
 			}
 
-			public void SynchronizeFrom(in Velocity component, in DefaultSetup setup, in SerializeClientData serializeData)
+			public void SynchronizeFrom(in SVelocity component, in DefaultSetup setup, in SerializeClientData serializeData)
 			{
 				Velocity.Set(Quantization, component.Value);
 			}
 
-			public void SynchronizeTo(ref Velocity component, in DeserializeClientData deserializeData)
+			public void SynchronizeTo(ref SVelocity component, in DeserializeClientData deserializeData)
 			{
 				component.Value = Velocity.Get(DeQuantization);
 			}
@@ -67,17 +67,17 @@ namespace StormiumTeam.GameBase
 
 		public float3 xfz => new float3(Value.x, 0, Value.z);
 
-		public Velocity(float3 value)
+		public SVelocity(float3 value)
 		{
 			Value = value;
 		}
 
-		public class System : ComponentSnapshotSystemBasic<Velocity, SnapshotData>
+		public class System : ComponentSnapshotSystemBasic<SVelocity, SnapshotData>
 		{
 			public override ComponentType ExcludeComponent => typeof(Exclude);
 		}
 
-		public class Synchronize : ComponentUpdateSystemInterpolated<Velocity, SnapshotData>
+		public class Synchronize : ComponentUpdateSystemInterpolated<SVelocity, SnapshotData>
 		{
 			protected override bool IsPredicted => false;
 		}
