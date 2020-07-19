@@ -8,7 +8,6 @@
     "dependencies": 
     {
 		"com.unity.entities": "0.0.11",
-		"package.stormiumteam.networking": "https://github.com/StormiumTeam/package.stormiumteam.networking.git",
 		"package.stormiumteam.shared": "https://github.com/StormiumTeam/package.stormiumteam.shared.git"
 	}
 }
