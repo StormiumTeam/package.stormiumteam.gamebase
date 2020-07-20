@@ -85,7 +85,6 @@ namespace DefaultNamespace
 						case EventType.Disconnect:
 							break;
 						case EventType.Receive:
-							Debug.Log("on receive!");
 							var reader = new DataBufferReader(netEvent.Packet.Data, netEvent.Packet.Length);
 							World.GetExistingSystem<ReceiveSimulationWorldSystem>()
 							     .OnNewMessage(ref reader);

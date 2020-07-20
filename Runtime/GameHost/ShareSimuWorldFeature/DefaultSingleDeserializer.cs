@@ -21,15 +21,18 @@ namespace DefaultNamespace
 		public void Deserialize(EntityManager entityManager, NativeArray<GhGameEntity> gameEntities, NativeArray<Entity> output, ref DataBufferReader reader)
 		{
 			var links = new NativeArray<GhComponentMetadata>(reader.ReadValue<int>(), Allocator.Temp);
-			reader.ReadDataSafe(ref links);
+			reader.ReadDataSafe(links);
 
+			var components = new NativeArray<TComponent>(reader.ReadValue<int>(), Allocator.Temp);
+			var comp = 0;
+			reader.ReadDataSafe(components);
 			for (var ent = 0; ent < gameEntities.Length; ent++)
 			{
 				var entity = gameEntities[ent];
 				if (links[(int) entity.Id].Null)
 					continue;
 				
-				entityManager.SetOrAddComponentData(output[ent], reader.ReadValue<TComponent>());
+				entityManager.SetOrAddComponentData(output[ent], components[comp++]);
 			}
 		}
 	}

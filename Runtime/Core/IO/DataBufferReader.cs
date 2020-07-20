@@ -76,7 +76,7 @@ namespace RevolutionSnapshot.Core.Buffers
             ReadUnsafe(data, readIndex, size);
         }
 
-        public void ReadDataSafe<T>(ref NativeArray<T> array, DataBufferMarker marker = default(DataBufferMarker))
+        public void ReadDataSafe<T>(NativeArray<T> array, DataBufferMarker marker = default(DataBufferMarker))
             where T : struct
         {
             ReadDataSafe((byte*) array.GetUnsafePtr(), array.Length * UnsafeUtility.SizeOf<T>(), marker);

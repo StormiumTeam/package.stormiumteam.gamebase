@@ -3,7 +3,7 @@ using Unity.Entities;
 
 namespace StormiumTeam.GameBase.GameHost.Simulation
 {
-	public struct GhGameEntity : IEquatable<GhGameEntity>, IComponentData
+	public struct GhGameEntity : IEquatable<GhGameEntity>
 	{
 		public uint Id;
 
@@ -23,9 +23,24 @@ namespace StormiumTeam.GameBase.GameHost.Simulation
 		}
 	}
 
-	public struct GhComponentType
+	public struct GhComponentType : IEquatable<GhComponentType>
 	{
 		public uint Id;
+
+		public bool Equals(GhComponentType other)
+		{
+			return Id == other.Id;
+		}
+
+		public override bool Equals(object obj)
+		{
+			return obj is GhComponentType other && Equals(other);
+		}
+
+		public override int GetHashCode()
+		{
+			return (int) Id;
+		}
 	}
 
 	public readonly struct GhComponentMetadata
