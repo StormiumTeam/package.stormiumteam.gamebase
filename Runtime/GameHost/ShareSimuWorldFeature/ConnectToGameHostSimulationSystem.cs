@@ -2,6 +2,8 @@
 using System.Net;
 using ENet;
 using RevolutionSnapshot.Core.Buffers;
+using StormiumTeam.GameBase.GameHost.Simulation;
+using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 using EventType = ENet.EventType;
@@ -59,6 +61,16 @@ namespace DefaultNamespace
 				m_Peer.Ping();
 			}
 
+			if (Input.GetKeyDown(KeyCode.S))
+			{
+				var buffer = new DataBufferWriter(0, Allocator.Temp);
+				buffer.WriteInt((int) EMessageType.Rpc);
+
+				var packet = new Packet();
+				packet.Create(buffer.GetSafePtr(), buffer.Length, PacketFlags.Reliable);
+				m_Peer.Send(0, ref packet);
+			}
+
 			for (var i = 0; i != maxEventPerFrame; i++)
 			{
 				var polled    = false;
@@ -86,8 +98,20 @@ namespace DefaultNamespace
 							break;
 						case EventType.Receive:
 							var reader = new DataBufferReader(netEvent.Packet.Data, netEvent.Packet.Length);
-							World.GetExistingSystem<ReceiveSimulationWorldSystem>()
-							     .OnNewMessage(ref reader);
+							var type   = (EMessageType) reader.ReadValue<int>();
+							switch (type)
+							{
+								case EMessageType.Rpc:
+									break;
+								case EMessageType.SimulationData:
+									var simulationDataReader = new DataBufferReader(reader, reader.CurrReadIndex, reader.Length);
+									World.GetExistingSystem<ReceiveSimulationWorldSystem>()
+									     .OnNewMessage(ref simulationDataReader);
+									break;
+								default:
+									throw new ArgumentOutOfRangeException();
+							}
+
 							netEvent.Packet.Dispose();
 							break;
 						case EventType.Timeout:
