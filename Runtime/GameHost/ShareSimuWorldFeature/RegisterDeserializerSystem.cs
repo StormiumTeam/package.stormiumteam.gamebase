@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using StormiumTeam.GameBase.GameHost.Simulation;
 using Unity.Entities;
 
 namespace DefaultNamespace
@@ -36,13 +37,14 @@ namespace DefaultNamespace
 			}
 		}
 
-		internal Dictionary<Key__, ICustomComponentDeserializer> deserializerMap;
+
+		internal Dictionary<Key__, (ICustomComponentArchetypeAttach attach, ICustomComponentDeserializer deserializer)> deserializerMap;
 
 		protected override void OnCreate()
 		{
 			base.OnCreate();
 
-			deserializerMap = new Dictionary<Key__, ICustomComponentDeserializer>();
+			deserializerMap = new Dictionary<Key__, (ICustomComponentArchetypeAttach attach, ICustomComponentDeserializer deserializer)>();
 		}
 
 		protected override void OnUpdate()
@@ -50,16 +52,31 @@ namespace DefaultNamespace
 
 		}
 
-		public void Register(string type, ICustomComponentDeserializer componentDeserializer)
+		public void Register(ICustomComponentArchetypeAttach attach, ICustomComponentDeserializer componentDeserializer)
 		{
-			deserializerMap[new Key__(componentDeserializer.Size, type)] = componentDeserializer;
+			var types = attach.RegisterTypes();
+			foreach (var type in types)
+			{
+				deserializerMap[new Key__(componentDeserializer.Size, type)] = (attach, componentDeserializer);
+			}
 		}
 
-		public ICustomComponentDeserializer GetDeserializer(int size, string name)
+		public (ICustomComponentArchetypeAttach attach, ICustomComponentDeserializer deserializer) Get(int size, string name)
 		{
-			if (deserializerMap.TryGetValue(new Key__(size, name), out var deserializer))
-				return deserializer;
-			return null;
+			deserializerMap.TryGetValue(new Key__(size, name), out var tuple);
+			return tuple;
+		}
+
+		public void AttachArchetype(ref ReceiveSimulationWorldSystem.Archetype__ archetype, in Dictionary<string, ComponentTypeDetails> detailMap)
+		{
+			foreach (var (attach, _) in deserializerMap.Values)
+			{
+				if (attach.CanAttachToArchetype(archetype.ComponentTypes.Reinterpret<GhComponentType>(), detailMap))
+				{
+					archetype.Attach = attach;
+					return;
+				}
+			}
 		}
 	}
 }

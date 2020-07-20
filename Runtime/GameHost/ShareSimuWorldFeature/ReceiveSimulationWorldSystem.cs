@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using package.stormiumteam.shared.ecs;
 using RevolutionSnapshot.Core.Buffers;
 using StormiumTeam.GameBase.GameHost.Simulation;
 using Unity.Collections;
@@ -12,17 +13,26 @@ namespace DefaultNamespace
 {
 	public struct ComponentTypeDetails
 	{
-		public int Size;
-		public string Name;
+		public GhComponentType Row;
+		public int             Size;
+		public string          Name;
 	}
-	
+
 	public class ReceiveSimulationWorldSystem : SystemBase
 	{
+		public struct Archetype__
+		{
+			public NativeArray<uint>               ComponentTypes;
+			public ICustomComponentArchetypeAttach Attach;
+		}
+
 		private RegisterDeserializerSystem          registerDeserializer;
 		private NativeHashMap<GhGameEntity, Entity> ghToUnityEntityMap;
 
-		public Dictionary<GhComponentType, ComponentTypeDetails> typeDetailMap;
-		public Dictionary<uint, NativeArray<uint>> archetypeMap;
+		public Dictionary<GhComponentType, ComponentTypeDetails> typeDetailMapFromRow;
+		public Dictionary<string, ComponentTypeDetails>          typeDetailMapFromName;
+
+		public Dictionary<uint, Archetype__> archetypeMap;
 
 		private EntityArchetype defaultSpawnArchetype;
 
@@ -32,9 +42,10 @@ namespace DefaultNamespace
 
 			registerDeserializer = World.GetOrCreateSystem<RegisterDeserializerSystem>();
 			ghToUnityEntityMap   = new NativeHashMap<GhGameEntity, Entity>(64, Allocator.Persistent);
-			
-			typeDetailMap = new Dictionary<GhComponentType, ComponentTypeDetails>();
-			archetypeMap = new Dictionary<uint, NativeArray<uint>>();
+
+			typeDetailMapFromRow  = new Dictionary<GhComponentType, ComponentTypeDetails>();
+			typeDetailMapFromName = new Dictionary<string, ComponentTypeDetails>();
+			archetypeMap          = new Dictionary<uint, Archetype__>();
 
 			defaultSpawnArchetype = EntityManager.CreateArchetype(typeof(ReplicatedGameEntity));
 		}
@@ -64,15 +75,17 @@ namespace DefaultNamespace
 			if (componentTypes.Length > 0)
 			{
 				reader.ReadDataSafe((byte*) componentTypes.GetUnsafePtr(), sizeof(GhComponentType) * componentTypes.Length);
-				
+
 				// 1.5 Read description of component type
 				foreach (var componentType in componentTypes)
 				{
 					ComponentTypeDetails details;
+					details.Row  = componentType;
 					details.Size = reader.ReadValue<int>();
 					details.Name = reader.ReadString();
-					
-					typeDetailMap[componentType] = details;
+
+					typeDetailMapFromRow[componentType] = details;
+					typeDetailMapFromName[details.Name] = details;
 				}
 			}
 			else
@@ -86,21 +99,26 @@ namespace DefaultNamespace
 			if (archetypes.Length > 0)
 			{
 				reader.ReadDataSafe(archetypes);
-				
+
 				// 2.1 read registered component of each archetype
 				for (var i = 0; i != archetypes.Length; i++)
 				{
-					var row    = archetypes[i];
-					var length = reader.ReadValue<int>();
-					if (!archetypeMap.TryGetValue(row, out var archetypeTypeArray) || archetypeTypeArray.Length != length)
-					{
-						if (archetypeTypeArray.IsCreated)
-							archetypeTypeArray.Dispose();
-						archetypeTypeArray = new NativeArray<uint>(length, Allocator.Persistent);
-						archetypeMap[row]  = archetypeTypeArray;
-					}
+					var row     = archetypes[i];
+					var length  = reader.ReadValue<int>();
+					var newData = new NativeArray<uint>(length, Allocator.Temp);
+					reader.ReadDataSafe(newData);
 
-					reader.ReadDataSafe(archetypeTypeArray);
+					if (!archetypeMap.TryGetValue(row, out var archetype)
+					    || archetype.ComponentTypes.Length != length
+					    || UnsafeUtility.MemCmp(archetype.ComponentTypes.GetUnsafePtr(), newData.GetUnsafePtr(), sizeof(uint) * length) != 0)
+					{
+						if (archetype.ComponentTypes.IsCreated)
+							archetype.ComponentTypes.Dispose();
+						archetype.ComponentTypes = new NativeArray<uint>(newData, Allocator.Persistent);
+						registerDeserializer.AttachArchetype(ref archetype, typeDetailMapFromName);
+
+						archetypeMap[row] = archetype;
+					}
 				}
 			}
 			else
@@ -115,23 +133,53 @@ namespace DefaultNamespace
 			{
 				// 3.1
 				reader.ReadDataSafe(entities);
-				
+
 				// 3.2 archetypes
 				var entitiesArchetype = new NativeArray<uint>(reader.ReadValue<int>(), Allocator.Temp);
 				reader.ReadDataSafe(entitiesArchetype);
-				
+
 				foreach (var entity in entities)
 				{
-					if (!ghToUnityEntityMap.TryGetValue(entity, out _))
+					var archetype       = entitiesArchetype[(int) entity.Id];
+					var archetypeUpdate = false;
+					if (!ghToUnityEntityMap.TryGetValue(entity, out var unityEntity))
 					{
-						ghToUnityEntityMap[entity] = EntityManager.CreateEntity(defaultSpawnArchetype);
-						EntityManager.SetComponentData(ghToUnityEntityMap[entity], new ReplicatedGameEntity
+						ghToUnityEntityMap[entity] = unityEntity = EntityManager.CreateEntity(defaultSpawnArchetype);
+						EntityManager.SetComponentData(unityEntity, new ReplicatedGameEntity
 						{
-							Source = entity,
-							ArchetypeId = entitiesArchetype[(int) entity.Id]
+							Source      = entity,
+							ArchetypeId = archetype
+						});
+						archetypeUpdate = true;
+
+						//Debug.Log($"Created Unity Entity ({unityEntity}) for GameHost Entity (Row={entity.Id}, Arch={archetype})");
+					}
+					else
+					{
+						if (EntityManager.GetComponentData<ReplicatedGameEntity>(unityEntity).ArchetypeId != archetype)
+						{
+							archetypeUpdate = true;
+						}
+					}
+
+					if (archetypeUpdate)
+					{
+						var previousArchetype = 0u;
+						if (EntityManager.TryGetComponentData(unityEntity, out ReplicatedGameEntity previousReplicatedData))
+							previousArchetype = previousReplicatedData.ArchetypeId;
+
+						if (previousArchetype > 0)
+						{
+							archetypeMap[previousArchetype].Attach.OnEntityRemoved(EntityManager, entity, unityEntity);
+						}
+
+						EntityManager.SetComponentData(unityEntity, new ReplicatedGameEntity
+						{
+							Source      = entity,
+							ArchetypeId = archetype
 						});
 
-						Debug.Log($"Created Unity Entity ({ghToUnityEntityMap[entity]}) for GameHost Entity (Row={entity.Id}, Arch={entitiesArchetype[(int) entity.Id]})");
+						archetypeMap[archetype].Attach.OnEntityAdded(EntityManager, entity, unityEntity);
 					}
 				}
 			}
@@ -144,7 +192,7 @@ namespace DefaultNamespace
 			// ---- 4. Component
 			//
 			// 4.1 Transforming gh entities to unity entities
-			/*var outputEntities = new NativeArray<Entity>(entities.Length, Allocator.Temp);
+			var outputEntities = new NativeArray<Entity>(entities.Length, Allocator.Temp);
 			for (var i = 0; i != entities.Length; i++)
 				outputEntities[i] = ghToUnityEntityMap[entities[i]];
 
@@ -157,13 +205,14 @@ namespace DefaultNamespace
 				reader.CurrReadIndex += componentTypeBuffer.CurrReadIndex;
 			}
 
-			outputEntities.Dispose();*/
+			outputEntities.Dispose();
 		}
 
-		/*private unsafe void OnReadComponent(ref DataBufferReader reader, int index, NativeArray<GhGameEntity> entities, NativeArray<Entity> output, NativeArray<GhComponentType> componentTypes)
+		private unsafe void OnReadComponent(ref DataBufferReader reader, int index, NativeArray<GhGameEntity> entities, NativeArray<Entity> output, NativeArray<GhComponentType> componentTypes)
 		{
-			var skip = reader.ReadValue<int>();
-			var deserializer = registerDeserializer.GetDeserializer(size, name);
+			var skip             = reader.ReadValue<int>();
+			var componentDetails = typeDetailMapFromRow[componentTypes[index]];
+			var deserializer     = registerDeserializer.Get(componentDetails.Size, componentDetails.Name).deserializer;
 			if (deserializer == null)
 			{
 				Debug.LogWarning("Serializer not found!");
@@ -174,6 +223,6 @@ namespace DefaultNamespace
 
 			deserializer.BeginDeserialize(this);
 			deserializer.Deserialize(EntityManager, entities, output, ref reader);
-		}*/
+		}
 	}
 }
