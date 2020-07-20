@@ -218,7 +218,7 @@ namespace DefaultNamespace
 			{
 				Debug.LogWarning($"Serializer not found for {componentDetails.Name} (size={componentDetails.Size}, row={componentDetails.Row})");
 
-				reader.CurrReadIndex = skip;
+				reader.CurrReadIndex += skip;
 				return;
 			}
 
