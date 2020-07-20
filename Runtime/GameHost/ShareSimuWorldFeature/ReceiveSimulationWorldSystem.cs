@@ -23,7 +23,7 @@ namespace DefaultNamespace
 		public struct Archetype__
 		{
 			public NativeArray<uint>               ComponentTypes;
-			public ICustomComponentArchetypeAttach Attach;
+			public List<ICustomComponentArchetypeAttach> Attaches;
 		}
 
 		private RegisterDeserializerSystem          registerDeserializer;
@@ -115,6 +115,7 @@ namespace DefaultNamespace
 						if (archetype.ComponentTypes.IsCreated)
 							archetype.ComponentTypes.Dispose();
 						archetype.ComponentTypes = new NativeArray<uint>(newData, Allocator.Persistent);
+						archetype.Attaches = new List<ICustomComponentArchetypeAttach>();
 						registerDeserializer.AttachArchetype(ref archetype, typeDetailMapFromName);
 
 						archetypeMap[row] = archetype;
@@ -151,8 +152,6 @@ namespace DefaultNamespace
 							ArchetypeId = archetype
 						});
 						archetypeUpdate = true;
-
-						//Debug.Log($"Created Unity Entity ({unityEntity}) for GameHost Entity (Row={entity.Id}, Arch={archetype})");
 					}
 					else
 					{
@@ -170,7 +169,8 @@ namespace DefaultNamespace
 
 						if (previousArchetype > 0)
 						{
-							archetypeMap[previousArchetype].Attach.OnEntityRemoved(EntityManager, entity, unityEntity);
+							foreach (var attach in archetypeMap[previousArchetype].Attaches)
+								attach.OnEntityRemoved(EntityManager, entity, unityEntity);
 						}
 
 						EntityManager.SetComponentData(unityEntity, new ReplicatedGameEntity
@@ -179,7 +179,8 @@ namespace DefaultNamespace
 							ArchetypeId = archetype
 						});
 
-						archetypeMap[archetype].Attach.OnEntityAdded(EntityManager, entity, unityEntity);
+						foreach (var attach in archetypeMap[archetype].Attaches)
+							attach.OnEntityAdded(EntityManager, entity, unityEntity);
 					}
 				}
 			}
@@ -215,7 +216,7 @@ namespace DefaultNamespace
 			var deserializer     = registerDeserializer.Get(componentDetails.Size, componentDetails.Name).deserializer;
 			if (deserializer == null)
 			{
-				Debug.LogWarning("Serializer not found!");
+				Debug.LogWarning($"Serializer not found for {componentDetails.Name} (size={componentDetails.Size}, row={componentDetails.Row})");
 
 				reader.CurrReadIndex = skip;
 				return;

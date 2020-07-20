@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using StormiumTeam.GameBase.GameHost.Simulation;
 using Unity.Entities;
+using UnityEngine;
 
 namespace DefaultNamespace
 {
@@ -58,6 +59,7 @@ namespace DefaultNamespace
 			foreach (var type in types)
 			{
 				deserializerMap[new Key__(componentDeserializer.Size, type)] = (attach, componentDeserializer);
+				Debug.Log($"{componentDeserializer.Size}, {type}, {componentDeserializer}");
 			}
 		}
 
@@ -71,11 +73,8 @@ namespace DefaultNamespace
 		{
 			foreach (var (attach, _) in deserializerMap.Values)
 			{
-				if (attach.CanAttachToArchetype(archetype.ComponentTypes.Reinterpret<GhComponentType>(), detailMap))
-				{
-					archetype.Attach = attach;
-					return;
-				}
+				if (attach.CanAttachToArchetype(archetype.ComponentTypes.Reinterpret<GhComponentType>(), detailMap)) 
+					archetype.Attaches.Add(attach);
 			}
 		}
 	}
