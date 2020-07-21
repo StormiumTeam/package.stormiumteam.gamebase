@@ -9,7 +9,7 @@ namespace GameHost.Transports.Transports.ENet
 
 		public ENetTransportAddress(Address address)
 		{
-			this.Address = address;
+			Address = address;
 		}
 
 		public override TransportDriver Connect()

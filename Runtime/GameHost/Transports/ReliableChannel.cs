@@ -1,4 +1,4 @@
-﻿﻿namespace GameHost.Transports
+﻿namespace GameHost.Transports
 {
 	/// <summary>
 	///     Indicate that we want the data to be reliable

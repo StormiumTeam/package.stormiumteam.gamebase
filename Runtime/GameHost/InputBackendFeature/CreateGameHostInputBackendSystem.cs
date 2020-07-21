@@ -12,9 +12,9 @@ namespace GameHost.InputBackendFeature
 {
 	public class CreateGameHostInputBackendSystem : SystemBase
 	{
+		private ENetTransportDriver  driver;
 		private InputBackendSystem   inputBackendSystem;
 		private RegisterLayoutSystem layoutSystem;
-		private ENetTransportDriver  driver;
 
 		protected override void OnCreate()
 		{
@@ -97,7 +97,7 @@ namespace GameHost.InputBackendFeature
 		private void OnRegisterLayoutActions(in TransportConnection connection, ref DataBufferReader reader)
 		{
 			inputBackendSystem.ClearCurrentActions();
-			
+
 			var length = reader.ReadValue<int>();
 			for (var ac = 0; ac < length; ac++)
 			{
@@ -116,7 +116,7 @@ namespace GameHost.InputBackendFeature
 					if (layout == null)
 					{
 						Debug.LogWarning($"No type defined for layout '{layoutType}'");
-						
+
 						reader.CurrReadIndex += skip;
 						continue;
 					}

@@ -9,14 +9,14 @@ namespace GameHost.ShareSimuWorldFeature
 {
 	public class ConnectToGameHostSimulationSystem : SystemBase
 	{
-		const int maxTries         = 4;
-		const int maxEventPerFrame = 32;
+		private const int maxTries         = 4;
+		private const int maxEventPerFrame = 32;
+		private       int m_ConnectionRetryCount;
 
 		private Host m_Host;
-		private Peer m_Peer;
 
 		private float m_NextPingDelay;
-		private int   m_ConnectionRetryCount;
+		private Peer  m_Peer;
 
 		private void ConnectionLost(bool forcefullyTerminated)
 		{
@@ -66,10 +66,7 @@ namespace GameHost.ShareSimuWorldFeature
 				{
 					if (m_Host.CheckEvents(out var netEvent) <= 0)
 					{
-						if (m_Host.Service(0, out netEvent) <= 0)
-						{
-							break;
-						}
+						if (m_Host.Service(0, out netEvent) <= 0) break;
 
 						polled = true;
 					}

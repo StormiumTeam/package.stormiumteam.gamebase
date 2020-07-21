@@ -27,7 +27,6 @@ namespace GameHost.InputBackendFeature
 
 		protected override void OnUpdate()
 		{
-
 		}
 
 		protected override void OnDestroy()
@@ -41,7 +40,6 @@ namespace GameHost.InputBackendFeature
 
 		public void Register(uint id)
 		{
-
 		}
 
 		public InputActionLayouts GetLayoutsOf(Entity entity)

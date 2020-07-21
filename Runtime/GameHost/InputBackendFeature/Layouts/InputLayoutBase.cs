@@ -6,18 +6,19 @@ using RevolutionSnapshot.Core.Buffers;
 namespace GameHost.InputBackendFeature.Layouts
 {
 	/// <summary>
-	/// A layout represent information about how an input should be processed with which keys.
+	///     A layout represent information about how an input should be processed with which keys.
 	/// </summary>
 	public abstract class InputLayoutBase
 	{
-		public readonly string                     Id;
-		public          ReadOnlyCollection<CInput> Inputs { get; protected set; }
+		public readonly string Id;
 
 		public InputLayoutBase(string id)
 		{
-			this.Id = id;
-			Inputs  = new ReadOnlyCollection<CInput>(Array.Empty<CInput>());
+			Id     = id;
+			Inputs = new ReadOnlyCollection<CInput>(Array.Empty<CInput>());
 		}
+
+		public ReadOnlyCollection<CInput> Inputs { get; protected set; }
 
 		public abstract void Serialize(ref   DataBufferWriter buffer);
 		public abstract void Deserialize(ref DataBufferReader buffer);
@@ -31,7 +32,6 @@ namespace GameHost.InputBackendFeature.Layouts
 
 		public InputActionLayouts(InputActionLayouts original) : base(original)
 		{
-
 		}
 
 		public InputActionLayouts(IEnumerable<InputLayoutBase> layouts)
@@ -40,7 +40,10 @@ namespace GameHost.InputBackendFeature.Layouts
 				Add(layout);
 		}
 
-		public void Add(InputLayoutBase layout) => Add(layout.Id, layout);
+		public void Add(InputLayoutBase layout)
+		{
+			Add(layout.Id, layout);
+		}
 
 		public bool TryGetOrDefault(string currentLayout, out InputLayoutBase layout)
 		{

@@ -17,21 +17,15 @@ namespace GameHost.ShareSimuWorldFeature
 
 	public class ReceiveSimulationWorldSystem : SystemBase
 	{
-		public struct Archetype__
-		{
-			public NativeArray<uint>               ComponentTypes;
-			public List<ICustomComponentArchetypeAttach> Attaches;
-		}
-
-		private RegisterDeserializerSystem          registerDeserializer;
-		private NativeHashMap<GhGameEntity, Entity> ghToUnityEntityMap;
-
-		public Dictionary<GhComponentType, ComponentTypeDetails> typeDetailMapFromRow;
-		public Dictionary<string, ComponentTypeDetails>          typeDetailMapFromName;
-
 		public Dictionary<uint, Archetype__> archetypeMap;
 
-		private EntityArchetype defaultSpawnArchetype;
+		private EntityArchetype                     defaultSpawnArchetype;
+		private NativeHashMap<GhGameEntity, Entity> ghToUnityEntityMap;
+
+		private RegisterDeserializerSystem               registerDeserializer;
+		public  Dictionary<string, ComponentTypeDetails> typeDetailMapFromName;
+
+		public Dictionary<GhComponentType, ComponentTypeDetails> typeDetailMapFromRow;
 
 		protected override void OnCreate()
 		{
@@ -112,7 +106,7 @@ namespace GameHost.ShareSimuWorldFeature
 						if (archetype.ComponentTypes.IsCreated)
 							archetype.ComponentTypes.Dispose();
 						archetype.ComponentTypes = new NativeArray<uint>(newData, Allocator.Persistent);
-						archetype.Attaches = new List<ICustomComponentArchetypeAttach>();
+						archetype.Attaches       = new List<ICustomComponentArchetypeAttach>();
 						registerDeserializer.AttachArchetype(ref archetype, typeDetailMapFromName);
 
 						archetypeMap[row] = archetype;
@@ -152,10 +146,7 @@ namespace GameHost.ShareSimuWorldFeature
 					}
 					else
 					{
-						if (EntityManager.GetComponentData<ReplicatedGameEntity>(unityEntity).ArchetypeId != archetype)
-						{
-							archetypeUpdate = true;
-						}
+						if (EntityManager.GetComponentData<ReplicatedGameEntity>(unityEntity).ArchetypeId != archetype) archetypeUpdate = true;
 					}
 
 					if (archetypeUpdate)
@@ -165,10 +156,8 @@ namespace GameHost.ShareSimuWorldFeature
 							previousArchetype = previousReplicatedData.ArchetypeId;
 
 						if (previousArchetype > 0)
-						{
 							foreach (var attach in archetypeMap[previousArchetype].Attaches)
 								attach.OnEntityRemoved(EntityManager, entity, unityEntity);
-						}
 
 						EntityManager.SetComponentData(unityEntity, new ReplicatedGameEntity
 						{
@@ -206,7 +195,7 @@ namespace GameHost.ShareSimuWorldFeature
 			outputEntities.Dispose();
 		}
 
-		private unsafe void OnReadComponent(ref DataBufferReader reader, int index, NativeArray<GhGameEntity> entities, NativeArray<Entity> output, NativeArray<GhComponentType> componentTypes)
+		private void OnReadComponent(ref DataBufferReader reader, int index, NativeArray<GhGameEntity> entities, NativeArray<Entity> output, NativeArray<GhComponentType> componentTypes)
 		{
 			var skip             = reader.ReadValue<int>();
 			var componentDetails = typeDetailMapFromRow[componentTypes[index]];
@@ -221,6 +210,12 @@ namespace GameHost.ShareSimuWorldFeature
 
 			deserializer.BeginDeserialize(this);
 			deserializer.Deserialize(EntityManager, entities, output, ref reader);
+		}
+
+		public struct Archetype__
+		{
+			public NativeArray<uint>                     ComponentTypes;
+			public List<ICustomComponentArchetypeAttach> Attaches;
 		}
 	}
 }

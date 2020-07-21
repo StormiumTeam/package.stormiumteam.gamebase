@@ -8,10 +8,6 @@ namespace GameHost.Transports.Transports.ENet
 {
 	public unsafe partial class ENetTransportDriver : TransportDriver
 	{
-		private TransportAddress m_TransportAddress;
-		
-		public override TransportAddress TransportAddress => m_TransportAddress;
-
 		private readonly Dictionary<uint, Connection> m_Connections;
 
 		private readonly int[] m_ConnectionVersions;
@@ -28,7 +24,8 @@ namespace GameHost.Transports.Transports.ENet
 		/// </summary>
 		private Host m_Host;
 
-		private int m_PipelineCount;
+		private int              m_PipelineCount;
+		private TransportAddress m_TransportAddress;
 
 		static ENetTransportDriver()
 		{
@@ -55,6 +52,8 @@ namespace GameHost.Transports.Transports.ENet
 			Listening = false;
 			m_DidBind = false;
 		}
+
+		public override TransportAddress TransportAddress => m_TransportAddress;
 
 		/// <summary>
 		///     The bind address
@@ -289,10 +288,8 @@ namespace GameHost.Transports.Transports.ENet
 		public override int Broadcast(TransportChannel chan, Span<byte> data)
 		{
 			foreach (var con in m_Connections.Values)
-			{
 				if (Send(chan, new TransportConnection {Id = con.Id, Version = 1}, data) < 0)
 					return -1;
-			}
 
 			return 0;
 		}

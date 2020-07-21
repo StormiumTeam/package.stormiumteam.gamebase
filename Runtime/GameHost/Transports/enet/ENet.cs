@@ -1,4 +1,4 @@
-﻿﻿/*
+﻿/*
  *  Managed C# wrapper for an extended version of ENet
  *  Copyright (c) 2013 James Bellinger
  *  Copyright (c) 2016 Nate Shoffner
@@ -23,12 +23,12 @@
  *  SOFTWARE.
  */
 
- using System;
- using System.Runtime.InteropServices;
- using System.Security;
- using System.Text;
+using System;
+using System.Runtime.InteropServices;
+using System.Security;
+using System.Text;
 
- namespace GameHost.Transports.enet
+namespace GameHost.Transports.enet
 {
 	[Flags]
 	public enum PacketFlags

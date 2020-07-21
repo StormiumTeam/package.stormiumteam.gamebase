@@ -45,38 +45,45 @@ namespace GameHost
 	public readonly struct GhComponentMetadata
 	{
 		/// <summary>
-		/// The assigned component meta
+		///     The assigned component meta
 		/// </summary>
 		public readonly int Assigned;
 
 		/// <summary>
-		/// Is the assignment null?
+		///     Is the assignment null?
 		/// </summary>
 		public bool Null => Assigned == 0;
-			 
+
 		/// <summary>
-		/// Is the assignment valid?
+		///     Is the assignment valid?
 		/// </summary>
 		public bool Valid => Assigned != 0;
 
 		/// <summary>
-		/// Is this a custom component?
+		///     Is this a custom component?
 		/// </summary>
 		public bool IsShared => Assigned < 0;
 
 		/// <summary>
-		/// The reference to the non custom component
+		///     The reference to the non custom component
 		/// </summary>
 		public uint Id => IsShared ? 0 : (uint) Assigned;
 
 		/// <summary>
-		/// The reference to the entity that share the component
+		///     The reference to the entity that share the component
 		/// </summary>
 		public uint Entity => IsShared ? (uint) -Assigned : 0;
 
-		public static GhComponentMetadata Reference(uint componentId) => new GhComponentMetadata((int) componentId);
-		public static GhComponentMetadata Shared(uint    entity)      => new GhComponentMetadata((int) -entity);
-			 
+		public static GhComponentMetadata Reference(uint componentId)
+		{
+			return new GhComponentMetadata((int) componentId);
+		}
+
+		public static GhComponentMetadata Shared(uint entity)
+		{
+			return new GhComponentMetadata((int) -entity);
+		}
+
 		private GhComponentMetadata(int assigned)
 		{
 			Assigned = assigned;

@@ -7,6 +7,42 @@ namespace GameHost.ShareSimuWorldFeature
 {
 	public class RegisterDeserializerSystem : SystemBase
 	{
+		internal Dictionary<Key__, (ICustomComponentArchetypeAttach attach, ICustomComponentDeserializer deserializer)> deserializerMap;
+
+		protected override void OnCreate()
+		{
+			base.OnCreate();
+
+			deserializerMap = new Dictionary<Key__, (ICustomComponentArchetypeAttach attach, ICustomComponentDeserializer deserializer)>();
+		}
+
+		protected override void OnUpdate()
+		{
+		}
+
+		public void Register(ICustomComponentArchetypeAttach attach, ICustomComponentDeserializer componentDeserializer)
+		{
+			var types = attach.RegisterTypes();
+			foreach (var type in types)
+			{
+				deserializerMap[new Key__(componentDeserializer.Size, type)] = (attach, componentDeserializer);
+				Debug.Log($"{componentDeserializer.Size}, {type}, {componentDeserializer}");
+			}
+		}
+
+		public (ICustomComponentArchetypeAttach attach, ICustomComponentDeserializer deserializer) Get(int size, string name)
+		{
+			deserializerMap.TryGetValue(new Key__(size, name), out var tuple);
+			return tuple;
+		}
+
+		public void AttachArchetype(ref ReceiveSimulationWorldSystem.Archetype__ archetype, in Dictionary<string, ComponentTypeDetails> detailMap)
+		{
+			foreach (var (attach, _) in deserializerMap.Values)
+				if (attach.CanAttachToArchetype(archetype.ComponentTypes.Reinterpret<GhComponentType>(), detailMap))
+					archetype.Attaches.Add(attach);
+		}
+
 		internal readonly struct Key__ : IEquatable<Key__>
 		{
 			public readonly int    Size;
@@ -34,46 +70,6 @@ namespace GameHost.ShareSimuWorldFeature
 				{
 					return (Size * 397) ^ (Name != null ? Name.GetHashCode() : 0);
 				}
-			}
-		}
-
-
-		internal Dictionary<Key__, (ICustomComponentArchetypeAttach attach, ICustomComponentDeserializer deserializer)> deserializerMap;
-
-		protected override void OnCreate()
-		{
-			base.OnCreate();
-
-			deserializerMap = new Dictionary<Key__, (ICustomComponentArchetypeAttach attach, ICustomComponentDeserializer deserializer)>();
-		}
-
-		protected override void OnUpdate()
-		{
-
-		}
-
-		public void Register(ICustomComponentArchetypeAttach attach, ICustomComponentDeserializer componentDeserializer)
-		{
-			var types = attach.RegisterTypes();
-			foreach (var type in types)
-			{
-				deserializerMap[new Key__(componentDeserializer.Size, type)] = (attach, componentDeserializer);
-				Debug.Log($"{componentDeserializer.Size}, {type}, {componentDeserializer}");
-			}
-		}
-
-		public (ICustomComponentArchetypeAttach attach, ICustomComponentDeserializer deserializer) Get(int size, string name)
-		{
-			deserializerMap.TryGetValue(new Key__(size, name), out var tuple);
-			return tuple;
-		}
-
-		public void AttachArchetype(ref ReceiveSimulationWorldSystem.Archetype__ archetype, in Dictionary<string, ComponentTypeDetails> detailMap)
-		{
-			foreach (var (attach, _) in deserializerMap.Values)
-			{
-				if (attach.CanAttachToArchetype(archetype.ComponentTypes.Reinterpret<GhComponentType>(), detailMap)) 
-					archetype.Attaches.Add(attach);
 			}
 		}
 	}

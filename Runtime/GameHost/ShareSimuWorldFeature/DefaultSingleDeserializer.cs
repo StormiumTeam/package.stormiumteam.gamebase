@@ -10,8 +10,6 @@ namespace GameHost.ShareSimuWorldFeature
 	public class DefaultSingleDeserializer<TComponent> : ICustomComponentDeserializer
 		where TComponent : struct, IComponentData
 	{
-		public int Size { get; private set; }
-
 		private ComponentDataFromEntity<TComponent> componentDataFromEntity;
 
 		public DefaultSingleDeserializer()
@@ -25,6 +23,8 @@ namespace GameHost.ShareSimuWorldFeature
 			Size = UnsafeUtility.SizeOf<TComponent>();
 		}
 
+		public int Size { get; }
+
 		public void BeginDeserialize(SystemBase system)
 		{
 			componentDataFromEntity = system.GetComponentDataFromEntity<TComponent>();
@@ -35,7 +35,7 @@ namespace GameHost.ShareSimuWorldFeature
 			// it's TagComponentBoard if size is 0, so nothing to read.
 			if (Size == 0)
 				return;
-			
+
 			var links = new NativeArray<GhComponentMetadata>(reader.ReadValue<int>(), Allocator.Temp);
 			reader.ReadDataSafe(links);
 
