@@ -74,20 +74,23 @@
                      var currentLayout = EntityManager.GetComponentData<InputCurrentLayout>(GetSingletonEntity<InputCurrentLayout>());
 
                      var layouts = GetLayouts(entity);
-                     if (!layouts.TryGetOrDefault(currentLayout.Id, out var layout))
+                     if (!layouts.TryGetOrDefault(currentLayout.Id, out var layout) || !(layout is Layout axisLayout))
                          return;
 
                      var action = EntityManager.GetComponentData<AxisAction>(entity);
                      var value  = 0f;
-                     foreach (var input in layout.Inputs)
+                     foreach (var input in axisLayout.Negative)
                      {
-                         if (Backend.GetInputControl(input.Target) is AxisControl buttonControl)
-                         {
+                         if (Backend.GetInputControl(input.Target) is AxisControl buttonControl) 
+                             value -= buttonControl.ReadValue();
+                     }
+                     foreach (var input in axisLayout.Positive)
+                     {
+                         if (Backend.GetInputControl(input.Target) is AxisControl buttonControl) 
                              value += buttonControl.ReadValue();
-                         }
                      }
 
-                     action.Value = math.clamp(value, 0, 1);
+                     action.Value = math.clamp(value, -1, 1);
                      EntityManager.SetComponentData(entity, action);
                  }
              }
