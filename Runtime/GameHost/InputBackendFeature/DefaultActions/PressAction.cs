@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using GameHost.InputBackendFeature.BaseSystems;
 using GameHost.InputBackendFeature.Interfaces;
 using GameHost.InputBackendFeature.Layouts;
 using RevolutionSnapshot.Core.Buffers;
 
-namespace GameHost.InputBackendFeature.DefaultActions
+namespace GameHost.Inputs.DefaultActions
 {
 	public struct PressAction : IInputAction
 	{
@@ -38,5 +39,22 @@ namespace GameHost.InputBackendFeature.DefaultActions
 		public uint DownCount, UpCount;
 
 		public bool HasBeenPressed => DownCount > 0;
+
+		public class System : InputActionSystemBase<PressAction, Layout>
+		{
+
+		}
+
+		public void Serialize(ref DataBufferWriter buffer)
+		{
+			buffer.WriteValue(DownCount);
+			buffer.WriteValue(UpCount);
+		}
+
+		public void Deserialize(ref DataBufferReader buffer)
+		{
+			DownCount = buffer.ReadValue<uint>();
+			UpCount   = buffer.ReadValue<uint>();
+		}
 	}
 }

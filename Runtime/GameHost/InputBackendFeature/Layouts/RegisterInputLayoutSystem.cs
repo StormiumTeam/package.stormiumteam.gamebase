@@ -4,14 +4,18 @@ using Unity.Entities;
 
 namespace GameHost.InputBackendFeature.Layouts
 {
-	public class RegisterLayoutSystem : SystemBase
+	public class RegisterInputLayoutSystem : SystemBase
 	{
 		internal Dictionary<string, Type> ghLayoutToUnityLayoutMap;
+
+		public RegisterInputLayoutSystem()
+		{
+			ghLayoutToUnityLayoutMap = new Dictionary<string, Type>();
+		}
 
 		protected override void OnCreate()
 		{
 			base.OnCreate();
-			ghLayoutToUnityLayoutMap = new Dictionary<string, Type>();
 			Enabled                  = false;
 		}
 

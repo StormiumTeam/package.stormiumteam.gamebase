@@ -15,6 +15,8 @@ namespace GameHost.InputBackendFeature
 		private NativeHashMap<ReplicatedInputAction, Entity>          ghIdToEntityMap;
 		private Dictionary<ReplicatedInputAction, InputActionLayouts> ghIdToLayoutsMap;
 
+		private RegisterInputActionSystem inputActionSystem;
+
 		protected override void OnCreate()
 		{
 			base.OnCreate();
@@ -23,6 +25,8 @@ namespace GameHost.InputBackendFeature
 			actionQuery      = GetEntityQuery(typeof(ReplicatedInputAction));
 			ghIdToEntityMap  = new NativeHashMap<ReplicatedInputAction, Entity>(256, Allocator.Persistent);
 			ghIdToLayoutsMap = new Dictionary<ReplicatedInputAction, InputActionLayouts>(256);
+
+			inputActionSystem = World.GetExistingSystem<RegisterInputActionSystem>();
 		}
 
 		protected override void OnUpdate()
@@ -56,9 +60,12 @@ namespace GameHost.InputBackendFeature
 			ghIdToEntityMap.Clear();
 		}
 
-		internal Entity RegisterAction(TransportConnection connection, InputAction action)
+		internal Entity RegisterAction(TransportConnection connection, string ghActionType, InputAction action)
 		{
-			var entity = EntityManager.CreateEntity();
+			var entity = inputActionSystem.TryGetCreateActionBase(ghActionType);
+			if (entity == default)
+				return default;
+
 			var repl = new ReplicatedInputAction
 			{
 				Connection = connection,

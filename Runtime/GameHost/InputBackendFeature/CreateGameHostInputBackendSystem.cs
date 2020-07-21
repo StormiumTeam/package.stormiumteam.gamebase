@@ -12,15 +12,15 @@ namespace GameHost.InputBackendFeature
 {
 	public class CreateGameHostInputBackendSystem : SystemBase
 	{
-		private ENetTransportDriver  driver;
-		private InputBackendSystem   inputBackendSystem;
-		private RegisterLayoutSystem layoutSystem;
+		private ENetTransportDriver       driver;
+		private InputBackendSystem        inputBackendSystem;
+		private RegisterInputLayoutSystem inputLayoutSystem;
 
 		protected override void OnCreate()
 		{
 			base.OnCreate();
 			inputBackendSystem = World.GetExistingSystem<InputBackendSystem>();
-			layoutSystem       = World.GetExistingSystem<RegisterLayoutSystem>();
+			inputLayoutSystem  = World.GetExistingSystem<RegisterInputLayoutSystem>();
 			driver             = new ENetTransportDriver(32);
 		}
 
@@ -101,23 +101,34 @@ namespace GameHost.InputBackendFeature
 			var length = reader.ReadValue<int>();
 			for (var ac = 0; ac < length; ac++)
 			{
-				var actionId    = reader.ReadValue<int>();
+				var actionId   = reader.ReadValue<int>();
+				var actionType = reader.ReadString();
+				var skipAction = reader.ReadValue<int>();
+
+				var actionEntity = inputBackendSystem.RegisterAction(connection, actionType, new InputAction {Id = actionId});
+				if (actionEntity == default)
+				{
+					Debug.LogWarning($"No type defined for action '{actionType}'");
+
+					reader.CurrReadIndex += skipAction;
+					continue;
+				}
+
 				var layoutCount = reader.ReadValue<int>();
 
-				var actionEntity = inputBackendSystem.RegisterAction(connection, new InputAction {Id = actionId});
-				var layouts      = inputBackendSystem.GetLayoutsOf(actionEntity);
+				var layouts = inputBackendSystem.GetLayoutsOf(actionEntity);
 				for (var lyt = 0; lyt < layoutCount; lyt++)
 				{
-					var layoutType = reader.ReadString();
 					var layoutId   = reader.ReadString();
-					var skip       = reader.ReadValue<int>();
+					var layoutType = reader.ReadString();
+					var skipLayout = reader.ReadValue<int>();
 
-					var layout = layoutSystem.TryCreateLayout(layoutType, layoutId);
+					var layout = inputLayoutSystem.TryCreateLayout(layoutType, layoutId);
 					if (layout == null)
 					{
 						Debug.LogWarning($"No type defined for layout '{layoutType}'");
 
-						reader.CurrReadIndex += skip;
+						reader.CurrReadIndex += skipLayout;
 						continue;
 					}
 
