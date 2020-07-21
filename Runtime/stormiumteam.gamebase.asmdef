@@ -1,33 +1,37 @@
-﻿{
-  "name": "package.stormiumteam.gamebase",
-  "references": [
-    "package.guerro.shared",
-    "Unity.TextMeshPro",
-    "Unity.ugui",
-    "Unity.Networking.Transport",
-    "Unity.InputSystem",
-    "Unity.Addressables",
-    "Unity.ResourceManager",
-    "Unity.Physics",
-    "Unity.Entities",
-    "Unity.Entities.Hybrid",
-    "Unity.Rendering.Hybrid",
-    "Unity.Transforms",
-    "Unity.Transforms.Hybrid",
-    "Unity.Mathematics",
-    "Unity.Collections",
-    "Unity.Jobs",
-    "Unity.Burst"
-  ],
-  "includePlatforms": [],
-  "excludePlatforms": [],
-  "allowUnsafeCode": true,
-  "overrideReferences": true,
-  "precompiledReferences": [
-    "Newtonsoft.Json.dll"
-  ],
-  "autoReferenced": true,
-  "defineConstraints": [],
-  "versionDefines": [],
-  "noEngineReferences": false
+{
+    "name": "package.stormiumteam.gamebase",
+    "rootNamespace": "",
+    "references": [
+        "package.guerro.shared",
+        "Unity.TextMeshPro",
+        "Unity.ugui",
+        "Unity.Networking.Transport",
+        "Unity.InputSystem",
+        "Unity.Addressables",
+        "Unity.ResourceManager",
+        "Unity.Physics",
+        "Unity.Entities",
+        "Unity.Entities.Hybrid",
+        "Unity.Rendering.Hybrid",
+        "Unity.Transforms",
+        "Unity.Transforms.Hybrid",
+        "Unity.Mathematics",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Burst"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Newtonsoft.Json.dll",
+        "System.Buffers.dll",
+        "System.Memory.dll",
+        "System.Runtime.CompilerServices.Unsafe.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

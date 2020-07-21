@@ -5,6 +5,7 @@
 	{
 		Unknown        = 0,
 		Rpc            = 10,
+		InputData      = 50,
 		SimulationData = 100
 	}
 }

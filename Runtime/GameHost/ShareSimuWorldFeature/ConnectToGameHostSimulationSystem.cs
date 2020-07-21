@@ -6,7 +6,6 @@ using StormiumTeam.GameBase.GameHost.Simulation;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
-using EventType = ENet.EventType;
 
 namespace DefaultNamespace
 {
@@ -34,7 +33,7 @@ namespace DefaultNamespace
 
 		protected override void OnUpdate()
 		{
-			if (m_Host == null)
+			if (!m_Host.IsSet)
 				return;
 
 			if (m_Peer.State == PeerState.Disconnected)
@@ -42,7 +41,7 @@ namespace DefaultNamespace
 				if (m_ConnectionRetryCount > maxTries)
 				{
 					m_Host.Dispose();
-					m_Host = null;
+					m_Host = default;
 					ConnectionLost(true);
 					return;
 				}
@@ -59,16 +58,6 @@ namespace DefaultNamespace
 			{
 				m_NextPingDelay = 2.0f;
 				m_Peer.Ping();
-			}
-
-			if (Input.GetKeyDown(KeyCode.S))
-			{
-				var buffer = new DataBufferWriter(0, Allocator.Temp);
-				buffer.WriteInt((int) EMessageType.Rpc);
-
-				var packet = new Packet();
-				packet.Create(buffer.GetSafePtr(), buffer.Length, PacketFlags.Reliable);
-				m_Peer.Send(0, ref packet);
 			}
 
 			for (var i = 0; i != maxEventPerFrame; i++)
@@ -89,14 +78,14 @@ namespace DefaultNamespace
 
 					switch (netEvent.Type)
 					{
-						case EventType.None:
+						case NetEventType.None:
 							break;
-						case EventType.Connect:
+						case NetEventType.Connect:
 							Debug.Log("connection!");
 							break;
-						case EventType.Disconnect:
+						case NetEventType.Disconnect:
 							break;
-						case EventType.Receive:
+						case NetEventType.Receive:
 							var reader = new DataBufferReader(netEvent.Packet.Data, netEvent.Packet.Length);
 							var type   = (EMessageType) reader.ReadValue<int>();
 							switch (type)
@@ -114,7 +103,7 @@ namespace DefaultNamespace
 
 							netEvent.Packet.Dispose();
 							break;
-						case EventType.Timeout:
+						case NetEventType.Timeout:
 							break;
 						default:
 							throw new ArgumentOutOfRangeException();
