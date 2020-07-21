@@ -1,4 +1,4 @@
-﻿using ENet;
+﻿using GameHost.Transports.enet;
 using Unity.Entities;
 using UnityEngine;
 
@@ -6,7 +6,7 @@ namespace Core.ENet
 {
 	public class InitializeLibrarySystem : SystemBase
 	{
-		protected override void OnCreate()
+		public InitializeLibrarySystem()
 		{
 			if (Library.Initialize())
 				Debug.Log("ENet Initialized");

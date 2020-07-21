@@ -1,15 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using package.stormiumteam.shared.ecs;
 using RevolutionSnapshot.Core.Buffers;
-using StormiumTeam.GameBase.GameHost.Simulation;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using UnityEngine;
-using UnityEngine.Profiling;
 
-namespace DefaultNamespace
+namespace GameHost.ShareSimuWorldFeature
 {
 	public struct ComponentTypeDetails
 	{

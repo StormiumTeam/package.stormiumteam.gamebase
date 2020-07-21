@@ -1,95 +1,131 @@
 ﻿using System;
-using DefaultNamespace;
-using ENet;
+using GameHost.Core.IO;
+using GameHost.InputBackendFeature.Components;
+using GameHost.InputBackendFeature.Layouts;
+using GameHost.Transports.enet;
+using GameHost.Transports.Transports.ENet;
 using RevolutionSnapshot.Core.Buffers;
 using Unity.Entities;
 using UnityEngine;
 
-namespace StormiumTeam.GameBase.GameHost.Simulation.InputBackendFeature
+namespace GameHost.InputBackendFeature
 {
 	public class CreateGameHostInputBackendSystem : SystemBase
 	{
-		const int maxEventPerFrame = 32;
-
-		private Host m_Host;
-		private Peer m_Peer;
+		private InputBackendSystem   inputBackendSystem;
+		private RegisterLayoutSystem layoutSystem;
+		private ENetTransportDriver  driver;
 
 		protected override void OnCreate()
 		{
 			base.OnCreate();
+			inputBackendSystem = World.GetExistingSystem<InputBackendSystem>();
+			layoutSystem       = World.GetExistingSystem<RegisterLayoutSystem>();
+			driver             = new ENetTransportDriver(32);
 		}
 
 		protected override void OnUpdate()
 		{
-			if (!m_Host.IsSet)
-				return;
+			driver.Update();
 
-			for (var i = 0; i != maxEventPerFrame; i++)
+			while (driver.Accept().IsCreated)
 			{
-				var polled    = false;
-				var breakThis = false;
-				while (!polled)
+			}
+
+			TransportEvent ev;
+			while ((ev = driver.PopEvent()).Type != TransportEvent.EType.None)
+			{
+				switch (ev.Type)
 				{
-					if (m_Host.CheckEvents(out var netEvent) <= 0)
-					{
-						if (m_Host.Service(0, out netEvent) <= 0)
+					case TransportEvent.EType.None:
+						break;
+					case TransportEvent.EType.RequestConnection:
+						break;
+					case TransportEvent.EType.Connect:
+						break;
+					case TransportEvent.EType.Disconnect:
+						break;
+					case TransportEvent.EType.Data:
+						var reader = new DataBufferReader(ev.Data);
+						var type   = (EMessageType) reader.ReadValue<int>();
+						Console.WriteLine($"received {type}");
+						switch (type)
 						{
-							break;
+							case EMessageType.InputData:
+							{
+								var inputDataReader = new DataBufferReader(reader, reader.CurrReadIndex, reader.Length);
+								var subType         = (EMessageInputType) inputDataReader.ReadValue<int>();
+								switch (subType)
+								{
+									case EMessageInputType.Register:
+									{
+										OnRegisterLayoutActions(ev.Connection, ref inputDataReader);
+										break;
+									}
+									case EMessageInputType.ReceiveRegister:
+										throw new InvalidOperationException("shouldnt be on unity");
+									case EMessageInputType.ReceiveInputs:
+										throw new InvalidOperationException("shouldnt be on unity");
+								}
+
+								break;
+							}
+							default:
+								throw new ArgumentOutOfRangeException();
 						}
 
-						polled = true;
-					}
-
-					switch (netEvent.Type)
-					{
-						case NetEventType.Connect:
-							Debug.Log("input connection!");
-							break;
-						case NetEventType.Receive:
-							var reader = new DataBufferReader(netEvent.Packet.Data, netEvent.Packet.Length);
-							var type   = (EMessageType) reader.ReadValue<int>();
-							switch (type)
-							{
-								case EMessageType.InputData:
-									var inputDataReader = new DataBufferReader(reader, reader.CurrReadIndex, reader.Length);
-									break;
-								default:
-									throw new ArgumentOutOfRangeException();
-							}
-
-							netEvent.Packet.Dispose();
-							break;
-						default:
-							throw new ArgumentOutOfRangeException();
-					}
+						break;
+					default:
+						throw new ArgumentOutOfRangeException();
 				}
-
-				if (breakThis)
-					break;
 			}
 		}
 
 		protected override void OnDestroy()
 		{
-			if (m_Peer.IsSet)
-				m_Peer.Disconnect(0);
-			if (m_Host.IsSet)
-			{
-				m_Host.Service(0, out _);
-				m_Host.Dispose();
-			}
+			base.OnDestroy();
+			driver.Dispose();
 		}
 
 		public bool Create(ushort port)
 		{
 			var addr = new Address {Port = port};
+			driver.Bind(addr);
+			return driver.Listen() >= 0;
+		}
 
-			if (m_Host.IsSet)
-				m_Host.Dispose();
-			m_Host = new Host();
-			m_Host.Create(addr, 32, 1);
+		private void OnRegisterLayoutActions(in TransportConnection connection, ref DataBufferReader reader)
+		{
+			inputBackendSystem.ClearCurrentActions();
+			
+			var length = reader.ReadValue<int>();
+			for (var ac = 0; ac < length; ac++)
+			{
+				var actionId    = reader.ReadValue<int>();
+				var layoutCount = reader.ReadValue<int>();
 
-			return m_Host.IsSet;
+				var actionEntity = inputBackendSystem.RegisterAction(connection, new InputAction {Id = actionId});
+				var layouts      = inputBackendSystem.GetLayoutsOf(actionEntity);
+				for (var lyt = 0; lyt < layoutCount; lyt++)
+				{
+					var layoutType = reader.ReadString();
+					var layoutId   = reader.ReadString();
+					var skip       = reader.ReadValue<int>();
+
+					var layout = layoutSystem.TryCreateLayout(layoutType, layoutId);
+					if (layout == null)
+					{
+						Debug.LogWarning($"No type defined for layout '{layoutType}'");
+						
+						reader.CurrReadIndex += skip;
+						continue;
+					}
+
+					Console.WriteLine($"Layout (Id={layoutId}, Type={layoutType})");
+					layout.Deserialize(ref reader);
+					layouts.Add(layout);
+				}
+			}
 		}
 	}
 }

@@ -44,6 +44,13 @@ namespace RevolutionSnapshot.Core.Buffers
 
             return readIndex;
         }
+        
+        public DataBufferReader(Span<byte> data)
+        {
+            DataPtr       = (byte*) Unsafe.AsPointer(ref data.GetPinnableReference());
+            CurrReadIndex = 0;
+            Length        = data.Length;
+        }
 
         public int GetReadIndexAndSetNew(DataBufferMarker marker, int size)
         {
@@ -204,7 +211,7 @@ namespace RevolutionSnapshot.Core.Buffers
             var strDataEnd        = ReadValue<int>(marker.GetOffset(sizeof(int) * 1));
             var strExpectedLength = ReadValue<int>(marker.GetOffset(sizeof(int) * 2));
             var strDataStart      = GetReadIndex(marker.GetOffset(sizeof(int) * 3));
-
+            
             if (strDataLength <= 0)
             {
                 if (strDataLength < 0)

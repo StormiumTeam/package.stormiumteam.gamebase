@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using StormiumTeam.GameBase.GameHost.Simulation;
 using Unity.Entities;
 using UnityEngine;
 
-namespace DefaultNamespace
+namespace GameHost.ShareSimuWorldFeature
 {
 	public class RegisterDeserializerSystem : SystemBase
 	{

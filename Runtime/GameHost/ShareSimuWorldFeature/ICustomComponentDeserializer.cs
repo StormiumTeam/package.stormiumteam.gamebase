@@ -1,10 +1,9 @@
 ﻿using System.Collections.Generic;
 using RevolutionSnapshot.Core.Buffers;
-using StormiumTeam.GameBase.GameHost.Simulation;
 using Unity.Collections;
 using Unity.Entities;
 
-namespace DefaultNamespace
+namespace GameHost.ShareSimuWorldFeature
 {
 	public interface ICustomComponentDeserializer
 	{

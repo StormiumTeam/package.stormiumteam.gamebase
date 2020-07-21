@@ -1,8 +1,8 @@
 ﻿using Unity.Entities;
 
-namespace StormiumTeam.GameBase.GameHost.Simulation
+namespace GameHost
 {
-	[UpdateAfter(typeof(Core.ENet.InitializeLibrarySystem))]
+	[UpdateAfter(typeof(global::Core.ENet.InitializeLibrarySystem))]
 	[UpdateInGroup(typeof(SimulationSystemGroup))]
 	public class ReceiveGameHostSystemGroup : ComponentSystemGroup
 	{

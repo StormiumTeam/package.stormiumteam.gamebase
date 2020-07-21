@@ -1,7 +1,6 @@
 ﻿using System;
-using Unity.Entities;
 
-namespace StormiumTeam.GameBase.GameHost.Simulation
+namespace GameHost
 {
 	public struct GhGameEntity : IEquatable<GhGameEntity>
 	{

@@ -1,4 +1,4 @@
-﻿namespace StormiumTeam.GameBase.GameHost.Simulation
+﻿namespace GameHost
 {
 	// need to be synchronized with GameHost enum structure
 	public enum EMessageType

@@ -1,14 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using package.stormiumteam.shared.ecs;
 using RevolutionSnapshot.Core.Buffers;
-using StormiumTeam.GameBase.GameHost.Simulation;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
-using UnityEngine;
 
-namespace DefaultNamespace
+namespace GameHost.ShareSimuWorldFeature
 {
 	public class DefaultSingleDeserializer<TComponent> : ICustomComponentDeserializer
 		where TComponent : struct, IComponentData

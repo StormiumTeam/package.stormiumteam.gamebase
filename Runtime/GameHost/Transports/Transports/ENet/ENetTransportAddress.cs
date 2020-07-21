@@ -1,7 +1,7 @@
-﻿﻿using ENet;
-using GameHost.Core.IO;
+﻿using GameHost.Core.IO;
+using GameHost.Transports.enet;
 
-namespace GameHost.Transports
+namespace GameHost.Transports.Transports.ENet
 {
 	public class ENetTransportAddress : TransportAddress
 	{

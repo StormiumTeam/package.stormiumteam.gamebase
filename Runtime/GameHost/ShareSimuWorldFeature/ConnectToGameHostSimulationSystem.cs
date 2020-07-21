@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Net;
-using ENet;
+using GameHost.Transports.enet;
 using RevolutionSnapshot.Core.Buffers;
-using StormiumTeam.GameBase.GameHost.Simulation;
-using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 
-namespace DefaultNamespace
+namespace GameHost.ShareSimuWorldFeature
 {
 	public class ConnectToGameHostSimulationSystem : SystemBase
 	{

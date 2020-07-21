@@ -1,4 +1,4 @@
-﻿namespace StormiumTeam.GameBase.GameHost.Simulation.InputBackendFeature
+﻿namespace GameHost.InputBackendFeature
 {
 	public enum EMessageInputType
 	{

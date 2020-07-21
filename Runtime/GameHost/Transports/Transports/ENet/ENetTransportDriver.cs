@@ -1,10 +1,10 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
- using ENet;
 using GameHost.Core.IO;
+using GameHost.Transports.enet;
 
- namespace GameHost.Transports
+namespace GameHost.Transports.Transports.ENet
 {
 	public unsafe partial class ENetTransportDriver : TransportDriver
 	{
