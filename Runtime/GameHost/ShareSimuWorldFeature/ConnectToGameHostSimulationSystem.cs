@@ -36,7 +36,7 @@ namespace GameHost.ShareSimuWorldFeature
 
 			if (m_Peer.State == PeerState.Disconnected)
 			{
-				if (m_ConnectionRetryCount > maxTries)
+				if (m_ConnectionRetryCount >= maxTries)
 				{
 					m_Host.Dispose();
 					m_Host = default;
@@ -112,9 +112,13 @@ namespace GameHost.ShareSimuWorldFeature
 
 		protected override void OnDestroy()
 		{
-			m_Peer.Disconnect(0);
-			m_Host.Service(0, out _);
-			m_Host.Dispose();
+			if (m_Host.IsSet)
+			{
+				if (m_Peer.IsSet)
+					m_Peer.Disconnect(0);
+				m_Host.Service(0, out _);
+				m_Host.Dispose();
+			}
 		}
 
 		public bool Connect(IPEndPoint endPoint)
@@ -126,6 +130,8 @@ namespace GameHost.ShareSimuWorldFeature
 			m_Host = new Host();
 			m_Host.Create();
 			m_Peer = m_Host.Connect(addr);
+			m_Peer.Timeout(0, 3000, 5000);
+
 			if (!m_Peer.IsSet)
 				Debug.LogWarning("Couldn't connect to " + endPoint);
 

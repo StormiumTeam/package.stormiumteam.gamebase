@@ -6,6 +6,8 @@ using GameHost.InputBackendFeature.Layouts;
 using package.stormiumteam.shared.ecs;
 using Unity.Collections;
 using Unity.Entities;
+using UnityEngine.InputSystem;
+using InputAction = GameHost.InputBackendFeature.Components.InputAction;
 
 namespace GameHost.InputBackendFeature
 {
@@ -27,6 +29,8 @@ namespace GameHost.InputBackendFeature
 			ghIdToLayoutsMap = new Dictionary<ReplicatedInputAction, InputActionLayouts>(256);
 
 			inputActionSystem = World.GetExistingSystem<RegisterInputActionSystem>();
+
+			EntityManager.AddComponentData(EntityManager.CreateEntity(), new InputCurrentLayout {Id = null});
 		}
 
 		protected override void OnUpdate()
@@ -52,6 +56,11 @@ namespace GameHost.InputBackendFeature
 				throw new InvalidOperationException($"GetLayoutsOf: {entity} should be an input action");
 
 			return ghIdToLayoutsMap[EntityManager.GetComponentData<ReplicatedInputAction>(entity)];
+		}
+
+		public InputControl GetInputControl(string path)
+		{
+			return InputSystem.FindControl(path);
 		}
 
 		internal void ClearCurrentActions()

@@ -28,6 +28,7 @@ namespace GameHost.InputBackendFeature.Layouts
 			if (!typeof(InputLayoutBase).IsAssignableFrom(type))
 				return;
 
+			Console.WriteLine($"Register layout type: {ghType}");
 			ghLayoutToUnityLayoutMap[ghType] = type;
 		}
 

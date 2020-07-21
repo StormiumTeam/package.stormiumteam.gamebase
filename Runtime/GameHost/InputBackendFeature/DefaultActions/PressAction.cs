@@ -1,9 +1,14 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using GameHost.InputBackendFeature.BaseSystems;
+using GameHost.InputBackendFeature.Components;
 using GameHost.InputBackendFeature.Interfaces;
 using GameHost.InputBackendFeature.Layouts;
 using RevolutionSnapshot.Core.Buffers;
+using Unity.Collections;
+using Unity.Entities;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 
 namespace GameHost.Inputs.DefaultActions
 {
@@ -42,7 +47,29 @@ namespace GameHost.Inputs.DefaultActions
 
 		public class System : InputActionSystemBase<PressAction, Layout>
 		{
+			protected override void OnUpdate()
+			{
+				foreach (var entity in InputQuery.ToEntityArray(Allocator.Temp))
+				{
+					var currentLayout = EntityManager.GetComponentData<InputCurrentLayout>(GetSingletonEntity<InputCurrentLayout>());
 
+					var layouts = GetLayouts(entity);
+					if (!layouts.TryGetOrDefault(currentLayout.Id, out var layout))
+						return;
+
+					var action = EntityManager.GetComponentData<PressAction>(entity);
+					foreach (var input in layout.Inputs)
+					{
+						if (Backend.GetInputControl(input.Target) is ButtonControl buttonControl)
+						{
+							action.DownCount = buttonControl.wasPressedThisFrame ? 1u : 0;
+							action.UpCount   = buttonControl.wasReleasedThisFrame ? 1u : 0;
+						}
+					}
+
+					EntityManager.SetComponentData(entity, action);
+				}
+			}
 		}
 
 		public void Serialize(ref DataBufferWriter buffer)

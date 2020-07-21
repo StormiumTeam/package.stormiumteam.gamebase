@@ -28,6 +28,7 @@ namespace GameHost.InputBackendFeature.Layouts
 		public void Register<T>(string ghType)
 			where T : struct, IInputAction
 		{
+			Console.WriteLine($"Register action type: {ghType}");
 			ghActionToUnityLayoutMap[ghType] = e => EntityManager.SetOrAddComponentData(e, default(T));
 		}
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using RevolutionSnapshot.Core.Buffers;
+using Unity.Entities;
 
 namespace GameHost.InputBackendFeature.Layouts
 {
@@ -60,7 +61,7 @@ namespace GameHost.InputBackendFeature.Layouts
 		}
 	}
 
-	public struct InputCurrentLayout
+	public class InputCurrentLayout : IComponentData
 	{
 		public string Id;
 	}

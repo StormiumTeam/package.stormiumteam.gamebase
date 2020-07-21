@@ -4,6 +4,7 @@ using GameHost.InputBackendFeature.Components;
 using GameHost.InputBackendFeature.Layouts;
 using GameHost.Transports.enet;
 using GameHost.Transports.Transports.ENet;
+using PataNext.Export.Desktop;
 using RevolutionSnapshot.Core.Buffers;
 using Unity.Entities;
 using UnityEngine;
@@ -12,7 +13,11 @@ namespace GameHost.InputBackendFeature
 {
 	public class CreateGameHostInputBackendSystem : SystemBase
 	{
-		private ENetTransportDriver       driver;
+		public TransportDriver Driver => driver;
+
+		private ENetTransportDriver   enetDriver;
+		private HeaderTransportDriver driver;
+
 		private InputBackendSystem        inputBackendSystem;
 		private RegisterInputLayoutSystem inputLayoutSystem;
 
@@ -21,7 +26,11 @@ namespace GameHost.InputBackendFeature
 			base.OnCreate();
 			inputBackendSystem = World.GetExistingSystem<InputBackendSystem>();
 			inputLayoutSystem  = World.GetExistingSystem<RegisterInputLayoutSystem>();
-			driver             = new ENetTransportDriver(32);
+			enetDriver         = new ENetTransportDriver(32);
+			driver             = new HeaderTransportDriver(enetDriver);
+
+			var header = driver.WriteHeader();
+			header.WriteInt((int) EMessageType.InputData);
 		}
 
 		protected override void OnUpdate()
@@ -90,8 +99,8 @@ namespace GameHost.InputBackendFeature
 		public bool Create(ushort port)
 		{
 			var addr = new Address {Port = port};
-			driver.Bind(addr);
-			return driver.Listen() >= 0;
+			enetDriver.Bind(addr);
+			return enetDriver.Listen() >= 0;
 		}
 
 		private void OnRegisterLayoutActions(in TransportConnection connection, ref DataBufferReader reader)

@@ -137,6 +137,12 @@ namespace RevolutionSnapshot.Core.Buffers
         {
             return WriteDataSafe((byte*) span.GetUnsafePtr(), UnsafeUtility.SizeOf<T>() * span.Length, marker);
         }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public DataBufferMarker WriteSpan<T>(Span<T> span, DataBufferMarker marker = default)
+        {
+            return WriteDataSafe((byte*) Unsafe.AsPointer(ref span.GetPinnableReference()), Unsafe.SizeOf<T>() * span.Length, marker);
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DataBufferMarker WriteRef<T>(ref T val, DataBufferMarker marker = default(DataBufferMarker))
@@ -376,7 +382,7 @@ namespace RevolutionSnapshot.Core.Buffers
                 var endMarker = WriteInt(0);
                 // Write the string buffer data
                 WriteInt(strLength); // In future, we should get a better way to define that
-                WriteDataSafe((byte*) tempCpyPtr, cpyLength, default(DataBufferMarker));
+                WriteDataSafe((byte*) tempCpyPtr, cpyLength, default);
                 // Re-write the end integer from end marker
                 var l = Length;
                 WriteInt(Length, endMarker);

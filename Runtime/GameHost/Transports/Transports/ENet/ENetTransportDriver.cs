@@ -93,10 +93,19 @@ namespace GameHost.Transports.Transports.ENet
 				}
 			}
 
+			var connectionToRemove = stackalloc uint[m_Connections.Count];
+			var connectionToRemoveLength = 0;
 			foreach (var connection in m_Connections.Values)
 			{
 				connection.ResetDataStream();
-				if (connection.QueuedForDisconnection) RemoveConnection(connection.Id);
+
+				if (connection.QueuedForDisconnection)
+					connectionToRemove[connectionToRemoveLength++] = connection.Id;
+			}
+
+			while (connectionToRemoveLength-- > 0)
+			{
+				RemoveConnection(connectionToRemove[connectionToRemoveLength]);
 			}
 
 			// UPDATE
