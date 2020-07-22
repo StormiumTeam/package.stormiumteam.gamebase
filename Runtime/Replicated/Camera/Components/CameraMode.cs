@@ -28,23 +28,23 @@ namespace GameBase.Camera
 	public struct ComputedCameraState : IComponentData
 	{
 		public bool UseModifier;
-		
+
 		/// <summary>
-		/// Entity from final camera state
+		///     Entity from final camera state
 		/// </summary>
 		public Entity StateEntity;
-		
+
 		/// <summary>
-		/// Camera state data
+		///     Camera state data
 		/// </summary>
 		public CameraState StateData;
 
 		/// <summary>
-		/// Field Of View.
+		///     Field Of View.
 		/// </summary>
 		public float Focus;
 	}
-	
+
 	public struct LocalCameraState : IComponentData
 	{
 		public CameraState Data;
@@ -53,7 +53,7 @@ namespace GameBase.Camera
 		public Entity         Target => Data.Target;
 		public RigidTransform Offset => Data.Offset;
 	}
-	
+
 	public struct ServerCameraState : IComponentData
 	{
 		public CameraState Data;
