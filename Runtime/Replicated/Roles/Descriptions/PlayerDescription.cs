@@ -13,14 +13,14 @@ namespace GameBase.Roles.Descriptions
 		public class RegisterRelative : RegisterGameHostComponentSystemBase<Relative<PlayerDescription>>
 		{
 		}
-		
+
 		public class Register : RegisterGameHostComponentSystemBase<PlayerDescription>
 		{
 		}
 	}
 
 	/// <summary>
-	/// Indicate whether or not this player is local
+	///     Indicate whether or not this player is local
 	/// </summary>
 	public struct PlayerIsLocal : IComponentData
 	{

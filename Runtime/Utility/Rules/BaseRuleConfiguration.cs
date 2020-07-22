@@ -13,17 +13,16 @@ namespace StormiumTeam.GameBase.Utility.Rules
 {
 	public class BaseRuleConfiguration : IDisposable
 	{
-		private FileInfo           m_FileInfo;
-		private RulePropertiesBase m_Rule;
+		public           int                FileVersion;
+		private readonly FileInfo           m_FileInfo;
+		private readonly RulePropertiesBase m_Rule;
 
 		public int TargetVersion;
-		public int FileVersion;
 
 		public BaseRuleConfiguration(RulePropertiesBase rule, RuleBaseSystem system, int version) : this(rule,
 			version,
 			$"{Application.persistentDataPath}/rules/{(string.IsNullOrEmpty(system.Name) ? system.GetType().Name : system.Name)}.json")
 		{
-
 		}
 
 		public BaseRuleConfiguration(RulePropertiesBase rule, int targetVersion, string filePath)
@@ -64,6 +63,11 @@ namespace StormiumTeam.GameBase.Utility.Rules
 			}
 		}
 
+		public void Dispose()
+		{
+			m_Rule.OnPropertyChanged -= OnPropertyChanged;
+		}
+
 		private void OnPropertyChanged(object sender, PropertyChangedEventArgs e)
 		{
 			Save();
@@ -90,18 +94,13 @@ namespace StormiumTeam.GameBase.Utility.Rules
 			Dispose();
 		}
 
-		public void Dispose()
-		{
-			m_Rule.OnPropertyChanged -= OnPropertyChanged;
-		}
-
 		private class Data
 		{
-			public int    Version;
 			public object Value;
+			public int    Version;
 		}
 
-		class NativeStringConverter : JsonConverter<NativeString64>
+		private class NativeStringConverter : JsonConverter<NativeString64>
 		{
 			public override void WriteJson(JsonWriter writer, NativeString64 value, JsonSerializer serializer)
 			{
@@ -114,11 +113,11 @@ namespace StormiumTeam.GameBase.Utility.Rules
 			}
 		}
 
-		class WritablePropertiesOnlyResolver : DefaultContractResolver
+		private class WritablePropertiesOnlyResolver : DefaultContractResolver
 		{
 			protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)
 			{
-				IList<JsonProperty> props = base.CreateProperties(type, memberSerialization);
+				var props = base.CreateProperties(type, memberSerialization);
 				return props.Where(p => p.Writable).ToList();
 			}
 		}

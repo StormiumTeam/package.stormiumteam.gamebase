@@ -1,6 +1,5 @@
 ﻿using System;
 using GameHost.InputBackendFeature.BaseSystems;
-using GameHost.ShareSimuWorldFeature;
 using RevolutionSnapshot.Core.Buffers;
 using Unity.Collections;
 using Unity.Entities;
@@ -32,17 +31,15 @@ namespace GameHost.InputBackendFeature
 			var countMarker = Buffer.WriteInt(0);
 			var count       = 0;
 			foreach (var system in updateInputActionSystemGroup.Systems)
-			{
 				if (system is InputActionSystemBase inputActionSystem)
 				{
 					Buffer.WriteStaticString(inputActionSystem.ActionPath);
 					var lengthMarker = Buffer.WriteInt(0);
 					inputActionSystem.CallSerialize(ref Buffer);
 					Buffer.WriteInt(Buffer.Length - lengthMarker.GetOffset(sizeof(int)).Index, lengthMarker);
-					
+
 					count++;
 				}
-			}
 
 			Buffer.WriteInt(count, countMarker);
 

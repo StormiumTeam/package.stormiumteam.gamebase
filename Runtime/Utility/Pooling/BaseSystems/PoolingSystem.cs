@@ -19,15 +19,15 @@ namespace StormiumTeam.GameBase.Utility.Pooling.BaseSystems
 		where TPresentation : RuntimeAssetPresentation<TPresentation>
 		where TCheckValidity : struct, ICheckValidity
 	{
-		private   AssetPool<GameObject>                         m_BackendPool;
-		protected GetAllBackendModule<TBackend, TCheckValidity> Module;
+		private AssetPool<GameObject> m_BackendPool;
 
 		private AsyncAssetPool<GameObject> m_PresentationPool;
 
 
-		private EntityQuery                m_Query;
-		public  AssetPool<GameObject>      BackendPool      => m_BackendPool;
-		public  AsyncAssetPool<GameObject> PresentationPool => m_PresentationPool;
+		private   EntityQuery                                   m_Query;
+		protected GetAllBackendModule<TBackend, TCheckValidity> Module;
+		public    AssetPool<GameObject>                         BackendPool      => m_BackendPool;
+		public    AsyncAssetPool<GameObject>                    PresentationPool => m_PresentationPool;
 
 		public int PoolingVersion { get; private set; }
 
@@ -100,15 +100,9 @@ namespace StormiumTeam.GameBase.Utility.Pooling.BaseSystems
 			Module.TargetEntities = m_Query.ToEntityArray(Allocator.TempJob);
 			Module.Update(default).Complete();
 			Module.TargetEntities.Dispose();
-			foreach (var entityWithBackend in Module.AttachedBackendEntities)
-			{
-				ReturnBackend(EntityManager.GetComponentObject<TBackend>(entityWithBackend));
-			}
+			foreach (var entityWithBackend in Module.AttachedBackendEntities) ReturnBackend(EntityManager.GetComponentObject<TBackend>(entityWithBackend));
 
-			foreach (var backendWithoutModel in Module.BackendWithoutModel)
-			{
-				ReturnBackend(EntityManager.GetComponentObject<TBackend>(backendWithoutModel));
-			}
+			foreach (var backendWithoutModel in Module.BackendWithoutModel) ReturnBackend(EntityManager.GetComponentObject<TBackend>(backendWithoutModel));
 		}
 
 		protected virtual void ReturnBackend(TBackend backend)

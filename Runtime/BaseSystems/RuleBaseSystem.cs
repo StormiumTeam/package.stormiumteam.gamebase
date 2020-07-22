@@ -1,11 +1,5 @@
-using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq.Expressions;
-using System.Reflection;
-using Newtonsoft.Json.Linq;
 using StormiumTeam.GameBase.Utility.Rules;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using UnityEngine;
 
@@ -62,8 +56,8 @@ namespace StormiumTeam.GameBase.BaseSystems
 	public abstract class RuleBaseSystem<TData> : RuleBaseSystem
 		where TData : struct, IComponentData
 	{
-		public    RuleProperties<TData> Rule;
 		protected BaseRuleConfiguration Configuration;
+		public    RuleProperties<TData> Rule;
 
 		public virtual int Version => 1;
 
@@ -75,10 +69,7 @@ namespace StormiumTeam.GameBase.BaseSystems
 			AddRuleProperties();
 			SetDefaultProperties();
 			Configuration = new BaseRuleConfiguration(Rule, this, Version);
-			if (Configuration.FileVersion != Configuration.TargetVersion)
-			{
-				OnUpgrade(Configuration.FileVersion);
-			}
+			if (Configuration.FileVersion != Configuration.TargetVersion) OnUpgrade(Configuration.FileVersion);
 		}
 
 		protected override void OnUpdate()

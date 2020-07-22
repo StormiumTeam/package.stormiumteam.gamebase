@@ -1,7 +1,7 @@
 ﻿using Unity.Entities;
 using UnityEngine;
 
-namespace DefaultNamespace.Utility.DOTS.xMonoBehaviour
+namespace StormiumTeam.GameBase.Utility.DOTS.xMonoBehaviour
 {
 	public class DestroyGameObjectOnEntityDestroyed : MonoBehaviour
 	{

@@ -9,9 +9,8 @@ namespace StormiumTeam.GameBase.Utility.AssetBackend
 	public abstract class RuntimeAssetPresentation<TMonoPresentation> : MonoBehaviour
 		where TMonoPresentation : RuntimeAssetPresentation<TMonoPresentation>
 	{
-		public RuntimeAssetBackend<TMonoPresentation> Backend { get; protected set; }
-
-		private List<IBackendReceiver> m_Receivers;
+		private List<IBackendReceiver>                 m_Receivers;
+		public  RuntimeAssetBackend<TMonoPresentation> Backend { get; protected set; }
 
 		internal void SetBackend(RuntimeAssetBackend<TMonoPresentation> backend)
 		{
@@ -31,9 +30,9 @@ namespace StormiumTeam.GameBase.Utility.AssetBackend
 			if (TryGetComponent(out GameObjectEntity goEntity)
 			    && goEntity.Entity != default)
 			{
-				#if UNITY_EDITOR
+#if UNITY_EDITOR
 				goEntity.EntityManager.SetName(goEntity.Entity, $"Presentation: {GetType().Name} ({goEntity.Entity})");
-				#endif
+#endif
 				goEntity.EntityManager.SetOrAddComponentData(goEntity.Entity, GameObjectConversionUtility.GetEntityGuid(gameObject, 0));
 			}
 
@@ -46,7 +45,7 @@ namespace StormiumTeam.GameBase.Utility.AssetBackend
 		}
 
 		/// <summary>
-		/// Call this method from a system...
+		///     Call this method from a system...
 		/// </summary>
 		public virtual void OnSystemUpdate()
 		{

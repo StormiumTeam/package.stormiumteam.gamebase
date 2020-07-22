@@ -3,7 +3,7 @@
 namespace GameHost.Core.IO
 {
 	/// <summary>
-	/// Event data
+	///     Event data
 	/// </summary>
 	public ref struct TransportEvent
 	{
@@ -13,7 +13,7 @@ namespace GameHost.Core.IO
 			RequestConnection = 9,
 			Connect           = 10,
 			Disconnect        = 15,
-			Data              = 20,
+			Data              = 20
 		}
 
 		public EType               Type;
@@ -22,7 +22,7 @@ namespace GameHost.Core.IO
 	}
 
 	/// <summary>
-	/// Contain data about a connection
+	///     Contain data about a connection
 	/// </summary>
 	public struct TransportConnection : IEquatable<TransportConnection>
 	{
@@ -59,7 +59,7 @@ namespace GameHost.Core.IO
 	}
 
 	/// <summary>
-	/// A transport channel indicate how a data should be sent.
+	///     A transport channel indicate how a data should be sent.
 	/// </summary>
 	public struct TransportChannel
 	{
@@ -68,7 +68,7 @@ namespace GameHost.Core.IO
 	}
 
 	/// <summary>
-	/// A transport address is a way to connect to other transports without knowing what type to instantiate.
+	///     A transport address is a way to connect to other transports without knowing what type to instantiate.
 	/// </summary>
 	public abstract class TransportAddress
 	{
@@ -76,57 +76,57 @@ namespace GameHost.Core.IO
 	}
 
 	/// <summary>
-	/// A transport driver is an interface for sending data between connections.
+	///     A transport driver is an interface for sending data between connections.
 	/// </summary>
 	public abstract class TransportDriver : IDisposable
 	{
 		public abstract TransportAddress TransportAddress { get; }
 
 		/// <summary>
-		/// Accept incoming connections
+		///     Dispose driver's resources.
+		/// </summary>
+		public abstract void Dispose();
+
+		/// <summary>
+		///     Accept incoming connections
 		/// </summary>
 		/// <returns>Return an accepted connection</returns>
 		public abstract TransportConnection Accept();
 
 		/// <summary>
-		/// Update the driver.
+		///     Update the driver.
 		/// </summary>
 		public abstract void Update();
 
 		/// <summary>
-		/// Pop a driver event from a connection
+		///     Pop a driver event from a connection
 		/// </summary>
 		/// <returns></returns>
 		public abstract TransportEvent PopEvent();
 
 		/// <summary>
-		/// Get the connection state of a connection
+		///     Get the connection state of a connection
 		/// </summary>
 		/// <param name="con"></param>
 		/// <returns></returns>
 		public abstract TransportConnection.State GetConnectionState(TransportConnection con);
 
 		/// <summary>
-		/// Send data to a connection
+		///     Send data to a connection
 		/// </summary>
 		/// <param name="chan"></param>
 		/// <param name="con"></param>
 		/// <param name="data"></param>
 		/// <returns></returns>
 		public abstract int Send(TransportChannel chan, TransportConnection con, Span<byte> data);
-		
+
 		/// <summary>
-		/// Broadcast to all connections
+		///     Broadcast to all connections
 		/// </summary>
 		/// <param name="chan"></param>
 		/// <param name="con"></param>
 		/// <param name="data"></param>
 		/// <returns></returns>
 		public abstract int Broadcast(TransportChannel chan, Span<byte> data);
-
-		/// <summary>
-		/// Dispose driver's resources.
-		/// </summary>
-		public abstract void Dispose();
 	}
 }

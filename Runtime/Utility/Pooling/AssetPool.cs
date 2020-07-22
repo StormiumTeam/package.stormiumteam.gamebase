@@ -4,8 +4,6 @@ using DefaultNamespace.Utility.DOTS;
 using StormiumTeam.GameBase.Utility.AssetBackend;
 using Unity.Entities;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
-using UnityEngine.ResourceManagement.AsyncOperations;
 using Object = UnityEngine.Object;
 
 namespace StormiumTeam.GameBase.Utility.Pooling
@@ -61,7 +59,6 @@ namespace StormiumTeam.GameBase.Utility.Pooling
 
 			m_Objects.Add(obj);
 			return obj;
-
 		}
 
 		public void AddElements(int size)

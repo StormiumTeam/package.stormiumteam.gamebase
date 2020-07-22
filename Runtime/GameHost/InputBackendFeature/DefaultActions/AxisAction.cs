@@ -1,109 +1,105 @@
-﻿﻿using System;
- using System.Collections.Generic;
- using System.Collections.ObjectModel;
- using System.Linq;
- using GameHost.InputBackendFeature.BaseSystems;
- using GameHost.InputBackendFeature.Interfaces;
- using GameHost.InputBackendFeature.Layouts;
- using RevolutionSnapshot.Core.Buffers;
- using Unity.Collections;
- using Unity.Entities;
- using Unity.Mathematics;
- using UnityEngine.InputSystem.Controls;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using GameHost.InputBackendFeature.BaseSystems;
+using GameHost.InputBackendFeature.Interfaces;
+using GameHost.InputBackendFeature.Layouts;
+using RevolutionSnapshot.Core.Buffers;
+using Unity.Collections;
+using Unity.Entities;
+using Unity.Mathematics;
+using UnityEngine.InputSystem.Controls;
 
- namespace GameHost.Inputs.DefaultActions
- {
-     public struct AxisAction : IInputAction
-     {
-         public class Layout : InputLayoutBase
-         {
-             public CInput[] Negative;
-             public CInput[] Positive;
-             
-             // empty for Activator.CreateInstance<>();
-             public Layout(string id) : base(id)
-             {
-                 Inputs = new ReadOnlyCollection<CInput>(Array.Empty<CInput>());
-             }
+namespace GameHost.Inputs.DefaultActions
+{
+	public struct AxisAction : IInputAction
+	{
+		public class Layout : InputLayoutBase
+		{
+			public CInput[] Negative;
+			public CInput[] Positive;
 
-             public Layout(string id, IEnumerable<CInput> negative, IEnumerable<CInput> positive) : base(id)
-             {
-                 Negative = negative.ToArray();
-                 Positive = positive.ToArray();
-                 Inputs   = new ReadOnlyCollection<CInput>(Negative.Concat(Positive).ToArray());
-             }
+			// empty for Activator.CreateInstance<>();
+			public Layout(string id) : base(id)
+			{
+				Inputs = new ReadOnlyCollection<CInput>(Array.Empty<CInput>());
+			}
 
-             public override void Serialize(ref DataBufferWriter buffer)
-             {
-                 void write(CInput[] array, ref DataBufferWriter writer)
-                 {
-                     writer.WriteInt(array.Length);
-                     foreach (var input in array)
-                         writer.WriteStaticString(input.Target);
-                 }
+			public Layout(string id, IEnumerable<CInput> negative, IEnumerable<CInput> positive) : base(id)
+			{
+				Negative = negative.ToArray();
+				Positive = positive.ToArray();
+				Inputs   = new ReadOnlyCollection<CInput>(Negative.Concat(Positive).ToArray());
+			}
 
-                 write(Negative, ref buffer);
-                 write(Positive, ref buffer);
-             }
+			public override void Serialize(ref DataBufferWriter buffer)
+			{
+				void write(CInput[] array, ref DataBufferWriter writer)
+				{
+					writer.WriteInt(array.Length);
+					foreach (var input in array)
+						writer.WriteStaticString(input.Target);
+				}
 
-             public override void Deserialize(ref DataBufferReader buffer)
-             {
-                 void read(ref CInput[] array, ref DataBufferReader reader)
-                 {
-                     var count = reader.ReadValue<int>();
-                     array = new CInput[count];
-                     for (var i = 0; i != count; i++)
-                         array[i] = new CInput(reader.ReadString());
-                 }
+				write(Negative, ref buffer);
+				write(Positive, ref buffer);
+			}
 
-                 read(ref Negative, ref buffer);
-                 read(ref Positive, ref buffer);
+			public override void Deserialize(ref DataBufferReader buffer)
+			{
+				void read(ref CInput[] array, ref DataBufferReader reader)
+				{
+					var count = reader.ReadValue<int>();
+					array = new CInput[count];
+					for (var i = 0; i != count; i++)
+						array[i] = new CInput(reader.ReadString());
+				}
 
-                 Inputs = new ReadOnlyCollection<CInput>(Negative.Concat(Positive).ToArray());
-             }
-         }
+				read(ref Negative, ref buffer);
+				read(ref Positive, ref buffer);
 
-         public float Value;
+				Inputs = new ReadOnlyCollection<CInput>(Negative.Concat(Positive).ToArray());
+			}
+		}
 
-         public class InputActionSystem : InputActionSystemBase<AxisAction, Layout>
-         {
-             protected override void OnUpdate()
-             {
-                 foreach (var entity in InputQuery.ToEntityArray(Allocator.Temp))
-                 {
-                     var currentLayout = EntityManager.GetComponentData<InputCurrentLayout>(GetSingletonEntity<InputCurrentLayout>());
+		public float Value;
 
-                     var layouts = GetLayouts(entity);
-                     if (!layouts.TryGetOrDefault(currentLayout.Id, out var layout) || !(layout is Layout axisLayout))
-                         return;
+		public class InputActionSystem : InputActionSystemBase<AxisAction, Layout>
+		{
+			protected override void OnUpdate()
+			{
+				foreach (var entity in InputQuery.ToEntityArray(Allocator.Temp))
+				{
+					var currentLayout = EntityManager.GetComponentData<InputCurrentLayout>(GetSingletonEntity<InputCurrentLayout>());
 
-                     var action = EntityManager.GetComponentData<AxisAction>(entity);
-                     var value  = 0f;
-                     foreach (var input in axisLayout.Negative)
-                     {
-                         if (Backend.GetInputControl(input.Target) is AxisControl buttonControl) 
-                             value -= buttonControl.ReadValue();
-                     }
-                     foreach (var input in axisLayout.Positive)
-                     {
-                         if (Backend.GetInputControl(input.Target) is AxisControl buttonControl) 
-                             value += buttonControl.ReadValue();
-                     }
+					var layouts = GetLayouts(entity);
+					if (!layouts.TryGetOrDefault(currentLayout.Id, out var layout) || !(layout is Layout axisLayout))
+						return;
 
-                     action.Value = math.clamp(value, -1, 1);
-                     EntityManager.SetComponentData(entity, action);
-                 }
-             }
-         }
+					var action = EntityManager.GetComponentData<AxisAction>(entity);
+					var value  = 0f;
+					foreach (var input in axisLayout.Negative)
+						if (Backend.GetInputControl(input.Target) is AxisControl buttonControl)
+							value -= buttonControl.ReadValue();
+					foreach (var input in axisLayout.Positive)
+						if (Backend.GetInputControl(input.Target) is AxisControl buttonControl)
+							value += buttonControl.ReadValue();
 
-         public void Serialize(ref DataBufferWriter buffer)
-         {
-             buffer.WriteValue(Value);
-         }
+					action.Value = math.clamp(value, -1, 1);
+					EntityManager.SetComponentData(entity, action);
+				}
+			}
+		}
 
-         public void Deserialize(ref DataBufferReader buffer)
-         {
-             Value = buffer.ReadValue<float>();
-         }
-     }
- }
+		public void Serialize(ref DataBufferWriter buffer)
+		{
+			buffer.WriteValue(Value);
+		}
+
+		public void Deserialize(ref DataBufferReader buffer)
+		{
+			Value = buffer.ReadValue<float>();
+		}
+	}
+}

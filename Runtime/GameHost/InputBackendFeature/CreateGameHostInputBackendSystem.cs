@@ -13,10 +13,9 @@ namespace GameHost.InputBackendFeature
 {
 	public class CreateGameHostInputBackendSystem : SystemBase
 	{
-		public TransportDriver Driver => driver;
+		private readonly HeaderTransportDriver driver;
 
-		private ENetTransportDriver   enetDriver;
-		private HeaderTransportDriver driver;
+		private readonly ENetTransportDriver enetDriver;
 
 		private InputBackendSystem        inputBackendSystem;
 		private RegisterInputLayoutSystem inputLayoutSystem;
@@ -29,7 +28,9 @@ namespace GameHost.InputBackendFeature
 			var header = driver.WriteHeader();
 			header.WriteInt((int) EMessageType.InputData);
 		}
-		
+
+		public TransportDriver Driver => driver;
+
 		protected override void OnCreate()
 		{
 			base.OnCreate();
@@ -47,7 +48,6 @@ namespace GameHost.InputBackendFeature
 
 			TransportEvent ev;
 			while ((ev = driver.PopEvent()).Type != TransportEvent.EType.None)
-			{
 				switch (ev.Type)
 				{
 					case TransportEvent.EType.None:
@@ -91,7 +91,6 @@ namespace GameHost.InputBackendFeature
 					default:
 						throw new ArgumentOutOfRangeException();
 				}
-			}
 		}
 
 		protected override void OnDestroy()

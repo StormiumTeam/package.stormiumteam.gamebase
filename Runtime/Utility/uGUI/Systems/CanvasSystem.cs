@@ -8,9 +8,11 @@ namespace StormiumTeam.GameBase.Utility.uGUI.Systems
 	[UpdateInGroup(typeof(PresentationSystemGroup))]
 	public class CanvasSystem : ComponentSystem
 	{
-		public List<Canvas> Canvas { get; private set; }
+		private string       hack0;
+		private int          hack1;
+		public  List<Canvas> Canvas { get; private set; }
 
-		public  Canvas Current { get; private set; }
+		public Canvas Current { get; private set; }
 
 		protected override void OnCreate()
 		{
@@ -40,7 +42,6 @@ namespace StormiumTeam.GameBase.Utility.uGUI.Systems
 
 		protected override void OnUpdate()
 		{
-
 		}
 
 		protected override void OnDestroy()
@@ -48,10 +49,8 @@ namespace StormiumTeam.GameBase.Utility.uGUI.Systems
 			base.OnDestroy();
 
 			foreach (var canvas in Canvas)
-			{
 				if (canvas != null)
 					Object.Destroy(canvas.gameObject);
-			}
 
 			Canvas.Clear();
 
@@ -62,8 +61,6 @@ namespace StormiumTeam.GameBase.Utility.uGUI.Systems
 			Canvas  = null;
 		}
 
-		private string hack0;
-		private int hack1;
 		public Canvas CreateCanvas(out int listIndex, string name = "UICustomCanvas", bool defaultInitialization = false, bool defaultAddRaycaster = true)
 		{
 			var gameObject = new GameObject($"(World: {World.Name}) {name}#{Canvas.Count}",
@@ -77,7 +74,7 @@ namespace StormiumTeam.GameBase.Utility.uGUI.Systems
 			listIndex = Canvas.Count;
 			if (!defaultInitialization)
 				return canvas;
-			
+
 			canvas.renderMode = RenderMode.ScreenSpaceOverlay;
 
 			var canvasScaler = gameObject.GetComponent<CanvasScaler>();

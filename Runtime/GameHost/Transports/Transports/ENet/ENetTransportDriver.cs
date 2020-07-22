@@ -93,7 +93,7 @@ namespace GameHost.Transports.Transports.ENet
 				}
 			}
 
-			var connectionToRemove = stackalloc uint[m_Connections.Count];
+			var connectionToRemove       = stackalloc uint[m_Connections.Count];
 			var connectionToRemoveLength = 0;
 			foreach (var connection in m_Connections.Values)
 			{
@@ -103,10 +103,7 @@ namespace GameHost.Transports.Transports.ENet
 					connectionToRemove[connectionToRemoveLength++] = connection.Id;
 			}
 
-			while (connectionToRemoveLength-- > 0)
-			{
-				RemoveConnection(connectionToRemove[connectionToRemoveLength]);
-			}
+			while (connectionToRemoveLength-- > 0) RemoveConnection(connectionToRemove[connectionToRemoveLength]);
 
 			// UPDATE
 			foreach (var info in m_PacketsToSend) info.Peer.Send(info.Channel, info.Packet);

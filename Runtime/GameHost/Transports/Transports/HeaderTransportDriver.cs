@@ -8,20 +8,20 @@ namespace PataNext.Export.Desktop
 {
 	// TODO: Should be added to Transport library once more stable and with more features
 	/// <summary>
-	/// A header driver only encapsulate data around a header.
+	///     A header driver only encapsulate data around a header.
 	/// </summary>
 	public class HeaderTransportDriver : TransportDriver
 	{
 		public readonly TransportDriver Source;
 
 		private DataBufferWriter header;
-		private DataBufferWriter tempWriter; 
+		private DataBufferWriter tempWriter;
 
 		public HeaderTransportDriver(TransportDriver source)
 		{
 			tempWriter = new DataBufferWriter(0, Allocator.Persistent);
 			Source     = source;
-			
+
 			header = new DataBufferWriter(0, Allocator.Persistent);
 		}
 
@@ -59,7 +59,7 @@ namespace PataNext.Export.Desktop
 			var curr = header;
 			if (Unsafe.AreSame(ref curr, ref def))
 				throw new InvalidOperationException("No header has been assigned!");
-			
+
 			tempWriter.Length = 0;
 			tempWriter.WriteBuffer(header);
 			tempWriter.WriteSpan(original);

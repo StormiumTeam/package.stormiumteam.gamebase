@@ -22,7 +22,6 @@ namespace StormiumTeam.GameBase.Utility.AssetBackend
 		public override void ReturnPresentation(bool unsetChildren = true)
 		{
 			if (unsetChildren)
-			{
 				foreach (var childPresentation in GetComponentsInChildren<RuntimeAssetBackendBase>())
 				{
 					if (childPresentation == this)
@@ -30,7 +29,6 @@ namespace StormiumTeam.GameBase.Utility.AssetBackend
 
 					childPresentation.Return(true, true, true);
 				}
-			}
 
 			ReturnPresentationToPool();
 		}

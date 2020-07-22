@@ -43,13 +43,13 @@ namespace StormiumTeam.GameBase.Modules
 
 		public NativeList<Entity> BackendWithoutModel;
 
-		private EntityQuery        m_BackendQuery;
+		private EntityQuery m_BackendQuery;
+
+		private TCheckValid        m_ValidData;
 		public  NativeList<Entity> MissingTargets;
 
 		public          NativeArray<Entity> TargetEntities;
 		public override ModuleUpdateType    UpdateType => ModuleUpdateType.All;
-
-		private TCheckValid m_ValidData;
 
 		protected override void OnEnable()
 		{

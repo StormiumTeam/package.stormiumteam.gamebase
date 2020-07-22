@@ -18,7 +18,7 @@ namespace GameHost.InputBackendFeature.BaseSystems
 
 		protected virtual string CustomLayoutPath { get; }
 		protected virtual string CustomActionPath { get; }
-		
+
 		internal abstract void CallSerialize(ref DataBufferWriter buffer);
 	}
 
@@ -27,12 +27,12 @@ namespace GameHost.InputBackendFeature.BaseSystems
 		where TAction : struct, IInputAction
 		where TLayout : InputLayoutBase
 	{
-		private RegisterInputLayoutSystem registerInputLayoutSystem;
 		private RegisterInputActionSystem registerInputActionSystem;
+		private RegisterInputLayoutSystem registerInputLayoutSystem;
 
 		public override string LayoutPath => CustomLayoutPath ?? typeof(TLayout).FullName;
 		public override string ActionPath => CustomActionPath ?? typeof(TAction).FullName;
-		
+
 		protected InputBackendSystem Backend    { get; private set; }
 		protected EntityQuery        InputQuery { get; private set; }
 

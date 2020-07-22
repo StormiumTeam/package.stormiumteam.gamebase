@@ -6,7 +6,6 @@ using System.Reflection;
 using Newtonsoft.Json.Linq;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
-using IComponentData = Unity.Entities.IComponentData;
 
 namespace StormiumTeam.GameBase.Utility.Rules
 {
@@ -15,12 +14,12 @@ namespace StormiumTeam.GameBase.Utility.Rules
 		public int                 Size;
 		public ComponentSystemBase System;
 
-		public event PropertyChangedEventHandler OnPropertyChanged;
-
 		public virtual void Dispose()
 		{
 			OnPropertyChanged = null;
 		}
+
+		public event PropertyChangedEventHandler OnPropertyChanged;
 
 		public void InvokePropertyChanged(PropertyChangedEventArgs args)
 		{
@@ -30,7 +29,7 @@ namespace StormiumTeam.GameBase.Utility.Rules
 		public abstract object GetDataObject();
 		public abstract void   SetDataObject(object data);
 	}
-	
+
 	public class RuleProperties<TData> : RulePropertiesBase
 		where TData : struct, IComponentData
 	{
@@ -44,7 +43,9 @@ namespace StormiumTeam.GameBase.Utility.Rules
 		public override void SetDataObject(object data)
 		{
 			if (data is TData cast)
+			{
 				System.SetSingleton(cast);
+			}
 			else
 			{
 				if (data is JObject jsonObject)
@@ -125,11 +126,9 @@ namespace StormiumTeam.GameBase.Utility.Rules
 		public class Property<T> : Property
 			where T : struct
 		{
-			public override Type Type => typeof(T);
-
 			public delegate bool OnVerifyDelegate(ref T value);
 
-			public event OnVerifyDelegate OnVerify;
+			public override Type Type => typeof(T);
 
 			public unsafe T Value
 			{
@@ -156,6 +155,8 @@ namespace StormiumTeam.GameBase.Utility.Rules
 					Base.InvokePropertyChanged(new PropertyChangedEventArgs(Name));
 				}
 			}
+
+			public event OnVerifyDelegate OnVerify;
 
 			public override object GetValue()
 			{

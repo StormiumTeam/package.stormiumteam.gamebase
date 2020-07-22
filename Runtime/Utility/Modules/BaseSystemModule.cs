@@ -4,7 +4,6 @@ using Unity.Jobs;
 
 namespace StormiumTeam.GameBase.Utility.Modules
 {
-
 	[Flags]
 	public enum ModuleUpdateType
 	{
@@ -15,14 +14,13 @@ namespace StormiumTeam.GameBase.Utility.Modules
 
 	public abstract class BaseSystemModule
 	{
+		protected      ModuleUpdateType CurrentUpdateType;
 		public virtual ModuleUpdateType UpdateType => ModuleUpdateType.MainThread;
 
 		public ComponentSystemBase System    { get; private set; }
 		public bool                IsEnabled => System != null;
 
 		public EntityManager EntityManager => System.EntityManager;
-
-		protected ModuleUpdateType CurrentUpdateType;
 
 		public void Enable(ComponentSystemBase system)
 		{
@@ -39,7 +37,7 @@ namespace StormiumTeam.GameBase.Utility.Modules
 				throw new InvalidOperationException();
 
 			CurrentUpdateType = ModuleUpdateType.MainThread;
-			
+
 			var tmp = default(JobHandle);
 			OnUpdate(ref tmp);
 		}

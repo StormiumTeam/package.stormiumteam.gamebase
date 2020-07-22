@@ -16,7 +16,7 @@ namespace GameHost.InputBackendFeature.Layouts
 		protected override void OnCreate()
 		{
 			base.OnCreate();
-			Enabled                  = false;
+			Enabled = false;
 		}
 
 		protected override void OnUpdate()

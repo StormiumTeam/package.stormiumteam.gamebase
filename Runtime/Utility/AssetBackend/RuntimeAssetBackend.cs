@@ -1,7 +1,7 @@
 ﻿using System;
-using DefaultNamespace.Utility.DOTS.xMonoBehaviour;
 using package.stormiumteam.shared.ecs;
 using StormiumTeam.GameBase.Utility.AssetBackend.Components;
+using StormiumTeam.GameBase.Utility.DOTS.xMonoBehaviour;
 using StormiumTeam.GameBase.Utility.Pooling;
 using Unity.Entities;
 using UnityEngine;
@@ -10,11 +10,6 @@ namespace StormiumTeam.GameBase.Utility.AssetBackend
 {
 	public abstract class RuntimeAssetBackendBase : MonoBehaviour
 	{
-		// only used to detect
-		public class RuntimeAssetDetection : MonoBehaviour
-		{
-		}
-		
 		public int  DestroyFlags;
 		public bool DisableNextUpdate, ReturnToPoolOnDisable, ReturnPresentationToPoolNextFrame;
 
@@ -33,7 +28,7 @@ namespace StormiumTeam.GameBase.Utility.AssetBackend
 		internal abstract void OnCompletePoolDequeue(GameObject result);
 		public abstract   void SetSingleModel(string            key, EntityManager em = default, Entity ent = default);
 		internal abstract bool SetPresentation(GameObject       obj);
-		public abstract   void ReturnPresentation(bool unsetChildren = true);
+		public abstract   void ReturnPresentation(bool          unsetChildren = true);
 
 		public virtual void OnComponentEnabled()
 		{
@@ -79,7 +74,7 @@ namespace StormiumTeam.GameBase.Utility.AssetBackend
 
 			var entityManager = gameObjectEntity.EntityManager;
 			entityManager.SetOrAddComponentData(gameObjectEntity.Entity, new ModelParent {Parent = DstEntity});
-			
+
 #if UNITY_EDITOR
 			gameObjectEntity.EntityManager.SetName(gameObjectEntity.Entity, $"Backend: {GetType().Name} ({gameObjectEntity.Entity})");
 #endif
@@ -218,13 +213,16 @@ namespace StormiumTeam.GameBase.Utility.AssetBackend
 			ReturnToPoolOnDisable = false;
 
 			if (rootPool != null)
-			{
 				rootPool.Enqueue(gameObject);
-				//transform.SetParent(null, false);
-			}
+			//transform.SetParent(null, false);
 		}
 
 		public virtual void OnPresentationSet()
+		{
+		}
+
+		// only used to detect
+		public class RuntimeAssetDetection : MonoBehaviour
 		{
 		}
 	}

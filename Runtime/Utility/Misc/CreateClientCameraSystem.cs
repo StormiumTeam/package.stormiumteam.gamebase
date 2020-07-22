@@ -1,6 +1,7 @@
 using DefaultNamespace.Utility.DOTS;
 using package.stormiumteam.shared.ecs;
 using StormiumTeam.GameBase.BaseSystems;
+using StormiumTeam.GameBase.Utility.DOTS.xMonoBehaviour;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -13,7 +14,7 @@ namespace StormiumTeam.GameBase.Utility.Misc
 	{
 		private bool m_PreviousState;
 
-		public Camera Camera { get; private set; }
+		public Camera        Camera        { get; private set; }
 		public AudioListener AudioListener { get; private set; }
 
 		protected override void OnCreate()
@@ -33,7 +34,7 @@ namespace StormiumTeam.GameBase.Utility.Misc
 				Camera.nearClipPlane    = 0.025f;
 
 				gameObject.transform.position = new Vector3(0, 0, -100);
-				
+
 				var listenerGo = new GameObject($"(World: {World.Name}) AudioListener", typeof(AudioListener));
 				AudioListener = listenerGo.GetComponent<AudioListener>();
 			}
@@ -85,7 +86,7 @@ namespace StormiumTeam.GameBase.Utility.Misc
 			Entities.ForEach((GameCamera camera, ref Translation translation) =>
 			{
 				camera.transform.position = translation.Value;
-				if (Math.Abs(camera.Camera.orthographicSize) < 0.1f)
+				if (math.abs(camera.Camera.orthographicSize) < 0.1f)
 					camera.Camera.orthographicSize = 0.25f;
 				Debug.DrawRay(translation.Value + new float3(0, 0, 10), Vector3.up * 4, Color.red);
 			});
@@ -99,7 +100,8 @@ namespace StormiumTeam.GameBase.Utility.Misc
 			};
 		}
 	}
-	
+
 	public struct DefaultCamera : IComponentData
-	{}
+	{
+	}
 }

@@ -10,7 +10,7 @@ namespace StormiumTeam.GameBase.Utility.Modules
 		{
 			System = system;
 		}
-		
+
 		public void GetModule<TModule>(out TModule module)
 			where TModule : BaseSystemModule, new()
 		{

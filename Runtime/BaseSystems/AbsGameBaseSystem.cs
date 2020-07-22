@@ -1,6 +1,5 @@
-﻿using System;
+﻿using GameBase.Roles.Descriptions;
 using StormiumTeam.GameBase.BaseSystems.Interfaces;
-using GameBase.Roles.Descriptions;
 using StormiumTeam.GameBase.Utility.Modules;
 using Unity.Entities;
 
@@ -11,9 +10,19 @@ namespace StormiumTeam.GameBase.BaseSystems
 		private ComponentSystemGroup m_ClientPresentationGroup;
 		private EntityQuery          m_LocalPlayerGroup;
 
+		private ModuleRegister m_ModuleRegister;
+
 		private EntityQuery m_PlayerGroup;
 
-		private ModuleRegister m_ModuleRegister;
+		EntityQuery IGameBaseSystem.GetPlayerGroup()
+		{
+			return m_PlayerGroup;
+		}
+
+		EntityQuery IGameBaseSystem.GetLocalPlayerGroup()
+		{
+			return m_LocalPlayerGroup;
+		}
 
 		protected override void OnCreate()
 		{
@@ -35,8 +44,5 @@ namespace StormiumTeam.GameBase.BaseSystems
 		{
 			m_ModuleRegister.GetModule(out module);
 		}
-
-		EntityQuery IGameBaseSystem.GetPlayerGroup()      => m_PlayerGroup;
-		EntityQuery IGameBaseSystem.GetLocalPlayerGroup() => m_LocalPlayerGroup;
 	}
 }

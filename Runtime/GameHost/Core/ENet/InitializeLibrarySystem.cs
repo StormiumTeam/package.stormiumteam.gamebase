@@ -14,7 +14,6 @@ namespace Core.ENet
 
 		protected override void OnUpdate()
 		{
-
 		}
 
 		protected override void OnDestroy()

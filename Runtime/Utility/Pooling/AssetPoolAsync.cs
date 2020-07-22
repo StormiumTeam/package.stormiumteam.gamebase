@@ -10,15 +10,15 @@ namespace StormiumTeam.GameBase.Utility.Pooling
 	{
 		public delegate void OnLoad(T result);
 
+		private readonly List<OnLoad> m_EventQueue;
+
+		private readonly Queue<T> m_ObjectPool;
+
 		public string AssetId;
 
 		// Is the pool still valid?
 		public bool IsValid;
 		public T    LoadedAsset;
-
-		private readonly List<OnLoad> m_EventQueue;
-
-		private readonly Queue<T> m_ObjectPool;
 
 		public AsyncAssetPool(string id)
 		{
