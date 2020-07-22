@@ -167,6 +167,10 @@ namespace GameHost.ShareSimuWorldFeature
 
 						foreach (var attach in archetypeMap[archetype].Attaches)
 							attach.OnEntityAdded(EntityManager, entity, unityEntity);
+
+#if UNITY_EDITOR
+						EntityManager.SetName(unityEntity, $"GameHost Entity #{entity.Id} (Arch={archetype})");
+#endif
 					}
 				}
 			}

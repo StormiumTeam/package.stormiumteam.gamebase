@@ -21,16 +21,20 @@ namespace GameHost.InputBackendFeature
 		private InputBackendSystem        inputBackendSystem;
 		private RegisterInputLayoutSystem inputLayoutSystem;
 
+		public CreateGameHostInputBackendSystem()
+		{
+			enetDriver = new ENetTransportDriver(32);
+			driver     = new HeaderTransportDriver(enetDriver);
+
+			var header = driver.WriteHeader();
+			header.WriteInt((int) EMessageType.InputData);
+		}
+		
 		protected override void OnCreate()
 		{
 			base.OnCreate();
 			inputBackendSystem = World.GetExistingSystem<InputBackendSystem>();
 			inputLayoutSystem  = World.GetExistingSystem<RegisterInputLayoutSystem>();
-			enetDriver         = new ENetTransportDriver(32);
-			driver             = new HeaderTransportDriver(enetDriver);
-
-			var header = driver.WriteHeader();
-			header.WriteInt((int) EMessageType.InputData);
 		}
 
 		protected override void OnUpdate()

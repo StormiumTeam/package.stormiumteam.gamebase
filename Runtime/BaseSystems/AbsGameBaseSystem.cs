@@ -1,10 +1,10 @@
 ﻿using System;
-using DefaultNamespace.BaseSystems.Interfaces;
+using StormiumTeam.GameBase.BaseSystems.Interfaces;
 using GameBase.Roles.Descriptions;
 using StormiumTeam.GameBase.Utility.Modules;
 using Unity.Entities;
 
-namespace DefaultNamespace.BaseSystems
+namespace StormiumTeam.GameBase.BaseSystems
 {
 	public abstract class AbsGameBaseSystem : SystemBase, IGameBaseSystem
 	{

@@ -13,6 +13,10 @@ namespace GameBase.Roles.Descriptions
 		public class RegisterRelative : RegisterGameHostComponentSystemBase<Relative<PlayerDescription>>
 		{
 		}
+		
+		public class Register : RegisterGameHostComponentSystemBase<PlayerDescription>
+		{
+		}
 	}
 
 	/// <summary>

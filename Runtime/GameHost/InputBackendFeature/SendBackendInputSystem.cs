@@ -36,7 +36,10 @@ namespace GameHost.InputBackendFeature
 				if (system is InputActionSystemBase inputActionSystem)
 				{
 					Buffer.WriteStaticString(inputActionSystem.ActionPath);
+					var lengthMarker = Buffer.WriteInt(0);
 					inputActionSystem.CallSerialize(ref Buffer);
+					Buffer.WriteInt(Buffer.Length - lengthMarker.GetOffset(sizeof(int)).Index, lengthMarker);
+					
 					count++;
 				}
 			}

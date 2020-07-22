@@ -1,6 +1,6 @@
 ﻿using Unity.Entities;
 
-namespace DefaultNamespace.BaseSystems.Interfaces
+namespace StormiumTeam.GameBase.BaseSystems.Interfaces
 {
 	public interface IGameBaseSystem
 	{

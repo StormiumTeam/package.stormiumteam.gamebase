@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using package.stormiumteam.shared.ecs;
 using Unity.Entities;
 using UnityEngine;
 
@@ -27,6 +28,15 @@ namespace StormiumTeam.GameBase.Utility.AssetBackend
 
 		public virtual void OnBackendSet()
 		{
+			if (TryGetComponent(out GameObjectEntity goEntity)
+			    && goEntity.Entity != default)
+			{
+				#if UNITY_EDITOR
+				goEntity.EntityManager.SetName(goEntity.Entity, $"Presentation: {GetType().Name} ({goEntity.Entity})");
+				#endif
+				goEntity.EntityManager.SetOrAddComponentData(goEntity.Entity, GameObjectConversionUtility.GetEntityGuid(gameObject, 0));
+			}
+
 			foreach (var r in m_Receivers)
 				r.OnBackendSet();
 		}
