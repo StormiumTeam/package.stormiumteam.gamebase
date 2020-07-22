@@ -20,7 +20,7 @@ namespace GameHost.ShareSimuWorldFeature
 		public Dictionary<uint, Archetype__> archetypeMap;
 
 		private EntityArchetype                     defaultSpawnArchetype;
-		private NativeHashMap<GhGameEntity, Entity> ghToUnityEntityMap;
+		public NativeHashMap<GhGameEntity, Entity> ghToUnityEntityMap;
 
 		private RegisterDeserializerSystem               registerDeserializer;
 		public  Dictionary<string, ComponentTypeDetails> typeDetailMapFromName;

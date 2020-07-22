@@ -16,12 +16,14 @@ namespace GameHost.Simulation.Features.ShareWorldState.BaseSystems
 	{
 		public override string ComponentPath => CustomComponentPath ?? typeof(T).FullName;
 
+		protected virtual ICustomComponentDeserializer CustomDeserializer { get; }
+
 		protected override void OnCreate()
 		{
 			base.OnCreate();
 
 			World.GetExistingSystem<RegisterDeserializerSystem>()
-			     .Register(new DefaultArchetypeAttach<T>(ComponentPath), new DefaultSingleDeserializer<T>());
+			     .Register(new DefaultArchetypeAttach<T>(ComponentPath), CustomDeserializer ?? new DefaultSingleDeserializer<T>());
 			Enabled = false;
 		}
 

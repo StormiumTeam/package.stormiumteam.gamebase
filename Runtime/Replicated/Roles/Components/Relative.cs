@@ -1,4 +1,10 @@
 ﻿using GameBase.Roles.Interfaces;
+using GameHost;
+using GameHost.ShareSimuWorldFeature;
+using GameHost.Simulation.Features.ShareWorldState.BaseSystems;
+using RevolutionSnapshot.Core.Buffers;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 
 namespace GameBase.Roles.Components
@@ -18,6 +24,24 @@ namespace GameBase.Roles.Components
 		public Relative(Entity target)
 		{
 			Target = target;
+		}
+
+#if UNITY_5_3_OR_NEWER
+		public class ValueDeserializer : IValueDeserializer<Relative<TDescription>>
+		{
+			public int Size => UnsafeUtility.SizeOf<GhGameEntity>();
+
+			public void Deserialize(EntityManager em, NativeHashMap<GhGameEntity, Entity> ghToUnityEntity, ref Relative<TDescription> component, ref DataBufferReader reader)
+			{
+				ghToUnityEntity.TryGetValue(reader.ReadValue<GhGameEntity>(), out var unityEntity);
+				component = new Relative<TDescription>(unityEntity);
+			}
+		}
+#endif
+
+		public class Register : RegisterGameHostComponentSystemBase<Relative<TDescription>>
+		{
+			protected override ICustomComponentDeserializer CustomDeserializer => new CustomSingleDeserializer<Relative<TDescription>, ValueDeserializer>();
 		}
 	}
 }
