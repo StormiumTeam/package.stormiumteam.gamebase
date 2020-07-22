@@ -14,4 +14,14 @@ namespace GameBase.Roles.Descriptions
 		{
 		}
 	}
+
+	/// <summary>
+	/// Indicate whether or not this player is local
+	/// </summary>
+	public struct PlayerIsLocal : IComponentData
+	{
+		public class Register : RegisterGameHostComponentSystemBase<PlayerIsLocal>
+		{
+		}
+	}
 }
