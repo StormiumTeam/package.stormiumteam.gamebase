@@ -6,7 +6,7 @@ using UnityEngine.UI;
 namespace StormiumTeam.GameBase.Utility.uGUI.Systems
 {
 	[UpdateInGroup(typeof(PresentationSystemGroup))]
-	public class CanvasSystem : ComponentSystem
+	public class ClientCanvasSystem : ComponentSystem
 	{
 		private string       hack0;
 		private int          hack1;

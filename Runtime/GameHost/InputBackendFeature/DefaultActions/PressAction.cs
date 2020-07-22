@@ -55,12 +55,12 @@ namespace GameHost.Inputs.DefaultActions
 					if (!layouts.TryGetOrDefault(currentLayout.Id, out var layout))
 						return;
 
-					var action = EntityManager.GetComponentData<PressAction>(entity);
+					PressAction action = default;
 					foreach (var input in layout.Inputs)
 						if (Backend.GetInputControl(input.Target) is ButtonControl buttonControl)
 						{
-							action.DownCount = buttonControl.wasPressedThisFrame ? 1u : 0;
-							action.UpCount   = buttonControl.wasReleasedThisFrame ? 1u : 0;
+							action.DownCount += buttonControl.wasPressedThisFrame ? 1u : 0;
+							action.UpCount   += buttonControl.wasReleasedThisFrame ? 1u : 0;
 						}
 
 					EntityManager.SetComponentData(entity, action);
