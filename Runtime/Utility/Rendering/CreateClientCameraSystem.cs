@@ -7,7 +7,7 @@ using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
 
-namespace StormiumTeam.GameBase.Utility.Misc
+namespace StormiumTeam.GameBase.Utility.Rendering
 {
 	[UpdateInGroup(typeof(PresentationSystemGroup))]
 	public class ClientCreateCameraSystem : AbsGameBaseSystem
