@@ -9,10 +9,8 @@ namespace GameHost.ShareSimuWorldFeature
 	{
 		internal Dictionary<Key__, (ICustomComponentArchetypeAttach attach, ICustomComponentDeserializer deserializer)> deserializerMap;
 
-		protected override void OnCreate()
+		public RegisterDeserializerSystem()
 		{
-			base.OnCreate();
-
 			deserializerMap = new Dictionary<Key__, (ICustomComponentArchetypeAttach attach, ICustomComponentDeserializer deserializer)>();
 		}
 
