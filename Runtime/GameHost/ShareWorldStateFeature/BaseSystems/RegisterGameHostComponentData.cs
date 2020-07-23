@@ -11,7 +11,8 @@ namespace GameHost.Simulation.Features.ShareWorldState.BaseSystems
 		internal abstract void DontUseThisBase();
 	}
 
-	public abstract class RegisterGameHostComponentSystemBase<T> : RegisterGameHostComponentSystemBase
+	// Component data format
+	public abstract class RegisterGameHostComponentData<T> : RegisterGameHostComponentSystemBase
 		where T : struct, IComponentData
 	{
 		public override string ComponentPath => CustomComponentPath ?? typeof(T).FullName;
@@ -24,6 +25,32 @@ namespace GameHost.Simulation.Features.ShareWorldState.BaseSystems
 
 			World.GetExistingSystem<RegisterDeserializerSystem>()
 			     .Register(new DefaultArchetypeAttach<T>(ComponentPath), CustomDeserializer ?? new DefaultSingleDeserializer<T>());
+			Enabled = false;
+		}
+
+		protected override void OnUpdate()
+		{
+		}
+
+		internal override void DontUseThisBase()
+		{
+		}
+	}
+
+	// Dynamic buffer format
+	public abstract class RegisterGameHostComponentBuffer<T> : RegisterGameHostComponentSystemBase
+		where T : struct, IBufferElementData
+	{
+		public override string ComponentPath => CustomComponentPath ?? typeof(T).FullName;
+
+		protected virtual ICustomComponentDeserializer CustomDeserializer { get; }
+
+		protected override void OnCreate()
+		{
+			base.OnCreate();
+
+			World.GetExistingSystem<RegisterDeserializerSystem>()
+			     .Register(new DefaultArchetypeAttach<T>(ComponentPath), CustomDeserializer ?? new DefaultBufferDeserializer<T>());
 			Enabled = false;
 		}
 

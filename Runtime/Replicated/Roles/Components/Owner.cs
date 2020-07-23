@@ -30,7 +30,7 @@ namespace GameBase.Roles.Components
 		}
 #endif
 
-		public class Register : RegisterGameHostComponentSystemBase<Owner>
+		public class Register : RegisterGameHostComponentData<Owner>
 		{
 			protected override ICustomComponentDeserializer CustomDeserializer => new CustomSingleDeserializer<Owner, ValueDeserializer>();
 		}

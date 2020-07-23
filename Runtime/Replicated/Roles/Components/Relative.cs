@@ -39,7 +39,7 @@ namespace GameBase.Roles.Components
 		}
 #endif
 
-		public abstract class Register : RegisterGameHostComponentSystemBase<Relative<TDescription>>
+		public abstract class Register : RegisterGameHostComponentData<Relative<TDescription>>
 		{
 			protected override ICustomComponentDeserializer CustomDeserializer => new CustomSingleDeserializer<Relative<TDescription>, ValueDeserializer>();
 		}

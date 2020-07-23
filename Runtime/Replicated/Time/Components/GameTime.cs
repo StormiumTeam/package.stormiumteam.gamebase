@@ -12,7 +12,7 @@ namespace GameBase.Time.Components
 		public float  Delta;
 		public double Elapsed;
 
-		public class Register : RegisterGameHostComponentSystemBase<GameTime>
+		public class Register : RegisterGameHostComponentData<GameTime>
 		{
 		}
 	}

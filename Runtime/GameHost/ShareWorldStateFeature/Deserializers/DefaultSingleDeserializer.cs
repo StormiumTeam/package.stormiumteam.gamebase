@@ -54,13 +54,15 @@ namespace GameHost.ShareSimuWorldFeature
 	}
 
 	public class DefaultArchetypeAttach<TComponent> : ICustomComponentArchetypeAttach
-		where TComponent : struct, IComponentData
+		where TComponent : struct
 	{
-		public readonly string GameHostType;
+		public readonly string        GameHostType;
+		public readonly ComponentType UnityType;
 
 		public DefaultArchetypeAttach(string ghType)
 		{
 			GameHostType = ghType;
+			UnityType    = typeof(TComponent);
 		}
 
 		public string[] RegisterTypes()
@@ -82,13 +84,14 @@ namespace GameHost.ShareSimuWorldFeature
 
 		public void OnEntityAdded(EntityManager entityManager, GhGameEntity ghEntity, Entity output)
 		{
-			entityManager.SetOrAddComponentData(output, new TComponent());
+			if (!entityManager.HasComponent(output, UnityType))
+				entityManager.AddComponent(output, UnityType);
 		}
 
 		public void OnEntityRemoved(EntityManager entityManager, GhGameEntity ghEntity, Entity output)
 		{
-			if (entityManager.HasComponent<TComponent>(output))
-				entityManager.RemoveComponent<TComponent>(output);
+			if (entityManager.HasComponent(output, UnityType))
+				entityManager.RemoveComponent(output, UnityType);
 		}
 	}
 }

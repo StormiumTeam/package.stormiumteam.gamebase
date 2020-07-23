@@ -14,7 +14,7 @@ namespace GameBase.Roles.Descriptions
 		{
 		}
 
-		public class Register : RegisterGameHostComponentSystemBase<PlayerDescription>
+		public class Register : RegisterGameHostComponentData<PlayerDescription>
 		{
 		}
 	}
@@ -24,7 +24,7 @@ namespace GameBase.Roles.Descriptions
 	/// </summary>
 	public struct PlayerIsLocal : IComponentData
 	{
-		public class Register : RegisterGameHostComponentSystemBase<PlayerIsLocal>
+		public class Register : RegisterGameHostComponentData<PlayerIsLocal>
 		{
 		}
 	}
