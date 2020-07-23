@@ -6,6 +6,16 @@ namespace GameHost.Simulation.Utility.Resource
 	public readonly struct GameResource<T> : IEquatable<GameResource<T>>
 		where T : IGameResourceDescription
 	{
+		public static bool operator ==(GameResource<T> left, GameResource<T> right)
+		{
+			return left.Equals(right);
+		}
+
+		public static bool operator !=(GameResource<T> left, GameResource<T> right)
+		{
+			return !left.Equals(right);
+		}
+
 		public readonly GhGameEntity Entity;
 
 		public GameResource(GhGameEntity target)
