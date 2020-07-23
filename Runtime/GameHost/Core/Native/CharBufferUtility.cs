@@ -9,7 +9,7 @@ namespace GameHost.Native
 		{
 			return buffer.Length;
 		}
-		
+
 		public static void SetLength<TCharBuffer>(this TCharBuffer buffer, int length)
 			where TCharBuffer : struct, ICharBuffer
 		{
@@ -26,6 +26,27 @@ namespace GameHost.Native
 			buffer.SetLength(span.Length);
 			span.CopyTo(buffer.Span);
 			return buffer;
+		}
+
+		public static int ComputeHashCode<TCharBuffer>(TCharBuffer buffer)
+			where TCharBuffer : struct, ICharBuffer
+		{
+			unchecked
+			{
+				const int p    = 16777619;
+				var       hash = (int) 2166136261;
+
+				var span = buffer.Span;
+				foreach (var tchar in span)
+					hash = (hash ^ tchar) * p;
+
+				hash += hash << 13;
+				hash ^= hash >> 7;
+				hash += hash << 3;
+				hash ^= hash >> 17;
+				hash += hash << 5;
+				return hash;
+			}
 		}
 	}
 }
