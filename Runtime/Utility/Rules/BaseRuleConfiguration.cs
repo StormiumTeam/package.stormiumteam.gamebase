@@ -100,16 +100,16 @@ namespace StormiumTeam.GameBase.Utility.Rules
 			public int    Version;
 		}
 
-		private class NativeStringConverter : JsonConverter<NativeString64>
+		private class NativeStringConverter : JsonConverter<FixedString64>
 		{
-			public override void WriteJson(JsonWriter writer, NativeString64 value, JsonSerializer serializer)
+			public override void WriteJson(JsonWriter writer, FixedString64 value, JsonSerializer serializer)
 			{
 				writer.WriteValue(value.ToString());
 			}
 
-			public override NativeString64 ReadJson(JsonReader reader, Type objectType, NativeString64 existingValue, bool hasExistingValue, JsonSerializer serializer)
+			public override FixedString64 ReadJson(JsonReader reader, Type objectType, FixedString64 existingValue, bool hasExistingValue, JsonSerializer serializer)
 			{
-				return new NativeString64(reader.ReadAsString());
+				return new FixedString64(reader.ReadAsString());
 			}
 		}
 

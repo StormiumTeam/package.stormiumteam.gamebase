@@ -29,16 +29,16 @@ namespace StormiumTeam.GameBase.Utility.AssetBackend.Systems
 			{
 				foreach (var chunk in chunks)
 				{
-					var disableDataArray = chunk.GetNativeArray(GetArchetypeChunkComponentType<RuntimeAssetDisable>(true));
-					var detectionArray   = chunk.GetComponentObjects(EntityManager.GetArchetypeChunkComponentType<RuntimeAssetBackendBase.RuntimeAssetDetection>(false), EntityManager);
+					var disableDataArray = chunk.GetNativeArray(GetComponentTypeHandle<RuntimeAssetDisable>(true));
+					var detectionArray   = chunk.GetManagedComponentAccessor(EntityManager.GetComponentTypeHandle<RuntimeAssetBackendBase.RuntimeAssetDetection>(false), EntityManager);
 					for (int ent = 0, count = chunk.Count; ent != count; ent++)
 					{
 						var disable     = disableDataArray[ent];
 						var modelParent = default(Entity);
 
-						if (!disable.IgnoreParent && chunk.Has(GetArchetypeChunkComponentType<ModelParent>(true)))
+						if (!disable.IgnoreParent && chunk.Has(GetComponentTypeHandle<ModelParent>(true)))
 						{
-							var modelParentArray = chunk.GetNativeArray(GetArchetypeChunkComponentType<ModelParent>(true));
+							var modelParentArray = chunk.GetNativeArray(GetComponentTypeHandle<ModelParent>(true));
 							modelParent = modelParentArray[ent].Parent;
 						}
 

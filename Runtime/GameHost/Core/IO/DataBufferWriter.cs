@@ -205,19 +205,6 @@ namespace RevolutionSnapshot.Core.Buffers
 			return WriteDataSafe((byte*) &val, sizeof(long), marker);
 		}
 
-		public DataBufferMarker WriteString(string val, Encoding encoding = null, DataBufferMarker marker = default)
-		{
-			fixed (char* strPtr = val)
-			{
-				return WriteString(strPtr, val.Length, encoding, marker);
-			}
-		}
-
-		public DataBufferMarker WriteString(char* val, int strLength, Encoding encoding = null, DataBufferMarker marker = default)
-		{
-			throw new NotImplementedException("crash");
-		}
-
 		public void WriteDynamicInt(ulong integer)
 		{
 			if (integer == 0)
@@ -353,50 +340,26 @@ namespace RevolutionSnapshot.Core.Buffers
 			WriteDataSafe((byte*) dataBuffer.GetSafePtr(), dataBuffer.Length, default);
 		}
 
-		public void WriteStaticString(string val, Encoding encoding = null)
+		public void WriteStaticString(string val)
 		{
 			fixed (char* strPtr = val)
 			{
-				WriteStaticString(strPtr, val.Length, encoding);
+				WriteStaticString(strPtr, val.Length);
+			}
+		}
+		
+		public void WriteStaticString(Span<char> val)
+		{
+			fixed (char* strPtr = val)
+			{
+				WriteStaticString(strPtr, val.Length);
 			}
 		}
 
-		public void WriteStaticString(char* val, int strLength, Encoding encoding = null)
+		public void WriteStaticString(char* val, int strLength)
 		{
-			// If we have a null encoding, let's get the most used one (UTF8)
-			encoding = encoding ?? Encoding.UTF8;
-
-			void* tempCpyPtr = null;
-
-			try
-			{
-				// Get the length of a 'UTF8 char' * 'string length';
-				var cpyLength = encoding.GetMaxByteCount(strLength);
-				// Allocate a temp memory region, and then...
-				tempCpyPtr = UnsafeUtility.Malloc(cpyLength, 4, Allocator.Temp);
-				// ... Get the bytes from the char array
-				encoding.GetBytes(val, strLength, (byte*) tempCpyPtr, cpyLength);
-
-				// Write the length of the string to the current index of the buffer
-				WriteInt(cpyLength);
-				var endMarker = WriteInt(0);
-				// Write the string buffer data
-				WriteInt(strLength); // In future, we should get a better way to define that
-				WriteDataSafe((byte*) tempCpyPtr, cpyLength, default);
-				// Re-write the end integer from end marker
-				var l = Length;
-				WriteInt(Length, endMarker);
-			}
-			catch (Exception ex)
-			{
-				Debug.LogException(ex);
-			}
-			finally
-			{
-				// If we had no problem with our temporary allocation, free it.
-				if (tempCpyPtr != null)
-					UnsafeUtility.Free(tempCpyPtr, Allocator.Temp);
-			}
+			WriteInt(strLength);
+			WriteDataSafe((byte*) val, strLength * sizeof(char), default);
 		}
 	}
 }

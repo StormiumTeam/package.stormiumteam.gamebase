@@ -14,13 +14,11 @@ namespace StormiumTeam.GameBase.Utility.uGUI.Systems
 
 		public Canvas Current { get; private set; }
 
-		protected override void OnCreate()
+		public ClientCanvasSystem()
 		{
-			base.OnCreate();
-
 			Canvas = new List<Canvas>();
 
-			var gameObject = new GameObject($"(World: {World.Name}) UICanvas",
+			var gameObject = new GameObject($"(World: {World.DefaultGameObjectInjectionWorld.Name}) UICanvas",
 				typeof(Canvas),
 				typeof(CanvasScaler),
 				typeof(GraphicRaycaster));
@@ -63,7 +61,7 @@ namespace StormiumTeam.GameBase.Utility.uGUI.Systems
 
 		public Canvas CreateCanvas(out int listIndex, string name = "UICustomCanvas", bool defaultInitialization = false, bool defaultAddRaycaster = true)
 		{
-			var gameObject = new GameObject($"(World: {World.Name}) {name}#{Canvas.Count}",
+			var gameObject = new GameObject($"Canvas: {name}#{Canvas.Count}",
 				typeof(Canvas),
 				typeof(CanvasScaler),
 				typeof(GraphicRaycaster));

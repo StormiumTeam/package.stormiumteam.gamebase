@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using package.stormiumteam.shared.ecs;
 using RevolutionSnapshot.Core.Buffers;
 using Unity.Collections;
@@ -48,7 +49,24 @@ namespace GameHost.ShareSimuWorldFeature
 		protected override void OnDestroy()
 		{
 			base.OnDestroy();
-			ghToUnityEntityMap.Dispose();
+			OnDisconnected();
+		}
+
+		public void OnDisconnected()
+		{
+			using (var query = EntityManager.CreateEntityQuery(typeof(ReplicatedGameEntity)))
+				EntityManager.DestroyEntity(query);
+			
+			ghToUnityEntityMap.Clear();
+			typeDetailMapFromRow.Clear();
+			typeDetailMapFromName.Clear();
+
+			foreach (var archetypeData in archetypeMap.Values)
+			{
+				archetypeData.Attaches.Clear();
+				archetypeData.ComponentTypes.Dispose();
+			}
+			archetypeMap.Clear();
 		}
 
 		public unsafe void OnNewMessage(ref DataBufferReader reader)
@@ -146,7 +164,8 @@ namespace GameHost.ShareSimuWorldFeature
 					}
 					else
 					{
-						if (EntityManager.GetComponentData<ReplicatedGameEntity>(unityEntity).ArchetypeId != archetype) archetypeUpdate = true;
+						if (EntityManager.GetComponentData<ReplicatedGameEntity>(unityEntity).ArchetypeId != archetype) 
+							archetypeUpdate = true;
 					}
 
 					if (archetypeUpdate)
@@ -165,6 +184,7 @@ namespace GameHost.ShareSimuWorldFeature
 							ArchetypeId = archetype
 						});
 
+						Console.WriteLine($"Created gamehost entity! {entity.Id}, {archetype}, {unityEntity}");
 						foreach (var attach in archetypeMap[archetype].Attaches)
 							attach.OnEntityAdded(EntityManager, entity, unityEntity);
 

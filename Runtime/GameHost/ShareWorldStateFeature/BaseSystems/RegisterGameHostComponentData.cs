@@ -1,4 +1,5 @@
 ﻿using GameHost.ShareSimuWorldFeature;
+using StormiumTeam.GameBase.Utility.Misc;
 using Unity.Entities;
 
 namespace GameHost.Simulation.Features.ShareWorldState.BaseSystems
@@ -15,7 +16,7 @@ namespace GameHost.Simulation.Features.ShareWorldState.BaseSystems
 	public abstract class RegisterGameHostComponentData<T> : RegisterGameHostComponentSystemBase
 		where T : struct, IComponentData
 	{
-		public override string ComponentPath => CustomComponentPath ?? typeof(T).FullName;
+		public override string ComponentPath => CustomComponentPath ?? TypeExt.GetFriendlyName(typeof(T));
 
 		protected virtual ICustomComponentDeserializer CustomDeserializer { get; }
 
@@ -41,7 +42,7 @@ namespace GameHost.Simulation.Features.ShareWorldState.BaseSystems
 	public abstract class RegisterGameHostComponentBuffer<T> : RegisterGameHostComponentSystemBase
 		where T : struct, IBufferElementData
 	{
-		public override string ComponentPath => CustomComponentPath ?? typeof(T).FullName;
+		public override string ComponentPath => CustomComponentPath ?? TypeExt.GetFriendlyName(typeof(T));
 
 		protected virtual ICustomComponentDeserializer CustomDeserializer { get; }
 

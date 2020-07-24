@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using System.Text;
+using GameHost.Native;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 
@@ -55,7 +56,7 @@ namespace RevolutionSnapshot.Core.Buffers
 			if (readIndex >= Length) throw new IndexOutOfRangeException($"p1 r={readIndex} >= l={Length}");
 
 			CurrReadIndex = readIndex + size;
-			if (CurrReadIndex > Length) throw new IndexOutOfRangeException("p2");
+			if (CurrReadIndex > Length) throw new IndexOutOfRangeException($"p2 {CurrReadIndex} ({readIndex} + {size}) > {Length}");
 
 			return readIndex;
 		}
@@ -78,12 +79,12 @@ namespace RevolutionSnapshot.Core.Buffers
 			where T : struct
 		{
 			ReadDataSafe((byte*) array.GetUnsafePtr(), array.Length * UnsafeUtility.SizeOf<T>(), marker);
-			/* var size      = UnsafeUtility.SizeOf<T>();
-			 var readIndex = GetReadIndexAndSetNew(marker, size * array.Length);
-			 // Set it for later usage
-			 CurrReadIndex = readIndex + size;
-			 // Read the value
-			 ReadUnsafe((byte*) array.GetUnsafePtr(), readIndex, size * array.Length);*/
+		}
+		
+		public void ReadDataSafe<T>(Span<T> span, DataBufferMarker marker = default)
+			where T : struct
+		{
+			ReadDataSafe((byte*) Unsafe.AsPointer(ref span.GetPinnableReference()), span.Length * Unsafe.SizeOf<T>(), marker);
 		}
 
 		public T ReadValue<T>(DataBufferMarker marker = default)
@@ -191,31 +192,37 @@ namespace RevolutionSnapshot.Core.Buffers
 			getval(ref this, val3, ref r4);
 		}
 
-		public string ReadString(DataBufferMarker marker = default)
+		public string ReadString(DataBufferMarker marker = default(DataBufferMarker))
 		{
-			var encoding = (UTF8Encoding) Encoding.UTF8;
-
-			if (!marker.Valid)
-				marker = CreateMarker(CurrReadIndex);
-
-			var strDataLength     = ReadValue<int>(marker);
-			var strDataEnd        = ReadValue<int>(marker.GetOffset(sizeof(int) * 1));
-			var strExpectedLength = ReadValue<int>(marker.GetOffset(sizeof(int) * 2));
-			var strDataStart      = GetReadIndex(marker.GetOffset(sizeof(int) * 3));
-
-			if (strDataLength <= 0)
+			var length = ReadValue<int>();
+			if (length < 1024)
 			{
-				if (strDataLength < 0) throw new Exception("No string found, maybe you are reading at the wrong location or you've done a bad write?");
-
-				return string.Empty;
+				Span<char> span = stackalloc char[length];
+				ReadDataSafe(new Span<char>(Unsafe.AsPointer(ref span.GetPinnableReference()), span.Length), marker);
+				return new string((char*) Unsafe.AsPointer(ref span.GetPinnableReference()), 0, length);
 			}
 
-			var str = encoding.GetString(DataPtr + strDataStart, Math.Min(strDataEnd - strDataStart, strDataLength));
-			CurrReadIndex = strDataEnd;
+			var ptr = UnsafeUtility.Malloc(length * sizeof(char), UnsafeUtility.AlignOf<char>(), Allocator.Temp);
+			ReadDataSafe((byte*) ptr, length * sizeof(char), marker);
+			UnsafeUtility.Free(ptr, Allocator.Temp);
+			return new string((char*) ptr, 0, length);
+		}
 
-			if (str.Length != strExpectedLength) return str.Substring(0, strExpectedLength);
+		public TCharBuffer ReadBuffer<TCharBuffer>(DataBufferMarker marker = default(DataBufferMarker))
+			where TCharBuffer : struct, ICharBuffer
+		{
+			var length = ReadValue<int>();
+			if (length < 1024)
+			{
+				Span<char> span = stackalloc char[length];
+				ReadDataSafe(new Span<char>(Unsafe.AsPointer(ref span.GetPinnableReference()), span.Length), marker);
+				return CharBufferUtility.Create<TCharBuffer>(span);
+			}
 
-			return str;
+			var ptr = UnsafeUtility.Malloc(length * sizeof(char), UnsafeUtility.AlignOf<char>(), Allocator.Temp);
+			ReadDataSafe((byte*) ptr, length * sizeof(char), marker);
+			UnsafeUtility.Free(ptr, Allocator.Temp);
+			return CharBufferUtility.Create<TCharBuffer>(new Span<char>(ptr, length));
 		}
 	}
 }

@@ -1,3 +1,4 @@
+using System;
 using GameBase.Roles.Components;
 using GameBase.Roles.Descriptions;
 using GameBase.Roles.Interfaces;

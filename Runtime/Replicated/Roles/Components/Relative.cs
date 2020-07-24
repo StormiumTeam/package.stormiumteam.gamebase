@@ -1,4 +1,5 @@
-﻿using GameBase.Roles.Interfaces;
+﻿using System;
+using GameBase.Roles.Interfaces;
 using GameHost;
 using GameHost.ShareSimuWorldFeature;
 using GameHost.Simulation.Features.ShareWorldState.BaseSystems;
@@ -29,7 +30,7 @@ namespace GameBase.Roles.Components
 #if UNITY_5_3_OR_NEWER
 		public class ValueDeserializer : IValueDeserializer<Relative<TDescription>>
 		{
-			public int Size => UnsafeUtility.SizeOf<GhGameEntity>();
+			public int Size => UnsafeUtility.SizeOf<GhGameEntity>() + sizeof(uint);
 
 			public void Deserialize(EntityManager em, NativeHashMap<GhGameEntity, Entity> ghToUnityEntity, ref Relative<TDescription> component, ref DataBufferReader reader)
 			{

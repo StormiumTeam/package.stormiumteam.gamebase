@@ -45,6 +45,8 @@ namespace GameHost.ShareSimuWorldFeature
 
 			var links = new NativeArray<GhComponentMetadata>(reader.ReadValue<int>(), Allocator.Temp);
 			reader.ReadDataSafe(links);
+
+			var componentCount = reader.ReadValue<int>();
 			for (var ent = 0; ent < gameEntities.Length; ent++)
 			{
 				var entity = gameEntities[ent];

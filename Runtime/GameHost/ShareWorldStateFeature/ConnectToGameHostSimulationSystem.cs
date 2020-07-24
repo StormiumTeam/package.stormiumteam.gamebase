@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using GameHost.ShareSimuWorldFeature.Systems;
 using GameHost.Transports.enet;
 using RevolutionSnapshot.Core.Buffers;
 using Unity.Entities;
@@ -7,6 +8,7 @@ using UnityEngine;
 
 namespace GameHost.ShareSimuWorldFeature
 {
+	[AlwaysUpdateSystem]
 	public class ConnectToGameHostSimulationSystem : SystemBase
 	{
 		private const int maxTries         = 4;
@@ -31,11 +33,16 @@ namespace GameHost.ShareSimuWorldFeature
 
 		protected override void OnUpdate()
 		{
+			World.GetExistingSystem<BeforeFirstFrameGhSimulationSystemGroup>().ForceUpdate();
+			
 			if (!m_Host.IsSet)
 				return;
 
 			if (m_Peer.State == PeerState.Disconnected)
 			{
+				World.GetExistingSystem<ReceiveSimulationWorldSystem>()
+				     .OnDisconnected();
+
 				if (m_ConnectionRetryCount >= maxTries)
 				{
 					m_Host.Dispose();
@@ -58,6 +65,8 @@ namespace GameHost.ShareSimuWorldFeature
 				m_Peer.Ping();
 			}
 
+			var receivedFrames = 0;
+
 			for (var i = 0; i != maxEventPerFrame; i++)
 			{
 				var polled    = false;
@@ -79,6 +88,7 @@ namespace GameHost.ShareSimuWorldFeature
 							Debug.Log("connection!");
 							break;
 						case NetEventType.Disconnect:
+							Debug.Log("disconnection");
 							break;
 						case NetEventType.Receive:
 							var reader = new DataBufferReader(netEvent.Packet.Data, netEvent.Packet.Length);
@@ -91,6 +101,12 @@ namespace GameHost.ShareSimuWorldFeature
 									var simulationDataReader = new DataBufferReader(reader, reader.CurrReadIndex, reader.Length);
 									World.GetExistingSystem<ReceiveSimulationWorldSystem>()
 									     .OnNewMessage(ref simulationDataReader);
+
+									if (receivedFrames == 0)
+										World.GetExistingSystem<ReceiveFirstFrameGhSimulationSystemGroup>().ForceUpdate();
+									World.GetExistingSystem<ReceiveGhSimulationSystemGroup>().ForceUpdate();
+									receivedFrames++;
+
 									break;
 								default:
 									throw new ArgumentOutOfRangeException();
@@ -99,6 +115,7 @@ namespace GameHost.ShareSimuWorldFeature
 							netEvent.Packet.Dispose();
 							break;
 						case NetEventType.Timeout:
+							Debug.Log("timeout");
 							break;
 						default:
 							throw new ArgumentOutOfRangeException();
@@ -108,6 +125,9 @@ namespace GameHost.ShareSimuWorldFeature
 				if (breakThis)
 					break;
 			}
+
+			if (receivedFrames > 0)
+				World.GetExistingSystem<ReceiveLastFrameGhSimulationSystemGroup>().ForceUpdate();
 		}
 
 		protected override void OnDestroy()
@@ -128,12 +148,16 @@ namespace GameHost.ShareSimuWorldFeature
 			addr.Port = (ushort) endPoint.Port;
 
 			m_Host = new Host();
-			m_Host.Create();
+			if (!m_Host.Create())
+				throw new InvalidOperationException();
+				
 			m_Peer = m_Host.Connect(addr);
 			m_Peer.Timeout(0, 3000, 5000);
 
 			if (!m_Peer.IsSet)
 				Debug.LogWarning("Couldn't connect to " + endPoint);
+			
+			Debug.Log("Created Connection Request!");
 
 			return m_Peer.IsSet;
 		}

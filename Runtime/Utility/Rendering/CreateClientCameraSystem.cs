@@ -40,6 +40,8 @@ namespace StormiumTeam.GameBase.Utility.Rendering
 			}
 
 			gameObject.SetActive(false);
+
+			InternalSetActive(true);
 		}
 
 		protected override void OnUpdate()

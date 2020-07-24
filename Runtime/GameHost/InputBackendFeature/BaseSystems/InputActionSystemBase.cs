@@ -60,8 +60,10 @@ namespace GameHost.InputBackendFeature.BaseSystems
 
 		protected virtual void OnSerialize(ref DataBufferWriter buffer)
 		{
-			buffer.WriteInt(InputQuery.CalculateEntityCount());
-			foreach (var entity in InputQuery.ToEntityArray(Allocator.Temp))
+			var entityArray = InputQuery.ToEntityArray(Allocator.Temp);
+
+			buffer.WriteInt(entityArray.Length);
+			foreach (var entity in entityArray)
 			{
 				var repl   = EntityManager.GetComponentData<ReplicatedInputAction>(entity);
 				var action = EntityManager.GetComponentData<TAction>(entity);

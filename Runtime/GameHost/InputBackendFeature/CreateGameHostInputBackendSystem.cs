@@ -40,6 +40,9 @@ namespace GameHost.InputBackendFeature
 
 		protected override void OnUpdate()
 		{
+			if (driver.TransportAddress == null)
+				return;
+
 			driver.Update();
 
 			while (driver.Accept().IsCreated)

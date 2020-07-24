@@ -47,8 +47,9 @@ namespace StormiumTeam.GameBase.BaseSystems
 			where TData : struct, IComponentData
 		{
 			var properties = AddRule<TData>();
-			Debug.Log(HasSingleton<TData>());
-			data = GetSingleton<TData>();
+			// temporary fix for not making it generating throught the Unity Entities compiler since it does result into an invalid internal query
+			using (var query = GetEntityQuery(typeof(TData)))
+				data = query.GetSingleton<TData>();
 			return properties;
 		}
 	}
@@ -64,7 +65,7 @@ namespace StormiumTeam.GameBase.BaseSystems
 		protected override void OnCreate()
 		{
 			base.OnCreate();
-
+			
 			Rule = AddRule<TData>();
 			AddRuleProperties();
 			SetDefaultProperties();

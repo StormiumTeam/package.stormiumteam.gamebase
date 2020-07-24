@@ -24,14 +24,19 @@ namespace StormiumTeam.GameBase.Modules
 			Handles.Clear();
 		}
 
-		public void Add<THandle, TData>(AsyncOperationHandle<THandle> handle, TData data)
+		public bool Add<THandle, TData>(AsyncOperationHandle<THandle> handle, TData data)
 			where TData : struct
 		{
+			if (!handle.IsValid())
+				return false;
+			
 			Handles.Add(new HandleDataPair<THandle, TData>
 			{
 				Handle = handle,
 				Data   = data
 			});
+
+			return true;
 		}
 
 		public HandleDataPair<THandle, TData> Get<THandle, TData>(int index)
@@ -53,7 +58,7 @@ namespace StormiumTeam.GameBase.Modules
 
 			public void Deconstruct(out AsyncOperationHandle<THandle> handle, out TData data)
 			{
-				handle = Generic;
+				handle = Handle.IsValid() ? Generic : default;
 				data   = Data;
 			}
 		}
