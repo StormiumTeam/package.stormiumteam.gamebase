@@ -30,7 +30,7 @@ namespace GameBase.Roles.Components
 #if UNITY_5_3_OR_NEWER
 		public class ValueDeserializer : IValueDeserializer<Relative<TDescription>>
 		{
-			public int Size => UnsafeUtility.SizeOf<GhGameEntity>() + sizeof(uint);
+			public int Size => UnsafeUtility.SizeOf<GhGameEntity>();
 
 			public void Deserialize(EntityManager em, NativeHashMap<GhGameEntity, Entity> ghToUnityEntity, ref Relative<TDescription> component, ref DataBufferReader reader)
 			{
