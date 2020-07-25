@@ -35,6 +35,7 @@ namespace GameHost.ShareSimuWorldFeature
 			var links = new NativeArray<GhComponentMetadata>(reader.ReadValue<int>(), Allocator.Temp);
 			reader.ReadDataSafe(links);
 
+			var count = reader.ReadValue<int>();
 			for (var ent = 0; ent < gameEntities.Length; ent++)
 			{
 				var entity = gameEntities[ent];
@@ -44,10 +45,10 @@ namespace GameHost.ShareSimuWorldFeature
 				var buffer = componentDataFromEntity[output[ent]];
 				buffer.Clear();
 
-				var array = new NativeArray<TComponent>(reader.ReadValue<int>(), Allocator.Temp);
-				reader.ReadDataSafe(array);
+				var rawData = new NativeArray<TComponent>(reader.ReadValue<int>() / UnsafeUtility.SizeOf<TComponent>(), Allocator.Temp);
+				reader.ReadDataSafe(rawData);
 
-				buffer.CopyFrom(array);
+				buffer.CopyFrom(rawData);
 			}
 		}
 	}

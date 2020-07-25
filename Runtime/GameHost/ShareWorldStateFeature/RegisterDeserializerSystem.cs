@@ -31,6 +31,9 @@ namespace GameHost.ShareSimuWorldFeature
 		public (ICustomComponentArchetypeAttach attach, ICustomComponentDeserializer deserializer) Get(int size, string name)
 		{
 			deserializerMap.TryGetValue(new Key__(size, name), out var tuple);
+			if (tuple.deserializer.Size != size)
+				throw new InvalidOperationException($"Size mismatch {size}<>{tuple.deserializer.Size}");
+			
 			return tuple;
 		}
 
