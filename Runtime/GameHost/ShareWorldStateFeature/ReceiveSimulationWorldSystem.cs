@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using GameHost.Native;
 using package.stormiumteam.shared.ecs;
 using RevolutionSnapshot.Core.Buffers;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 namespace GameHost.ShareSimuWorldFeature
 {
@@ -13,7 +15,7 @@ namespace GameHost.ShareSimuWorldFeature
 	{
 		public GhComponentType Row;
 		public int             Size;
-		public string          Name;
+		public CharBuffer256   Name;
 	}
 
 	public class ReceiveSimulationWorldSystem : SystemBase
@@ -23,8 +25,8 @@ namespace GameHost.ShareSimuWorldFeature
 		private EntityArchetype                     defaultSpawnArchetype;
 		public NativeHashMap<GhGameEntity, Entity> ghToUnityEntityMap;
 
-		private RegisterDeserializerSystem               registerDeserializer;
-		public  Dictionary<string, ComponentTypeDetails> typeDetailMapFromName;
+		private RegisterDeserializerSystem                      registerDeserializer;
+		public  Dictionary<CharBuffer256, ComponentTypeDetails> typeDetailMapFromName;
 
 		public Dictionary<GhComponentType, ComponentTypeDetails> typeDetailMapFromRow;
 
@@ -36,7 +38,7 @@ namespace GameHost.ShareSimuWorldFeature
 			ghToUnityEntityMap   = new NativeHashMap<GhGameEntity, Entity>(64, Allocator.Persistent);
 
 			typeDetailMapFromRow  = new Dictionary<GhComponentType, ComponentTypeDetails>();
-			typeDetailMapFromName = new Dictionary<string, ComponentTypeDetails>();
+			typeDetailMapFromName = new Dictionary<CharBuffer256, ComponentTypeDetails>();
 			archetypeMap          = new Dictionary<uint, Archetype__>();
 
 			defaultSpawnArchetype = EntityManager.CreateArchetype(typeof(ReplicatedGameEntity));
@@ -80,30 +82,33 @@ namespace GameHost.ShareSimuWorldFeature
 
 			// ---- 1. Component Type
 			//
+			Profiler.BeginSample("Component Type");
 			using var componentTypes = new NativeArray<GhComponentType>(reader.ReadValue<int>(), Allocator.Temp);
 			if (componentTypes.Length > 0)
 			{
 				reader.ReadDataSafe((byte*) componentTypes.GetUnsafePtr(), sizeof(GhComponentType) * componentTypes.Length);
 
 				// 1.5 Read description of component type
+				ComponentTypeDetails details;
 				foreach (var componentType in componentTypes)
 				{
-					ComponentTypeDetails details;
-					details.Row  = componentType;
-					details.Size = reader.ReadValue<int>();
-					details.Name = reader.ReadString();
-
+					details.Row                         = componentType;
+					details.Size                        = reader.ReadValue<int>();
+					details.Name                        = reader.ReadBuffer<CharBuffer256>();
+					
 					typeDetailMapFromRow[componentType] = details;
-					typeDetailMapFromName[details.Name] = details;
+					typeDetailMapFromName[details.Name] = details; 
 				}
 			}
 			else
 			{
 				return;
 			}
+			Profiler.EndSample();
 
 			// ---- 2. Archetype
 			//
+			Profiler.BeginSample("Archetype");
 			using var archetypes = new NativeArray<uint>(reader.ReadValue<int>(), Allocator.Temp);
 			if (archetypes.Length > 0)
 			{
@@ -126,6 +131,7 @@ namespace GameHost.ShareSimuWorldFeature
 						archetype.ComponentTypes = new NativeArray<uint>(newData, Allocator.Persistent);
 						archetype.Attaches       = new List<ICustomComponentArchetypeAttach>();
 						registerDeserializer.AttachArchetype(ref archetype, typeDetailMapFromName);
+						Console.WriteLine("new archetype!");
 
 						archetypeMap[row] = archetype;
 					}
@@ -135,9 +141,11 @@ namespace GameHost.ShareSimuWorldFeature
 			{
 				return;
 			}
+			Profiler.EndSample();
 
 			// ---- 3. Entity
 			//
+			Profiler.BeginSample("ENtity");
 			using var entities = new NativeArray<GhGameEntity>(reader.ReadValue<int>(), Allocator.Temp);
 			if (entities.Length > 0)
 			{
@@ -202,10 +210,12 @@ namespace GameHost.ShareSimuWorldFeature
 				ghToUnityEntityMap.Clear();
 				return;
 			}
+			Profiler.EndSample();
 
 			// ---- 4. Component
 			//
 			// 4.1 Transforming gh entities to unity entities
+			Profiler.BeginSample("Component");
 			var outputEntities = new NativeArray<Entity>(entities.Length, Allocator.Temp);
 			for (var i = 0; i != entities.Length; i++)
 				outputEntities[i] = ghToUnityEntityMap[entities[i]];
@@ -218,6 +228,7 @@ namespace GameHost.ShareSimuWorldFeature
 
 				reader.CurrReadIndex += componentTypeBuffer.CurrReadIndex;
 			}
+			Profiler.EndSample();
 
 			outputEntities.Dispose();
 		}

@@ -1,27 +1,28 @@
-﻿﻿using System;
+﻿using System;
+ using UnityEngine.Profiling;
 
-namespace GameHost.Native
+ namespace GameHost.Native
 {
 	public static class CharBufferUtility
 	{
 		public static int GetLength<TCharBuffer>(this TCharBuffer buffer)
-			where TCharBuffer : struct, ICharBuffer
+			where TCharBuffer : unmanaged, ICharBuffer
 		{
 			return buffer.Length;
 		}
 
 		public static void SetLength<TCharBuffer>(this ref TCharBuffer buffer, int length)
-			where TCharBuffer : struct, ICharBuffer
+			where TCharBuffer : unmanaged, ICharBuffer
 		{
 			if (length > buffer.Capacity)
-				throw new IndexOutOfRangeException();
+				throw new IndexOutOfRangeException($"{length} > {buffer.Capacity}");
 			buffer.Length = length;
 		}
 
 		public static TCharBuffer Create<TCharBuffer>(string content)
-			where TCharBuffer : struct, ICharBuffer
+			where TCharBuffer : unmanaged, ICharBuffer
 		{
-			var buffer = new TCharBuffer();
+			var buffer = default(TCharBuffer);
 			if (string.IsNullOrEmpty(content))
 				return buffer;
 			
@@ -32,9 +33,9 @@ namespace GameHost.Native
 		}
 		
 		public static TCharBuffer Create<TCharBuffer>(Span<char> content)
-			where TCharBuffer : struct, ICharBuffer
+			where TCharBuffer : unmanaged, ICharBuffer
 		{
-			var buffer = new TCharBuffer();
+			var buffer = default(TCharBuffer);
 			if (content.Length == 0)
 				return buffer;
 			
@@ -44,7 +45,7 @@ namespace GameHost.Native
 		}
 
 		public static int ComputeHashCode<TCharBuffer>(TCharBuffer buffer)
-			where TCharBuffer : struct, ICharBuffer
+			where TCharBuffer : unmanaged, ICharBuffer
 		{
 			unchecked
 			{

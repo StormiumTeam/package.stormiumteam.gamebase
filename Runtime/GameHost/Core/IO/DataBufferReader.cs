@@ -4,6 +4,7 @@ using System.Text;
 using GameHost.Native;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using UnityEngine.Profiling;
 
 namespace RevolutionSnapshot.Core.Buffers
 {
@@ -209,7 +210,7 @@ namespace RevolutionSnapshot.Core.Buffers
 		}
 
 		public TCharBuffer ReadBuffer<TCharBuffer>(DataBufferMarker marker = default(DataBufferMarker))
-			where TCharBuffer : struct, ICharBuffer
+			where TCharBuffer : unmanaged, ICharBuffer
 		{
 			var length = ReadValue<int>();
 			if (length < 1024)
@@ -218,11 +219,12 @@ namespace RevolutionSnapshot.Core.Buffers
 				ReadDataSafe(new Span<char>(Unsafe.AsPointer(ref span.GetPinnableReference()), span.Length), marker);
 				return CharBufferUtility.Create<TCharBuffer>(span);
 			}
-
+			
 			var ptr = UnsafeUtility.Malloc(length * sizeof(char), UnsafeUtility.AlignOf<char>(), Allocator.Temp);
 			ReadDataSafe((byte*) ptr, length * sizeof(char), marker);
+			var buffer = CharBufferUtility.Create<TCharBuffer>(new Span<char>(ptr, length));
 			UnsafeUtility.Free(ptr, Allocator.Temp);
-			return CharBufferUtility.Create<TCharBuffer>(new Span<char>(ptr, length));
+			return buffer;
 		}
 	}
 }

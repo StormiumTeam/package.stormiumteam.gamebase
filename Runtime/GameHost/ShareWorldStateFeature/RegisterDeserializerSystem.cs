@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using GameHost.Native;
 using Unity.Entities;
 using UnityEngine;
 
@@ -23,12 +24,12 @@ namespace GameHost.ShareSimuWorldFeature
 			var types = attach.RegisterTypes();
 			foreach (var type in types)
 			{
-				deserializerMap[new Key__(componentDeserializer.Size, type)] = (attach, componentDeserializer);
+				deserializerMap[new Key__(componentDeserializer.Size, CharBufferUtility.Create<CharBuffer256>(type))] = (attach, componentDeserializer);
 				Debug.Log($"{componentDeserializer.Size}, {type}, {componentDeserializer}");
 			}
 		}
 
-		public (ICustomComponentArchetypeAttach attach, ICustomComponentDeserializer deserializer) Get(int size, string name)
+		public (ICustomComponentArchetypeAttach attach, ICustomComponentDeserializer deserializer) Get(int size, CharBuffer256 name)
 		{
 			deserializerMap.TryGetValue(new Key__(size, name), out var tuple);
 			if (tuple.deserializer.Size != size)
@@ -37,7 +38,7 @@ namespace GameHost.ShareSimuWorldFeature
 			return tuple;
 		}
 
-		public void AttachArchetype(ref ReceiveSimulationWorldSystem.Archetype__ archetype, in Dictionary<string, ComponentTypeDetails> detailMap)
+		public void AttachArchetype(ref ReceiveSimulationWorldSystem.Archetype__ archetype, in Dictionary<CharBuffer256, ComponentTypeDetails> detailMap)
 		{
 			foreach (var (attach, _) in deserializerMap.Values)
 				if (attach.CanAttachToArchetype(archetype.ComponentTypes.Reinterpret<GhComponentType>(), detailMap))
@@ -46,10 +47,10 @@ namespace GameHost.ShareSimuWorldFeature
 
 		internal readonly struct Key__ : IEquatable<Key__>
 		{
-			public readonly int    Size;
-			public readonly string Name;
+			public readonly int           Size;
+			public readonly CharBuffer256 Name;
 
-			public Key__(int size, string name)
+			public Key__(int size, CharBuffer256 name)
 			{
 				Size = size;
 				Name = name;
@@ -57,7 +58,7 @@ namespace GameHost.ShareSimuWorldFeature
 
 			public bool Equals(Key__ other)
 			{
-				return Size == other.Size && Name == other.Name;
+				return Size == other.Size && Name.Span.SequenceEqual(other.Name.Span);
 			}
 
 			public override bool Equals(object obj)
@@ -69,7 +70,7 @@ namespace GameHost.ShareSimuWorldFeature
 			{
 				unchecked
 				{
-					return (Size * 397) ^ (Name != null ? Name.GetHashCode() : 0);
+					return (Size * 397) ^ Name.GetHashCode();
 				}
 			}
 		}

@@ -1,4 +1,5 @@
-﻿using GameHost.Transports.enet;
+﻿using System;
+using GameHost.Transports.enet;
 using Unity.Entities;
 using UnityEngine;
 
@@ -6,10 +7,10 @@ namespace Core.ENet
 {
 	public class InitializeLibrarySystem : SystemBase
 	{
-		public InitializeLibrarySystem()
+		protected override void OnCreate()
 		{
 			if (Library.Initialize())
-				Debug.Log("ENet Initialized");
+				Console.WriteLine("[ENet] Initialize");
 		}
 
 		protected override void OnUpdate()
@@ -18,7 +19,11 @@ namespace Core.ENet
 
 		protected override void OnDestroy()
 		{
-			Library.Deinitialize();
+			if (Library.Initialized)
+			{
+				Library.Deinitialize();
+				Console.WriteLine("[ENet] DeInitialized");
+			}
 		}
 	}
 }

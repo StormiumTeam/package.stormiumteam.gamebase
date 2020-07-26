@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using GameHost.Native;
 using package.stormiumteam.shared.ecs;
 using RevolutionSnapshot.Core.Buffers;
 using Unity.Collections;
@@ -56,21 +57,21 @@ namespace GameHost.ShareSimuWorldFeature
 	public class DefaultArchetypeAttach<TComponent> : ICustomComponentArchetypeAttach
 		where TComponent : struct
 	{
-		public readonly string        GameHostType;
+		public readonly CharBuffer256 GameHostType;
 		public readonly ComponentType UnityType;
 
 		public DefaultArchetypeAttach(string ghType)
 		{
-			GameHostType = ghType;
+			GameHostType = CharBufferUtility.Create<CharBuffer256>(ghType);
 			UnityType    = typeof(TComponent);
 		}
 
 		public string[] RegisterTypes()
 		{
-			return new[] {GameHostType};
+			return new[] {GameHostType.Span.ToString()};
 		}
 
-		public bool CanAttachToArchetype(NativeArray<GhComponentType> componentTypes, Dictionary<string, ComponentTypeDetails> detailMap)
+		public bool CanAttachToArchetype(NativeArray<GhComponentType> componentTypes, Dictionary<CharBuffer256, ComponentTypeDetails> detailMap)
 		{
 			if (!detailMap.TryGetValue(GameHostType, out var details))
 				return false;

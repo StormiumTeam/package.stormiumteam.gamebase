@@ -943,6 +943,7 @@ namespace GameHost.Transports.enet
 		public static void Deinitialize()
 		{
 			Native.enet_deinitialize();
+			Initialized = false;
 		}
 	}
 

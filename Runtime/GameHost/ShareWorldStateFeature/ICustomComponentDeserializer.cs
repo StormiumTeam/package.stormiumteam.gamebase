@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using GameHost.Native;
 using RevolutionSnapshot.Core.Buffers;
 using Unity.Collections;
 using Unity.Entities;
@@ -17,7 +18,7 @@ namespace GameHost.ShareSimuWorldFeature
 	{
 		string[] RegisterTypes();
 
-		bool CanAttachToArchetype(NativeArray<GhComponentType> componentTypes, Dictionary<string, ComponentTypeDetails> detailMap);
+		bool CanAttachToArchetype(NativeArray<GhComponentType> componentTypes, Dictionary<CharBuffer256, ComponentTypeDetails> detailMap);
 
 		void OnEntityAdded(EntityManager   entityManager, GhGameEntity ghEntity, Entity output);
 		void OnEntityRemoved(EntityManager entityManager, GhGameEntity ghEntity, Entity output);
