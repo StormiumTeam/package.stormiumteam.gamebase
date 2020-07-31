@@ -53,6 +53,12 @@ namespace StormiumTeam.GameBase.Utility.Pooling
 			m_ObjectPool.Enqueue(obj);
 		}
 
+		public void StopDequeue(OnLoad function)
+		{
+			while (m_EventQueue.Contains(function))
+				m_EventQueue.Remove(function);
+		}
+
 		public void Dequeue(OnLoad complete)
 		{
 			if (m_ObjectPool.Count == 0)

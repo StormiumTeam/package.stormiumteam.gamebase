@@ -14,7 +14,7 @@ namespace GameHost
 		public override bool Equals(object obj)
 		{
 			return obj is GhGameEntity other && Equals(other);
-		}
+		} 
 
 		public override int GetHashCode()
 		{

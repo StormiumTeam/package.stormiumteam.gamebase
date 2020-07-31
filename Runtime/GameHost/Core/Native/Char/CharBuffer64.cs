@@ -34,5 +34,12 @@ namespace GameHost.Native
 		{
 			return CharBufferUtility.ComputeHashCode(this);
 		}
+		
+		public static implicit operator CharBuffer64(string str) => CharBufferUtility.Create<CharBuffer64>(str); 
+		
+		public override string ToString()
+		{
+			return Span.ToString();
+		}
 	}
 }

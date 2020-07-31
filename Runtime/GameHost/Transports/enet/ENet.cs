@@ -24,6 +24,7 @@
  */
 
 using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Text;
@@ -374,6 +375,16 @@ namespace GameHost.Transports.enet
 	public struct Host : IDisposable
 	{
 		internal IntPtr NativeData { get; set; }
+		
+		public unsafe Address Address
+		{
+			get
+			{
+				// header + ENetSocket (int)
+				var unsafeAddr = Unsafe.AsRef<ENetAddress>((NativeData + sizeof(int) * 2).ToPointer());
+				return new Address(unsafeAddr);
+			}
+		}
 
 		public void Dispose()
 		{

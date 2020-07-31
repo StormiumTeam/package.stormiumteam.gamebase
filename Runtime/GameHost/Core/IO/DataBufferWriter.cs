@@ -38,6 +38,8 @@ namespace RevolutionSnapshot.Core.Buffers
 		[NativeDisableUnsafePtrRestriction]
 		private DataBuffer* m_Data;
 
+		public bool IsCreated => m_Data != null;
+		
 		public int Length
 		{
 			get => m_Data->length;
@@ -66,10 +68,8 @@ namespace RevolutionSnapshot.Core.Buffers
 			}
 		}
 
-		public IntPtr GetSafePtr()
-		{
-			return (IntPtr) m_Data->buffer;
-		}
+		public IntPtr     GetSafePtr() => (IntPtr) m_Data->buffer;
+		public Span<byte> Span         => new Span<byte>(m_Data->buffer, m_Data->length);
 
 
 		public DataBufferWriter(int capacity, Allocator allocator)

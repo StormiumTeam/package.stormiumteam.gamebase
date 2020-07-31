@@ -58,6 +58,8 @@ namespace GameHost.ShareSimuWorldFeature
 				return;
 			}
 
+			m_ConnectionRetryCount = 0;
+
 			m_NextPingDelay -= Time.DeltaTime;
 			if (m_NextPingDelay < 0)
 			{
@@ -152,7 +154,7 @@ namespace GameHost.ShareSimuWorldFeature
 				throw new InvalidOperationException();
 				
 			m_Peer = m_Host.Connect(addr);
-			m_Peer.Timeout(0, 3000, 5000);
+			m_Peer.Timeout(0, 4000, 6000);
 
 			if (!m_Peer.IsSet)
 				Debug.LogWarning("Couldn't connect to " + endPoint);

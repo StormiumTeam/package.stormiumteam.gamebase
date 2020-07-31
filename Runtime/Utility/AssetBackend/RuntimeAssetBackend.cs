@@ -114,6 +114,9 @@ namespace StormiumTeam.GameBase.Utility.AssetBackend
 
 		public void SetPresentationFromPool(AsyncAssetPool<GameObject> pool)
 		{
+			if (presentationPool != null && m_IncomingPresentation)
+				presentationPool.StopDequeue(OnCompletePoolDequeue);
+			
 			presentationPool = pool;
 
 			OnPresentationPoolUpdate();

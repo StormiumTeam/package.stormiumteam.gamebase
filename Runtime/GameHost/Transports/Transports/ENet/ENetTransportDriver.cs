@@ -161,8 +161,8 @@ namespace GameHost.Transports.Transports.ENet
 
 		public int Bind(Address address)
 		{
-			BindingAddress = address;
 			m_DidBind      = m_Host.Create(address, (int) MaxConnections, 32);
+			BindingAddress = m_Host.Address;
 			if (m_DidBind)
 				return 0;
 			return -1;

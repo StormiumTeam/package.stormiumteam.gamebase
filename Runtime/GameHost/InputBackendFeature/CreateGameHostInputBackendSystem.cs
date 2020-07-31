@@ -11,6 +11,7 @@ using UnityEngine;
 
 namespace GameHost.InputBackendFeature
 {
+	[AlwaysUpdateSystem]
 	public class CreateGameHostInputBackendSystem : SystemBase
 	{
 		private readonly HeaderTransportDriver driver;
@@ -19,6 +20,8 @@ namespace GameHost.InputBackendFeature
 
 		private InputBackendSystem        inputBackendSystem;
 		private RegisterInputLayoutSystem inputLayoutSystem;
+
+		public ENetTransportAddress Address => (ENetTransportAddress)enetDriver.TransportAddress;
 
 		public CreateGameHostInputBackendSystem()
 		{
@@ -48,7 +51,7 @@ namespace GameHost.InputBackendFeature
 			while (driver.Accept().IsCreated)
 			{
 			}
-
+			
 			TransportEvent ev;
 			while ((ev = driver.PopEvent()).Type != TransportEvent.EType.None)
 				switch (ev.Type)
@@ -62,9 +65,9 @@ namespace GameHost.InputBackendFeature
 					case TransportEvent.EType.Disconnect:
 						break;
 					case TransportEvent.EType.Data:
+						Console.WriteLine("------> data");
 						var reader = new DataBufferReader(ev.Data);
 						var type   = (EMessageType) reader.ReadValue<int>();
-						Console.WriteLine($"received {type}");
 						switch (type)
 						{
 							case EMessageType.InputData:
@@ -99,6 +102,7 @@ namespace GameHost.InputBackendFeature
 		protected override void OnDestroy()
 		{
 			base.OnDestroy();
+			
 			driver.Dispose();
 		}
 
