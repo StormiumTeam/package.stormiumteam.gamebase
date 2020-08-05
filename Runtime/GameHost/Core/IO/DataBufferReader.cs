@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
-using System.Text;
 using GameHost.Native;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-using UnityEngine.Profiling;
 
 namespace RevolutionSnapshot.Core.Buffers
 {

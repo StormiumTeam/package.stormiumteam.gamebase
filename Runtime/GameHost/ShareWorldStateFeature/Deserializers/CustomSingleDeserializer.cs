@@ -1,8 +1,5 @@
-﻿using System.Collections.Generic;
-using package.stormiumteam.shared.ecs;
-using RevolutionSnapshot.Core.Buffers;
+﻿using RevolutionSnapshot.Core.Buffers;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 
 namespace GameHost.ShareSimuWorldFeature

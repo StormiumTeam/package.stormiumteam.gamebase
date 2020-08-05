@@ -1,5 +1,4 @@
-﻿using Core.ENet;
-using Unity.Entities;
+﻿using Unity.Entities;
 
 namespace GameHost
 {

@@ -1,7 +1,6 @@
 ﻿﻿using System;
-using System.Runtime.CompilerServices;
 
-namespace GameHost.Native
+ namespace GameHost.Native
 {
 	public unsafe struct CharBuffer64 : ICharBuffer, IEquatable<CharBuffer64>
 	{

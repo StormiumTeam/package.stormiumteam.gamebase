@@ -1,17 +1,16 @@
-﻿using System;
-using GameBase.Roles.Interfaces;
-using GameHost;
+﻿using GameHost;
 using GameHost.ShareSimuWorldFeature;
 using GameHost.Simulation.Features.ShareWorldState.BaseSystems;
 using RevolutionSnapshot.Core.Buffers;
+using StormiumTeam.GameBase.Roles.Interfaces;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 
-namespace GameBase.Roles.Components
+namespace StormiumTeam.GameBase.Roles.Components
 {
 	/// <summary>
-	///     A relative path to a <see cref="Entity" /> with <see cref="Interfaces.IEntityDescription" />
+	///     A relative path to a <see cref="Entity" /> with <see cref="IEntityDescription" />
 	/// </summary>
 	/// <typeparam name="TDescription"></typeparam>
 	public readonly struct Relative<TDescription> : IComponentData

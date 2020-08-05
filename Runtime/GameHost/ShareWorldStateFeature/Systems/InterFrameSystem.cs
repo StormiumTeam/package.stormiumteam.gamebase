@@ -1,6 +1,5 @@
-using System;
-using GameBase.Time.Components;
 using GameHost.Simulation.Utility.InterTick;
+using StormiumTeam.GameBase.Time.Components;
 using Unity.Entities;
 
 namespace GameHost.ShareSimuWorldFeature.Systems

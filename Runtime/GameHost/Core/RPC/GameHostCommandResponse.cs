@@ -1,7 +1,4 @@
-﻿using System;
-using System.Runtime.CompilerServices;
-using GameHost.Core.IO;
- using GameHost.Native;
+﻿using GameHost.Core.IO;
  using GameHost.Native;
 using Newtonsoft.Json;
 using RevolutionSnapshot.Core.Buffers;

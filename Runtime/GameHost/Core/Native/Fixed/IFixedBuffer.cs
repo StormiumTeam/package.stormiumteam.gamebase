@@ -1,7 +1,6 @@
 ﻿﻿using System;
-using System.Runtime.CompilerServices;
 
-namespace GameHost.Native.Fixed
+ namespace GameHost.Native.Fixed
 {
 	public interface IFixedBuffer
 	{

@@ -1,5 +1,5 @@
-﻿using GameBase.Roles.Descriptions;
-using StormiumTeam.GameBase.BaseSystems.Interfaces;
+﻿using StormiumTeam.GameBase.BaseSystems.Interfaces;
+using StormiumTeam.GameBase.Roles.Descriptions;
 using StormiumTeam.GameBase.Utility.Modules;
 using Unity.Entities;
 

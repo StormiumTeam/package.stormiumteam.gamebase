@@ -232,6 +232,8 @@ namespace GameHost.ShareSimuWorldFeature
 
 			outputEntities.Dispose();
 		}
+		
+		private HashSet<(CharBuffer256 name, int size)> warningSet = new HashSet<(CharBuffer256 name, int size)>(); 
 
 		private void OnReadComponent(ref DataBufferReader reader, int index, NativeArray<GhGameEntity> entities, NativeArray<Entity> output, NativeArray<GhComponentType> componentTypes)
 		{
@@ -240,9 +242,14 @@ namespace GameHost.ShareSimuWorldFeature
 			var deserializer     = registerDeserializer.Get(componentDetails.Size, componentDetails.Name).deserializer;
 			if (deserializer == null)
 			{
-				Debug.LogWarning($"Serializer not found for {componentDetails.Name} (size={componentDetails.Size}, row={componentDetails.Row})");
+				var key = (componentDetails.Name, componentDetails.Size);
+				if (!warningSet.Contains(key))
+				{
+					Debug.LogWarning($"Serializer not found for {componentDetails.Name} (size={componentDetails.Size}, row={componentDetails.Row})");
+					warningSet.Add(key);
+				}
 
-				reader.CurrReadIndex += skip;
+				reader.CurrReadIndex += skip - sizeof(int);
 				return;
 			}
 

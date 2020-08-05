@@ -1,5 +1,5 @@
-using GameBase.Camera;
 using StormiumTeam.GameBase.BaseSystems.Interfaces;
+using StormiumTeam.GameBase._Camera;
 using StormiumTeam.GameBase.Utility.Rendering;
 using Unity.Entities;
 

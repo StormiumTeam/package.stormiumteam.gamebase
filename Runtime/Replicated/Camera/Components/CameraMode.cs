@@ -1,7 +1,7 @@
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace GameBase.Camera
+namespace StormiumTeam.GameBase._Camera
 {
 	public enum CameraMode
 	{

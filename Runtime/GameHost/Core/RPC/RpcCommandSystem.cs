@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using RevolutionSnapshot.Core.Buffers;
 using StormiumTeam.GameBase.BaseSystems;
 

@@ -1,6 +1,6 @@
 ﻿using Unity.Entities;
 
-namespace GameBase.Roles.Interfaces
+namespace StormiumTeam.GameBase.Roles.Interfaces
 {
 	/// <summary>
 	///     An entity description is a role attributed to a <see cref="GameEntity" />

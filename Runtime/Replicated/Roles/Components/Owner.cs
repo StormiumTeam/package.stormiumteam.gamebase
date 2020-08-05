@@ -6,7 +6,7 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 
-namespace GameBase.Roles.Components
+namespace StormiumTeam.GameBase.Roles.Components
 {
 	public readonly struct Owner : IComponentData
 	{

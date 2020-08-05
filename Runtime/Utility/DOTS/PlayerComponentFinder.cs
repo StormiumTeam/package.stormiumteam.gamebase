@@ -1,8 +1,7 @@
-using System;
-using GameBase.Roles.Components;
-using GameBase.Roles.Descriptions;
-using GameBase.Roles.Interfaces;
 using package.stormiumteam.shared.ecs;
+using StormiumTeam.GameBase.Roles.Components;
+using StormiumTeam.GameBase.Roles.Descriptions;
+using StormiumTeam.GameBase.Roles.Interfaces;
 using Unity.Collections;
 using Unity.Entities;
 

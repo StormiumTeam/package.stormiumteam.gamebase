@@ -1,7 +1,7 @@
 using GameHost.Simulation.Features.ShareWorldState.BaseSystems;
 using Unity.Entities;
 
-namespace GameBase.Roles.Components
+namespace StormiumTeam.GameBase.Roles.Components
 {
 	/// <summary>
 	/// Is this entity simulated by us?

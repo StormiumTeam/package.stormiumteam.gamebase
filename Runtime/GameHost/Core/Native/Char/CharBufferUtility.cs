@@ -1,7 +1,6 @@
 ﻿using System;
- using UnityEngine.Profiling;
 
- namespace GameHost.Native
+namespace GameHost.Native
 {
 	public static class CharBufferUtility
 	{

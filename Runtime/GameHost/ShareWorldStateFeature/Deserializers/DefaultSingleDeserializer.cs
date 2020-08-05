@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using GameHost.Native;
-using package.stormiumteam.shared.ecs;
 using RevolutionSnapshot.Core.Buffers;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;

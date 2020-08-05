@@ -1,7 +1,7 @@
 ﻿using GameHost.Simulation.Features.ShareWorldState.BaseSystems;
 using Unity.Entities;
 
-namespace GameBase.Time.Components
+namespace StormiumTeam.GameBase.Time.Components
 {
 	/// <summary>
 	///     Represent the current time data of a <see cref="GameWorld" />

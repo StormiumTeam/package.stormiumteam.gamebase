@@ -1,12 +1,12 @@
-﻿using GameBase.Roles.Components;
-using GameBase.Roles.Descriptions;
-using GameBase.Roles.Interfaces;
-using GameHost.Simulation.Features.ShareWorldState.BaseSystems;
+﻿using GameHost.Simulation.Features.ShareWorldState.BaseSystems;
+using StormiumTeam.GameBase.Roles.Components;
+using StormiumTeam.GameBase.Roles.Descriptions;
+using StormiumTeam.GameBase.Roles.Interfaces;
 using Unity.Entities;
 
 [assembly: RegisterGenericComponentType(typeof(Relative<PlayerDescription>))]
 
-namespace GameBase.Roles.Descriptions
+namespace StormiumTeam.GameBase.Roles.Descriptions
 {
 	public struct PlayerDescription : IEntityDescription
 	{
