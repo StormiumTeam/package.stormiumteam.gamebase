@@ -12,8 +12,8 @@ namespace StormiumTeam.GameBase.Utility.DOTS
 	{
 		public static Entity FromQueryFindPlayerChild(EntityQuery findQuery, Entity player)
 		{
-			var entities        = findQuery.ToEntityArray(Allocator.TempJob);
-			var relativePlayers = findQuery.ToComponentDataArray<Relative<PlayerDescription>>(Allocator.TempJob);
+			using var entities        = findQuery.ToEntityArray(Allocator.TempJob);
+			using var relativePlayers = findQuery.ToComponentDataArray<Relative<PlayerDescription>>(Allocator.TempJob);
 			for (var ent = 0; ent < entities.Length; ent++)
 			{
 				if (relativePlayers[ent].Target == player)

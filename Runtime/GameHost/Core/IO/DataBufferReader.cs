@@ -52,10 +52,16 @@ namespace RevolutionSnapshot.Core.Buffers
 		public int GetReadIndexAndSetNew(DataBufferMarker marker, int size)
 		{
 			var readIndex = !marker.Valid ? CurrReadIndex : marker.Index;
-			if (readIndex >= Length) throw new IndexOutOfRangeException($"p1 r={readIndex} >= l={Length}");
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+			if (readIndex >= Length)
+				throw new IndexOutOfRangeException($"p1");
+#endif
 
 			CurrReadIndex = readIndex + size;
-			if (CurrReadIndex > Length) throw new IndexOutOfRangeException($"p2 {CurrReadIndex} ({readIndex} + {size}) > {Length}");
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+			if (CurrReadIndex > Length)
+				throw new IndexOutOfRangeException($"p2");
+#endif
 
 			return readIndex;
 		}
