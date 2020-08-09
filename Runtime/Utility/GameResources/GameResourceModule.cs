@@ -18,33 +18,33 @@ namespace Utility.GameResources
 
 		private EntityQuery resourceQuery;
 		private double      lastUpdateFrame;
-
-		private NativeHashMap<TKey, GameResource<TResource>> map;
+		
+		private NativeHashMap<TKey, GameResource<TResource>> keyMap;
 
 		protected override void OnEnable()
 		{
 			resourceQuery = EntityManager.CreateEntityQuery(typeof(IsResourceEntity), typeof(GameResourceKey<TKey>), typeof(ReplicatedGameEntity));
-			map           = new NativeHashMap<TKey, GameResource<TResource>>(32, Allocator.Persistent);
+			keyMap        = new NativeHashMap<TKey, GameResource<TResource>>(32, Allocator.Persistent);
 		}
 
 		protected override void OnUpdate(ref JobHandle jobHandle)
 		{
 			lastUpdateFrame = System.Time.ElapsedTime;
-
-			map.Clear();
+			
+			keyMap.Clear();
 
 			using var keyArray        = resourceQuery.ToComponentDataArray<GameResourceKey<TKey>>(Allocator.Temp);
 			using var replicatedArray = resourceQuery.ToComponentDataArray<ReplicatedGameEntity>(Allocator.Temp);
 			for (var i = 0; i != keyArray.Length; i++)
 			{
-				map[keyArray[i].Value] = new GameResource<TResource>(replicatedArray[i].Source);
+				keyMap[keyArray[i].Value] = new GameResource<TResource>(replicatedArray[i].Source);
 			}
 		}
 
 		protected override void OnDisable()
 		{
 			resourceQuery.Dispose();
-			map.Dispose();
+			keyMap.Dispose();
 		}
 
 		public GameResource<TResource> GetResourceOrDefault(TKey key)
@@ -52,16 +52,16 @@ namespace Utility.GameResources
 			if (!lastUpdateFrame.Equals(System.Time.ElapsedTime))
 				Update();
 
-			map.TryGetValue(key, out var resource);
+			keyMap.TryGetValue(key, out var resource);
 			return resource;
 		}
-		
+
 		public (GameResource<TResource>, TKey) GetResourceTuple(TKey key)
 		{
 			if (!lastUpdateFrame.Equals(System.Time.ElapsedTime))
 				Update();
 
-			map.TryGetValue(key, out var resource);
+			keyMap.TryGetValue(key, out var resource);
 			return (resource, key);
 		}
 	}
