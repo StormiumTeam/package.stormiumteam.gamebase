@@ -18,6 +18,7 @@ namespace StormiumTeam.GameBase.Authoring
 			foreach (var e in bootstrapEntities)
 			{
 				var bootstrap = dstManager.GetComponentData<BootstrapComponent>(e);
+				Debug.LogError(dstManager.World.Name + "> " + bootstrap.Name);
 				if (bootstrap.Name == Name)
 				{
 					targetBootstrap = e;
