@@ -1,6 +1,13 @@
-﻿using RevolutionSnapshot.Core.Buffers;
+﻿using System;
+using System.Runtime.CompilerServices;
+using package.stormiumteam.shared;
+using RevolutionSnapshot.Core.Buffers;
+using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
+using Unity.Jobs;
+using UnityEngine;
 
 namespace GameHost.ShareSimuWorldFeature
 {
@@ -12,9 +19,10 @@ namespace GameHost.ShareSimuWorldFeature
 		void Deserialize(EntityManager em, NativeHashMap<GhGameEntity, Entity> ghEntityToUEntity, ref TComponent component, ref DataBufferReader reader);
 	}
 
+	[BurstCompile]
 	public class CustomSingleDeserializer<TComponent, TValueDeserializer> : ICustomComponentDeserializer
 		where TComponent : struct, IComponentData
-		where TValueDeserializer : IValueDeserializer<TComponent>, new()
+		where TValueDeserializer : struct, IValueDeserializer<TComponent>
 	{
 		private ComponentDataFromEntity<TComponent> componentDataFromEntity;
 		private NativeHashMap<GhGameEntity, Entity> ghToUnityEntityMap;
@@ -27,33 +35,68 @@ namespace GameHost.ShareSimuWorldFeature
 		}
 
 		public int Size => deserializer.Size;
-
-		public void BeginDeserialize(SystemBase system)
+		
+		public unsafe void BeginDeserialize(SystemBase system)
 		{
 			componentDataFromEntity = system.GetComponentDataFromEntity<TComponent>();
 			ghToUnityEntityMap      = system.World.GetExistingSystem<ReceiveSimulationWorldSystem>().ghToUnityEntityMap;
 		}
 
-		public void Deserialize(EntityManager entityManager, NativeArray<GhGameEntity> gameEntities, NativeArray<Entity> output, ref DataBufferReader reader)
+		[BurstCompile]
+		private struct RunJob : IJob
 		{
-			// it's TagComponentBoard if size is 0, so nothing to read.
-			if (Size == 0)
-				return;
+			public ComponentDataFromEntity<TComponent> ComponentDataFromEntity;
+			public NativeArray<GhGameEntity>           GameEntities;
+			public NativeArray<Entity>                 Output;
+			public EntityManager                       EntityManager;
+			public NativeHashMap<GhGameEntity, Entity> GhToUnityEntityMap;
 
-			var links = new NativeArray<GhComponentMetadata>(reader.ReadValue<int>(), Allocator.Temp);
-			reader.ReadDataSafe(links);
+			public DataBufferReader Reader;
 
-			var componentCount = reader.ReadValue<int>();
-			for (var ent = 0; ent < gameEntities.Length; ent++)
+			public unsafe void Execute()
 			{
-				var entity = gameEntities[ent];
-				if (links[(int) entity.Id].Null)
-					continue;
+				var links  = new NativeArray<GhComponentMetadata>(Reader.ReadValue<int>(), Allocator.Temp);
+				Reader.ReadDataSafe(links);
 
-				var current = componentDataFromEntity[output[ent]];
-				deserializer.Deserialize(entityManager, ghToUnityEntityMap, ref current, ref reader);
-				componentDataFromEntity[output[ent]] = current;
+				var componentcount = Reader.ReadValue<int>();
+				var deserializer   = default(TValueDeserializer);
+				for (var ent = 0; ent < GameEntities.Length; ent++)
+				{
+					var entity = GameEntities[ent];
+					if (links[(int) entity.Id].Null)
+						continue;
+
+					TComponent current = default;
+					if (!ComponentDataFromEntity.HasComponent(Output[ent]))
+					{
+						deserializer.Deserialize(EntityManager, GhToUnityEntityMap, ref current, ref Reader);
+
+						continue;
+					}
+
+					current = ComponentDataFromEntity[Output[ent]];
+					deserializer.Deserialize(EntityManager, GhToUnityEntityMap, ref current, ref Reader);
+					ComponentDataFromEntity[Output[ent]] = current;
+				}
 			}
+		}
+
+		public unsafe JobHandle Deserialize(EntityManager entityManager, NativeArray<GhGameEntity> gameEntities, NativeArray<Entity> output, DataBufferReader reader)
+		{
+			if (Size == 0)
+				return default;
+			
+			var param = new RunJob
+			{
+				ComponentDataFromEntity = componentDataFromEntity,
+				GameEntities            = gameEntities,
+				Output                  = output,
+				EntityManager           = entityManager,
+				GhToUnityEntityMap      = ghToUnityEntityMap,
+				
+				Reader = reader
+			};
+			return param.Schedule();
 		}
 	}
 }

@@ -29,7 +29,8 @@
         "System.Memory.dll",
         "System.Runtime.CompilerServices.Unsafe.dll",
         "ZetaIpc.dll",
-        "HttpServer.dll"
+        "HttpServer.dll",
+        "K4os.Compression.LZ4.dll"
     ],
     "autoReferenced": true,
     "defineConstraints": [],

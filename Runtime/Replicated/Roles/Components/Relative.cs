@@ -1,4 +1,5 @@
-﻿using GameHost;
+﻿using System;
+using GameHost;
 using GameHost.ShareSimuWorldFeature;
 using GameHost.Simulation.Features.ShareWorldState.BaseSystems;
 using RevolutionSnapshot.Core.Buffers;
@@ -27,7 +28,7 @@ namespace StormiumTeam.GameBase.Roles.Components
 		}
 
 #if UNITY_5_3_OR_NEWER
-		public class ValueDeserializer : IValueDeserializer<Relative<TDescription>>
+		public struct ValueDeserializer : IValueDeserializer<Relative<TDescription>>
 		{
 			public int Size => UnsafeUtility.SizeOf<GhGameEntity>();
 
@@ -41,7 +42,9 @@ namespace StormiumTeam.GameBase.Roles.Components
 
 		public abstract class Register : RegisterGameHostComponentData<Relative<TDescription>>
 		{
-			protected override ICustomComponentDeserializer CustomDeserializer => new CustomSingleDeserializer<Relative<TDescription>, ValueDeserializer>();
+			protected override ICustomComponentDeserializer CustomDeserializer => BurstKnowDeserializer();
+
+			public abstract ICustomComponentDeserializer BurstKnowDeserializer();
 		}
 	}
 }

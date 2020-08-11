@@ -1,4 +1,6 @@
 using System;
+using System.Runtime.CompilerServices;
+using Unity.Collections.LowLevel.Unsafe;
 
 namespace GameHost.Native
 {
@@ -10,6 +12,15 @@ namespace GameHost.Native
 		int ICharBuffer.Capacity => ConstCapacity;
 		int ICharBuffer.Length   { get; set; }
 
+		public char* Begin
+		{
+			get
+			{
+				fixed (char* ptr = buffer)
+					return ptr;
+			}
+		}
+		
 		public Span<char> Span
 		{
 			get
@@ -21,7 +32,11 @@ namespace GameHost.Native
 		
 		public bool Equals(CharBuffer256 other)
 		{
-			return Span.SequenceEqual(other.Span);
+			var thisLength = this.GetLength();
+			if (thisLength == 0 || thisLength != other.GetLength())
+				return false;
+			
+			return UnsafeUtility.MemCmp(Begin, other.Begin, sizeof(char) * thisLength) == 0;
 		}
 
 		public override bool Equals(object obj)

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using GameHost.Native;
 using package.stormiumteam.shared;
 using RevolutionSnapshot.Core.Buffers;
@@ -8,6 +9,8 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
+using Unity.Jobs;
+using UnityEngine;
 
 namespace GameHost.ShareSimuWorldFeature
 {
@@ -31,61 +34,52 @@ namespace GameHost.ShareSimuWorldFeature
 		}
 
 		public int Size { get; }
-
-		private FunctionPointer<delegateSingleDeserialize> fp;
-		private delegateSingleDeserialize                  deserialize;
-
-		public unsafe void BeginDeserialize(SystemBase system)
+		
+		public void BeginDeserialize(SystemBase system)
 		{
 			componentDataFromEntity = system.GetComponentDataFromEntity<TComponent>();
-			if (!fp.IsCreated)
-			{
-				fp          = BurstCompiler.CompileFunctionPointer((delegateSingleDeserialize) DeserializeMethod);
-				deserialize = fp.Invoke;
-			}
 		}
-
-		private struct Parameters
+		
+		[BurstCompile]
+		private struct RunJob : IJob
 		{
 			public ComponentDataFromEntity<TComponent> ComponentDataFromEntity;
 			public NativeArray<GhGameEntity>           GameEntities;
 			public NativeArray<Entity>                 Output;
-		}
-
-		[BurstCompile]
-		private static unsafe void DeserializeMethod(int size, void* parameters, ref DataBufferReader reader)
-		{
-			// it's TagComponentBoard if size is 0, so nothing to read.
-			if (size == 0)
-				return;
-
-			var param = Unsafe.Read<Parameters>(parameters);
-			var links = new NativeArray<GhComponentMetadata>(reader.ReadValue<int>(), Allocator.Temp);
-			reader.ReadDataSafe(links);
-
-			var components = new NativeArray<TComponent>(reader.ReadValue<int>(), Allocator.Temp);
-			var comp       = 0;
-			reader.ReadDataSafe(components);
-			for (var ent = 0; ent < param.GameEntities.Length; ent++)
+			public DataBufferReader                    Reader;
+			
+			public void Execute()
 			{
-				if (links[(int) param.GameEntities[ent].Id].Assigned == 0)
-					continue;
+				var links = new NativeArray<GhComponentMetadata>(Reader.ReadValue<int>(), Allocator.Temp);
+				Reader.ReadDataSafe(links);
 
-				param.ComponentDataFromEntity[param.Output[ent]] = components[comp++];
+				var components = new NativeArray<TComponent>(Reader.ReadValue<int>(), Allocator.Temp);
+				var comp       = 0;
+				Reader.ReadDataSafe(components);
+				for (var ent = 0; ent < GameEntities.Length; ent++)
+				{
+					if (links[(int) GameEntities[ent].Id].Assigned == 0)
+						continue;
+
+					ComponentDataFromEntity[Output[ent]] = components[comp++];
+				}
 			}
 		}
 
-		public unsafe void Deserialize(EntityManager entityManager, NativeArray<GhGameEntity> gameEntities, NativeArray<Entity> output, ref DataBufferReader reader)
+		public JobHandle Deserialize(EntityManager entityManager, NativeArray<GhGameEntity> gameEntities, NativeArray<Entity> output, DataBufferReader reader)
 		{
-			var param = new Parameters
+			// Tag Component Board
+			if (Size == 0)
+				return default;
+
+			var param = new RunJob
 			{
 				ComponentDataFromEntity = componentDataFromEntity,
 				GameEntities            = gameEntities,
-				Output                  = output
+				Output                  = output,
+				Reader                  = reader
 			};
-
-			var alloc = UnsafeAllocation.From(ref param);
-			deserialize(Size, alloc.Data, ref reader);
+			return param.Schedule();
 		}
 	}
 
@@ -106,7 +100,7 @@ namespace GameHost.ShareSimuWorldFeature
 			return new[] {GameHostType.Span.ToString()};
 		}
 
-		public bool CanAttachToArchetype(NativeArray<GhComponentType> componentTypes, Dictionary<CharBuffer256, ComponentTypeDetails> detailMap)
+		public bool CanAttachToArchetype(NativeArray<GhComponentType> componentTypes, NativeHashMap<CharBuffer256, ComponentTypeDetails> detailMap)
 		{
 			if (!detailMap.TryGetValue(GameHostType, out var details))
 				return false;

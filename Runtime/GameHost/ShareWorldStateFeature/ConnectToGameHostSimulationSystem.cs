@@ -19,6 +19,8 @@ namespace GameHost.ShareSimuWorldFeature
 		private float m_NextPingDelay;
 		private Peer  m_Peer;
 
+		private const int MaxSimulationFrames = 4;
+
 		private void ConnectionLost(bool forcefullyTerminated)
 		{
 			var str = $"Connection Lost to <{m_Peer.IP}:{m_Peer.Port}>! - ";
@@ -99,9 +101,14 @@ namespace GameHost.ShareSimuWorldFeature
 								case EMessageType.Rpc:
 									break;
 								case EMessageType.SimulationData:
+									if (receivedFrames >= MaxSimulationFrames)
+										break;
+									
 									var simulationDataReader = new DataBufferReader(reader, reader.CurrReadIndex, reader.Length);
-									World.GetExistingSystem<ReceiveSimulationWorldSystem>()
+									var handle = World.GetExistingSystem<ReceiveSimulationWorldSystem>()
 									     .OnNewMessage(ref simulationDataReader);
+									
+									handle.Complete();
 
 									if (receivedFrames == 0)
 										World.GetExistingSystem<ReceiveFirstFrameGhSimulationSystemGroup>().ForceUpdate();
@@ -151,10 +158,10 @@ namespace GameHost.ShareSimuWorldFeature
 			m_Host = new Host();
 			if (!m_Host.Create())
 				throw new InvalidOperationException();
-				
+			
 			m_Peer = m_Host.Connect(addr);
 			m_Peer.Timeout(0, 4000, 6000);
-
+			
 			if (!m_Peer.IsSet)
 				Debug.LogWarning("Couldn't connect to " + endPoint);
 			

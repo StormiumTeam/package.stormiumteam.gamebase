@@ -10,6 +10,15 @@
 		int ICharBuffer.Capacity => ConstCapacity;
 		int ICharBuffer.Length   { get; set; }
 
+		public char* Begin
+		{
+			get
+			{
+				fixed (char* ptr = buffer)
+					return ptr;
+			}
+		}
+		
 		public Span<char> Span
 		{
 			get

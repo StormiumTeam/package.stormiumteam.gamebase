@@ -6,8 +6,9 @@ using Unity.Collections.LowLevel.Unsafe;
 
 namespace RevolutionSnapshot.Core.Buffers
 {
-	public unsafe ref struct DataBufferReader
+	public unsafe struct DataBufferReader
 	{
+		[NativeDisableUnsafePtrRestriction]
 		public byte* DataPtr;
 
 		public int CurrReadIndex;
@@ -217,18 +218,9 @@ namespace RevolutionSnapshot.Core.Buffers
 			where TCharBuffer : unmanaged, ICharBuffer
 		{
 			var length = ReadValue<int>();
-			if (length < 1024)
-			{
-				Span<char> span = stackalloc char[length];
-				ReadDataSafe(new Span<char>(Unsafe.AsPointer(ref span.GetPinnableReference()), span.Length), marker);
-				return CharBufferUtility.Create<TCharBuffer>(span);
-			}
-			
-			var ptr = UnsafeUtility.Malloc(length * sizeof(char), UnsafeUtility.AlignOf<char>(), Allocator.Temp);
-			ReadDataSafe((byte*) ptr, length * sizeof(char), marker);
-			var buffer = CharBufferUtility.Create<TCharBuffer>(new Span<char>(ptr, length));
-			UnsafeUtility.Free(ptr, Allocator.Temp);
-			return buffer;
+			using var array  = new NativeArray<char>(length, Allocator.Temp);
+			ReadDataSafe(array, marker);
+			return CharBufferUtility.Create<TCharBuffer>(array);
 		}
 	}
 }

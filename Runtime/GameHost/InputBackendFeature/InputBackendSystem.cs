@@ -19,6 +19,8 @@ namespace GameHost.InputBackendFeature
 
 		private RegisterInputActionSystem inputActionSystem;
 
+		private Dictionary<string, InputControl> cachedControlMap;
+		
 		protected override void OnCreate()
 		{
 			base.OnCreate();
@@ -31,6 +33,13 @@ namespace GameHost.InputBackendFeature
 			inputActionSystem = World.GetExistingSystem<RegisterInputActionSystem>();
 
 			EntityManager.AddComponentData(EntityManager.CreateEntity(), new InputCurrentLayout {Id = null});
+			
+			cachedControlMap           =  new Dictionary<string, InputControl>();
+			InputSystem.onDeviceChange += (device, change) =>
+			{
+				if (change == InputDeviceChange.Added || change == InputDeviceChange.Removed)
+					cachedControlMap.Clear();
+			};
 		}
 
 		protected override void OnUpdate()
@@ -60,7 +69,10 @@ namespace GameHost.InputBackendFeature
 
 		public InputControl GetInputControl(string path)
 		{
-			return InputSystem.FindControl(path);
+			if (!cachedControlMap.TryGetValue(path, out var control))
+				cachedControlMap[path] = control = InputSystem.FindControl(path);
+
+			return control;
 		}
 
 		internal void ClearCurrentActions()

@@ -1,4 +1,5 @@
-﻿using GameHost.Simulation.Features.ShareWorldState.BaseSystems;
+﻿using GameHost.ShareSimuWorldFeature;
+using GameHost.Simulation.Features.ShareWorldState.BaseSystems;
 using StormiumTeam.GameBase.Roles.Components;
 using StormiumTeam.GameBase.Roles.Descriptions;
 using StormiumTeam.GameBase.Roles.Interfaces;
@@ -12,6 +13,10 @@ namespace StormiumTeam.GameBase.Roles.Descriptions
 	{
 		public class RegisterRelative : Relative<PlayerDescription>.Register
 		{
+			public override ICustomComponentDeserializer BurstKnowDeserializer()
+			{
+				return new CustomSingleDeserializer<Relative<PlayerDescription>, Relative<PlayerDescription>.ValueDeserializer>();
+			}
 		}
 
 		public class Register : RegisterGameHostComponentData<PlayerDescription>

@@ -90,7 +90,6 @@ namespace StormiumTeam.GameBase.Utility.Rendering
 				camera.transform.position = translation.Value;
 				if (math.abs(camera.Camera.orthographicSize) < 0.1f)
 					camera.Camera.orthographicSize = 0.25f;
-				Debug.DrawRay(translation.Value + new float3(0, 0, 10), Vector3.up * 4, Color.red);
 			});
 
 			var cam = World.GetExistingSystem<ClientCreateCameraSystem>();

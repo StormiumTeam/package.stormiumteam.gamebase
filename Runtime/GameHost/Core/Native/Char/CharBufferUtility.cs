@@ -1,4 +1,6 @@
 ﻿using System;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 
 namespace GameHost.Native
 {
@@ -43,7 +45,19 @@ namespace GameHost.Native
 			return buffer;
 		}
 
-		public static int ComputeHashCode<TCharBuffer>(TCharBuffer buffer)
+		public static unsafe TCharBuffer Create<TCharBuffer>(NativeArray<char> content)
+			where TCharBuffer : unmanaged, ICharBuffer
+		{
+			var buffer = default(TCharBuffer);
+			if (content.Length == 0)
+				return buffer;
+
+			buffer.SetLength(content.Length);
+			UnsafeUtility.MemCpy(buffer.Begin, content.GetUnsafeReadOnlyPtr(), sizeof(char) * content.Length);
+			return buffer;
+		}
+
+		public static unsafe int ComputeHashCode<TCharBuffer>(TCharBuffer buffer)
 			where TCharBuffer : unmanaged, ICharBuffer
 		{
 			unchecked
@@ -51,9 +65,9 @@ namespace GameHost.Native
 				const int p    = 16777619;
 				var       hash = (int) 2166136261;
 
-				var span = buffer.Span;
-				foreach (var tchar in span)
-					hash = (hash ^ tchar) * p;
+				var tchar = buffer.Begin;
+				for (var i = 0; i < buffer.Length; i++)
+					hash = (hash ^ tchar[i]) * p;
 
 				hash += hash << 13;
 				hash ^= hash >> 7;

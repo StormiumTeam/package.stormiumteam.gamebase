@@ -18,7 +18,7 @@ namespace StormiumTeam.GameBase.Roles.Components
 		}
 
 #if UNITY_5_3_OR_NEWER
-		public class ValueDeserializer : IValueDeserializer<Owner>
+		public struct ValueDeserializer : IValueDeserializer<Owner>
 		{
 			public int Size => UnsafeUtility.SizeOf<GhGameEntity>();
 

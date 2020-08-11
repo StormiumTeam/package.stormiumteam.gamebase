@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using GameHost.Native;
+using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 
@@ -29,26 +30,33 @@ namespace GameHost.ShareSimuWorldFeature
 			}
 		}
 
+		private Key__ cachedKey;
 		public (ICustomComponentArchetypeAttach attach, ICustomComponentDeserializer deserializer) Get(int size, CharBuffer256 name)
 		{
-			deserializerMap.TryGetValue(new Key__(size, name), out var tuple);
+			ref var key = ref cachedKey;
+			key.Size = size;
+			key.Name = name;
+			
+			deserializerMap.TryGetValue(key, out var tuple);
 			if (tuple.deserializer != null && tuple.deserializer.Size != size)
 				throw new InvalidOperationException($"Size mismatch {size}<>{tuple.deserializer.Size}");
 			
 			return tuple;
 		}
 
-		public void AttachArchetype(ref ReceiveSimulationWorldSystem.Archetype__ archetype, in Dictionary<CharBuffer256, ComponentTypeDetails> detailMap)
+		public void AttachArchetype(ref ReceiveSimulationWorldSystem.Archetype__ archetype, in NativeHashMap<CharBuffer256, ComponentTypeDetails> detailMap)
 		{
 			foreach (var (attach, _) in deserializerMap.Values)
 				if (attach.CanAttachToArchetype(archetype.ComponentTypes.Reinterpret<GhComponentType>(), detailMap))
+				{
 					archetype.Attaches.Add(attach);
+				}
 		}
 
-		internal readonly struct Key__ : IEquatable<Key__>
+		internal struct Key__ : IEquatable<Key__>
 		{
-			public readonly int           Size;
-			public readonly CharBuffer256 Name;
+			public int           Size;
+			public CharBuffer256 Name;
 
 			public Key__(int size, CharBuffer256 name)
 			{

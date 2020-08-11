@@ -1,7 +1,9 @@
 ﻿using RevolutionSnapshot.Core.Buffers;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
+using Unity.Jobs;
 
 namespace GameHost.ShareSimuWorldFeature
 {
@@ -28,26 +30,46 @@ namespace GameHost.ShareSimuWorldFeature
 			componentDataFromEntity = system.GetBufferFromEntity<TComponent>();
 		}
 
-		public void Deserialize(EntityManager entityManager, NativeArray<GhGameEntity> gameEntities, NativeArray<Entity> output, ref DataBufferReader reader)
+		[BurstCompile]
+		private struct RunJob : IJob
 		{
-			var links = new NativeArray<GhComponentMetadata>(reader.ReadValue<int>(), Allocator.Temp);
-			reader.ReadDataSafe(links);
+			public BufferFromEntity<TComponent> BufferFromEntity;
+			public NativeArray<Entity>                Output;
+			public NativeArray<GhGameEntity>                GameEntities;
+			public DataBufferReader             Reader;
 
-			var count = reader.ReadValue<int>();
-			for (var ent = 0; ent < gameEntities.Length; ent++)
+			public void Execute()
 			{
-				var entity = gameEntities[ent];
-				if (links[(int) entity.Id].Null)
-					continue;
+				var links = new NativeArray<GhComponentMetadata>(Reader.ReadValue<int>(), Allocator.Temp);
+				Reader.ReadDataSafe(links);
 
-				var buffer = componentDataFromEntity[output[ent]];
-				buffer.Clear();
+				var count = Reader.ReadValue<int>();
+				for (var ent = 0; ent < GameEntities.Length; ent++)
+				{
+					var entity = GameEntities[ent];
+					if (links[(int) entity.Id].Null)
+						continue;
 
-				var rawData = new NativeArray<TComponent>(reader.ReadValue<int>() / UnsafeUtility.SizeOf<TComponent>(), Allocator.Temp);
-				reader.ReadDataSafe(rawData);
+					var buffer = BufferFromEntity[Output[ent]];
+					buffer.Clear();
 
-				buffer.CopyFrom(rawData);
+					var rawData = new NativeArray<TComponent>(Reader.ReadValue<int>() / UnsafeUtility.SizeOf<TComponent>(), Allocator.Temp);
+					Reader.ReadDataSafe(rawData);
+
+					buffer.CopyFrom(rawData);
+				}
 			}
+		}
+
+		public JobHandle Deserialize(EntityManager entityManager, NativeArray<GhGameEntity> gameEntities, NativeArray<Entity> output, DataBufferReader reader)
+		{
+			return new RunJob
+			{
+				BufferFromEntity = componentDataFromEntity,
+				Output           = output,
+				GameEntities     = gameEntities,
+				Reader           = reader
+			}.Schedule();
 		}
 	}
 }
