@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using GameHost.Native;
+﻿using GameHost.Native;
 using RevolutionSnapshot.Core.Buffers;
 using Unity.Collections;
 using Unity.Entities;
