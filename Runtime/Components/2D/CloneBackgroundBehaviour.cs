@@ -47,10 +47,12 @@ namespace StormiumTeam.GameBase._2D
 			var half  = array.Length * 0.5f;
 			for (var i = 0; i != array.Length; i++)
 			{
+				var computedPosition = startPosition + ((i - half) * bg.width) + ((int) (position / bg.width) * bg.width);
+
 				array[i] = new Computed
 				{
 					backgroundIndex = 0,
-					position        = startPosition + ((i - half) * bg.width) + ((int)(position / bg.width) * bg.width)
+					position        = computedPosition
 				};
 			}
 

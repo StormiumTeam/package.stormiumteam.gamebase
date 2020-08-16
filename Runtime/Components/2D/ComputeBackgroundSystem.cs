@@ -51,25 +51,27 @@ namespace StormiumTeam.GameBase._2D
 					EntityManager.DestroyEntity(entity);
 					return;
 				}
-				
+
 				var startPos   = pos;
 				var targetPos  = pos;
 				var multiplier = 1f;
 				if (EntityManager.HasComponent<ParallaxEffect>(entity))
 				{
 					multiplier = EntityManager.GetComponentObject<ParallaxEffect>(entity).multiplier;
-					
-					startPos  = pos * (1 - multiplier);
-					targetPos = pos * multiplier;
 				}
+
+				startPos  = pos * (1 - multiplier);
+				targetPos = pos * multiplier;
 
 				var offset = targetPos - pos;
 
 				if (EntityManager.HasComponent<CloneBackgroundBehaviour>(entity))
 				{
-					var clone  = EntityManager.GetComponentObject<CloneBackgroundBehaviour>(entity);
+					var clone = EntityManager.GetComponentObject<CloneBackgroundBehaviour>(entity);
+					clone.transform.localPosition = new Vector3(startPos, 0, 0);
+
 					var buffer = EntityManager.GetBuffer<ComputedBackground>(entity);
-					using (var computedArray = clone.Compute(pos, width, Allocator.TempJob))
+					using (var computedArray = clone.Compute(targetPos, width, Allocator.TempJob))
 					{
 						if (buffer.Length != computedArray.Length)
 						{
@@ -108,19 +110,8 @@ namespace StormiumTeam.GameBase._2D
 									Value = clone.backgrounds[b.data.backgroundIndex].gameObject
 								});
 							}
-							
-							var finalPosition = b.position + offset * 0.5f;
-							var length        = clone.backgrounds[b.data.backgroundIndex].width;
 
-							var hasBeenComputedOnRight = false;
-							while (finalPosition > pos + length)
-							{
-								finalPosition          -= length;
-								hasBeenComputedOnRight =  true;
-							}
-
-							while (!hasBeenComputedOnRight && finalPosition < pos - length)
-								finalPosition += length;
+							var finalPosition = b.position + offset;
 
 							EntityManager.SetComponentData(b.child, new Translation {Value = finalPosition});
 							bufferArray[i] = b;
