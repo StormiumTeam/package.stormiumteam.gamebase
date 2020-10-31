@@ -10,21 +10,20 @@ using Unity.Jobs;
 
 namespace Utility.GameResources
 {
-	public class GameResourceModule<TResource, TKey> : BaseSystemModule
-		where TResource : IGameResourceDescription
-		where TKey : struct, IGameResourceKeyDescription, IEquatable<TKey>
+	public class GameResourceModule<TResource> : BaseSystemModule
+		where TResource : struct, IEquatable<TResource>, IGameResourceDescription
 	{
 		public override ModuleUpdateType UpdateType => ModuleUpdateType.MainThread;
 
 		private EntityQuery resourceQuery;
 		private double      lastUpdateFrame;
 		
-		private NativeHashMap<TKey, GameResource<TResource>> keyMap;
+		private NativeHashMap<TResource, GameResource<TResource>> keyMap;
 
 		protected override void OnEnable()
 		{
-			resourceQuery = EntityManager.CreateEntityQuery(typeof(IsResourceEntity), typeof(GameResourceKey<TKey>), typeof(ReplicatedGameEntity));
-			keyMap        = new NativeHashMap<TKey, GameResource<TResource>>(32, Allocator.Persistent);
+			resourceQuery = EntityManager.CreateEntityQuery(typeof(IsResourceEntity), typeof(TResource), typeof(ReplicatedGameEntity));
+			keyMap        = new NativeHashMap<TResource, GameResource<TResource>>(32, Allocator.Persistent);
 		}
 
 		protected override void OnUpdate(ref JobHandle jobHandle)
@@ -33,11 +32,11 @@ namespace Utility.GameResources
 			
 			keyMap.Clear();
 
-			using var keyArray        = resourceQuery.ToComponentDataArray<GameResourceKey<TKey>>(Allocator.Temp);
+			using var keyArray        = resourceQuery.ToComponentDataArray<TResource>(Allocator.Temp);
 			using var replicatedArray = resourceQuery.ToComponentDataArray<ReplicatedGameEntity>(Allocator.Temp);
 			for (var i = 0; i != keyArray.Length; i++)
 			{
-				keyMap[keyArray[i].Value] = new GameResource<TResource>(replicatedArray[i].Source);
+				keyMap[keyArray[i]] = new GameResource<TResource>(replicatedArray[i].Source);
 			}
 		}
 
@@ -47,7 +46,7 @@ namespace Utility.GameResources
 			keyMap.Dispose();
 		}
 
-		public GameResource<TResource> GetResourceOrDefault(TKey key)
+		public GameResource<TResource> GetResourceOrDefault(TResource key)
 		{
 			if (!lastUpdateFrame.Equals(System.Time.ElapsedTime))
 				Update();
@@ -56,7 +55,7 @@ namespace Utility.GameResources
 			return resource;
 		}
 
-		public (GameResource<TResource>, TKey) GetResourceTuple(TKey key)
+		public (GameResource<TResource>, TResource) GetResourceTuple(TResource key)
 		{
 			if (!lastUpdateFrame.Equals(System.Time.ElapsedTime))
 				Update();

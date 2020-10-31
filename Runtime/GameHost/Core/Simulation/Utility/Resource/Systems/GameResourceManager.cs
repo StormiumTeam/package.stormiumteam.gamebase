@@ -29,29 +29,27 @@ namespace GameHost.Simulation.Utility.Resource.Systems
 			return receiveSystem.ghToUnityEntityMap.TryGetValue(resource.Entity, out entity);
 		}
 
-		public bool TryGetResource<TResource, TKey>(GameResource<TResource> resource, out TKey key)
-			where TResource : IGameResourceDescription
-			where TKey : struct, IEquatable<TKey>, IGameResourceKeyDescription
+		public bool TryGetResource<TResource>(GameResource<TResource> resource, out TResource res)
+			where TResource : struct, IEquatable<TResource>, IGameResourceDescription
 		{
 			if (TryGetRawEntity(resource, out var entity)
-			    && EntityManager.TryGetComponentData(entity, out GameResourceKey<TKey> resourceKey))
+			    && EntityManager.TryGetComponentData(entity, out TResource resourceKey))
 			{
-				key = resourceKey.Value;
+				res = resourceKey;
 				return true;
 			}
 
-			key = default;
+			res = default;
 			return false;
 		}
 	}
 
 	public static class GameResourceManagerExtensions
 	{
-		public static bool TryGet<TResource, TKey>(this GameResource<TResource> resource, GameResourceManager mgr, out TKey key)
-			where TResource : IGameResourceDescription
-			where TKey : struct, IEquatable<TKey>, IGameResourceKeyDescription
+		public static bool TryGet<TResource>(this GameResource<TResource> resource, GameResourceManager mgr, out TResource res)
+			where TResource : struct, IEquatable<TResource>, IGameResourceDescription
 		{
-			return mgr.TryGetResource(resource, out key);
+			return mgr.TryGetResource(resource, out res);
 		}
 	}
 }

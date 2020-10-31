@@ -148,6 +148,21 @@ namespace GameHost.ShareSimuWorldFeature
 
 			public void Execute()
 			{
+				for (uint ent = 1; ent < entitiesArchetype.Length; ent++)
+				{
+					if (entitiesArchetype[(int) ent] == 0 && ghToUnityEntityMap.TryGetValue(new GhGameEntity {Id = ent}, out var unityEntity))
+					{
+						archetypeUpdates.Add(new ArchetypeUpdate
+						{
+							GhGameEntity = new GhGameEntity {Id = ent},
+							UnityEntity  = unityEntity,
+							NewArchetype = 0
+						});
+
+						ghToUnityEntityMap.Remove(new GhGameEntity {Id = ent});
+					}
+				}
+				
 				for (var ent = 0; ent < entities.Length; ent++)
 				{
 					var entity          = entities[ent];
@@ -193,7 +208,7 @@ namespace GameHost.ShareSimuWorldFeature
 
 			// ---- 1. Component Type
 			//
-			using var componentTypes = new NativeArray<GhComponentType>(reader.ReadValue<int>(), Allocator.Temp);
+			using var componentTypes = new NativeArray<GhComponentType>(reader.ReadValue<int>(), Allocator.TempJob);
 			new ReadComponentTypeAndArchetypeJob
 			{
 				typeDetailMapFromName = typeDetailMapFromName,
@@ -207,7 +222,7 @@ namespace GameHost.ShareSimuWorldFeature
 
 			// ---- 2. Archetype
 			//
-			using var archetypes = new NativeArray<uint>(reader.ReadValue<int>(), Allocator.Temp);
+			using var archetypes = new NativeArray<uint>(reader.ReadValue<int>(), Allocator.TempJob);
 			if (archetypes.Length > 0)
 			{
 				reader.ReadDataSafe(archetypes);
@@ -229,7 +244,6 @@ namespace GameHost.ShareSimuWorldFeature
 						archetype.ComponentTypes = new NativeArray<uint>(newData, Allocator.Persistent);
 						archetype.Attaches       = new List<ICustomComponentArchetypeAttach>();
 						registerDeserializer.AttachArchetype(ref archetype, typeDetailMapFromName);
-						Console.WriteLine("new archetype!");
 
 						archetypeMap[row] = archetype;
 					}
@@ -243,17 +257,17 @@ namespace GameHost.ShareSimuWorldFeature
 			// ---- 3. Entity
 			//
 			Profiler.BeginSample("ENtity");
-			using var entities = new NativeArray<GhGameEntity>(reader.ReadValue<int>(), Allocator.Temp);
+			using var entities = new NativeArray<GhGameEntity>(reader.ReadValue<int>(), Allocator.TempJob);
 			if (entities.Length > 0)
 			{
 				// 3.1
 				reader.ReadDataSafe(entities);
 
 				// 3.2 archetypes
-				var entitiesArchetype = new NativeArray<uint>(reader.ReadValue<int>(), Allocator.Temp);
+				using var entitiesArchetype = new NativeArray<uint>(reader.ReadValue<int>(), Allocator.TempJob);
 				reader.ReadDataSafe(entitiesArchetype);
 
-				using var archetypeUpdates = new NativeList<ArchetypeUpdate>(Allocator.Temp);
+				using var archetypeUpdates = new NativeList<ArchetypeUpdate>(Allocator.TempJob);
 
 				EntityManager.CompleteAllJobs();
 				new ReadEntitiesJob
@@ -274,19 +288,20 @@ namespace GameHost.ShareSimuWorldFeature
 					if (previousArchetype > 0)
 						foreach (var attach in archetypeMap[previousArchetype].Attaches)
 							attach.OnEntityRemoved(EntityManager, update.GhGameEntity, update.UnityEntity);
-
-					EntityManager.SetComponentData(update.UnityEntity, new ReplicatedGameEntity
-					{
-						Source      = update.GhGameEntity,
-						ArchetypeId = update.NewArchetype
-					});
-
-					//Console.WriteLine($"Created gamehost entity! {update.GhGameEntity.Id}, {update.NewArchetype}, {update.UnityEntity}");
+					
 					if (update.NewArchetype > 0)
 					{
+						EntityManager.SetComponentData(update.UnityEntity, new ReplicatedGameEntity
+						{
+							Source      = update.GhGameEntity,
+							ArchetypeId = update.NewArchetype
+						});
+						
 						foreach (var attach in archetypeMap[update.NewArchetype].Attaches)
 							attach.OnEntityAdded(EntityManager, update.GhGameEntity, update.UnityEntity);
 					}
+					else
+						EntityManager.DestroyEntity(update.UnityEntity);
 
 #if UNITY_EDITOR
 					EntityManager.SetName(update.UnityEntity, $"GameHost Entity #{update.GhGameEntity.Id} (Arch={update.NewArchetype})");
@@ -305,7 +320,7 @@ namespace GameHost.ShareSimuWorldFeature
 			//
 			// 4.1 Transforming gh entities to unity entities
 			Profiler.BeginSample("Component");
-			var outputEntities = new NativeArray<Entity>(entities.Length, Allocator.Temp);
+			var outputEntities = new NativeArray<Entity>(entities.Length, Allocator.TempJob);
 			Profiler.BeginSample("4.15 Convert Gh to Unity");
 			for (var i = 0; i != entities.Length; i++)
 				outputEntities[i] = ghToUnityEntityMap[entities[i]];

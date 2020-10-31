@@ -41,6 +41,7 @@ namespace StormiumTeam.GameBase.Utility.Misc
 		}
 
 		public bool TryGetPresentationObject<T>(string toSearch, out T obj, T defValue = default)
+			where T : UnityEngine.Object
 		{
 			obj = defValue;
 			if (!EntityObjects.TryGetValue(toSearch, out var baseObj))
