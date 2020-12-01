@@ -76,7 +76,7 @@ namespace StormiumTeam.GameBase.Utility.AssetBackend
 			entityManager.SetOrAddComponentData(gameObjectEntity.Entity, new ModelParent {Parent = DstEntity});
 
 #if UNITY_EDITOR
-			gameObjectEntity.EntityManager.SetName(gameObjectEntity.Entity, $"Backend: {GetType().Name} ({gameObjectEntity.Entity})");
+			gameObjectEntity.EntityManager.SetName(gameObjectEntity.Entity, $"Backend '{GetType().Name}'");
 #endif
 			gameObjectEntity.EntityManager.SetOrAddComponentData(gameObjectEntity.Entity, GameObjectConversionUtility.GetEntityGuid(gameObject, 0));
 		}

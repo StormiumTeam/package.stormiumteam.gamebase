@@ -2,7 +2,9 @@
 using System.Net;
 using GameHost.Transports.enet;
 using RevolutionSnapshot.Core.Buffers;
+using Unity.Collections;
 using Unity.Entities;
+using Unity.Jobs;
 using UnityEngine;
 
 namespace GameHost.ShareSimuWorldFeature
@@ -35,7 +37,7 @@ namespace GameHost.ShareSimuWorldFeature
 		protected override void OnUpdate()
 		{
 			World.GetExistingSystem<BeforeFirstFrameGhSimulationSystemGroup>().ForceUpdate();
-			
+
 			if (!m_Host.IsSet)
 				return;
 
@@ -70,6 +72,8 @@ namespace GameHost.ShareSimuWorldFeature
 
 			var receivedFrames = 0;
 
+			using var packets = new NativeList<Packet>(Allocator.Temp);
+			using var dispose = new NativeList<Packet>(Allocator.Temp);
 			for (var i = 0; i != maxEventPerFrame; i++)
 			{
 				var polled    = false;
@@ -101,26 +105,17 @@ namespace GameHost.ShareSimuWorldFeature
 								case EMessageType.Rpc:
 									break;
 								case EMessageType.SimulationData:
-									if (receivedFrames >= MaxSimulationFrames)
+									if (receivedFrames++ >= MaxSimulationFrames)
 										break;
-									
-									var simulationDataReader = new DataBufferReader(reader, reader.CurrReadIndex, reader.Length);
-									var handle = World.GetExistingSystem<ReceiveSimulationWorldSystem>()
-									     .OnNewMessage(ref simulationDataReader);
-									
-									handle.Complete();
 
-									if (receivedFrames == 0)
-										World.GetExistingSystem<ReceiveFirstFrameGhSimulationSystemGroup>().ForceUpdate();
-									World.GetExistingSystem<ReceiveGhSimulationSystemGroup>().ForceUpdate();
-									receivedFrames++;
+									packets.Add(netEvent.Packet);
 
 									break;
 								default:
 									throw new ArgumentOutOfRangeException();
 							}
 
-							netEvent.Packet.Dispose();
+							dispose.Add(netEvent.Packet);
 							break;
 						case NetEventType.Timeout:
 							Debug.Log("timeout");
@@ -129,13 +124,30 @@ namespace GameHost.ShareSimuWorldFeature
 							throw new ArgumentOutOfRangeException();
 					}
 				}
-
-				if (breakThis)
-					break;
 			}
+
+			for (var i = 0; i < packets.Length; i++)
+			{
+				var reader               = new DataBufferReader(packets[i].Data + sizeof(int), packets[i].Length);
+				var simulationDataReader = new DataBufferReader(reader, reader.CurrReadIndex, reader.Length);
+
+				// A packet is only worth if it's either the first packet or the last one
+				Dependency = JobHandle.CombineDependencies(Dependency,
+					World.GetExistingSystem<ReceiveSimulationWorldSystem>()
+					     .OnNewMessage(ref simulationDataReader, i == 0 || i == packets.Length - 1));
+
+				if (i == 0)
+					World.GetExistingSystem<ReceiveFirstFrameGhSimulationSystemGroup>().ForceUpdate();
+				World.GetExistingSystem<ReceiveGhSimulationSystemGroup>().ForceUpdate();
+			}
+
+			foreach (var d in dispose)
+				d.Dispose();
 
 			if (receivedFrames > 0)
 				World.GetExistingSystem<ReceiveLastFrameGhSimulationSystemGroup>().ForceUpdate();
+			
+			Dependency.Complete();
 		}
 
 		protected override void OnDestroy()

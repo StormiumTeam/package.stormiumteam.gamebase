@@ -31,7 +31,7 @@ namespace StormiumTeam.GameBase.Utility.AssetBackend
 			    && goEntity.Entity != default)
 			{
 #if UNITY_EDITOR
-				goEntity.EntityManager.SetName(goEntity.Entity, $"Presentation: {GetType().Name} ({goEntity.Entity})");
+				goEntity.EntityManager.SetName(goEntity.Entity, $"Presentation '{GetType().Name}'");
 #endif
 				goEntity.EntityManager.SetOrAddComponentData(goEntity.Entity, GameObjectConversionUtility.GetEntityGuid(gameObject, 0));
 			}

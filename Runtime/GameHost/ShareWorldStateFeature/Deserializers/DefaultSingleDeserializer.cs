@@ -9,7 +9,7 @@ using Unity.Jobs;
 namespace GameHost.ShareSimuWorldFeature
 {
 	internal unsafe delegate void delegateSingleDeserialize(int size, void* parameters, ref DataBufferReader reader);
-	
+
 	[BurstCompile]
 	public class DefaultSingleDeserializer<TComponent> : ICustomComponentDeserializer
 		where TComponent : struct, IComponentData
@@ -28,31 +28,29 @@ namespace GameHost.ShareSimuWorldFeature
 		}
 
 		public int Size { get; }
-		
+
 		public void BeginDeserialize(SystemBase system)
 		{
 			componentDataFromEntity = system.GetComponentDataFromEntity<TComponent>();
 		}
-		
+
 		[BurstCompile]
 		private struct RunJob : IJob
 		{
 			public ComponentDataFromEntity<TComponent> ComponentDataFromEntity;
-			public NativeArray<GhGameEntity>           GameEntities;
+			public NativeArray<GhGameEntitySafe>       GameEntities;
+			public NativeArray<bool>                   Valid;
 			public NativeArray<Entity>                 Output;
 			public DataBufferReader                    Reader;
-			
+
 			public void Execute()
 			{
-				var links = new NativeArray<GhComponentMetadata>(Reader.ReadValue<int>(), Allocator.Temp);
-				Reader.ReadDataSafe(links);
-
 				var components = new NativeArray<TComponent>(Reader.ReadValue<int>(), Allocator.Temp);
 				var comp       = 0;
 				Reader.ReadDataSafe(components);
 				for (var ent = 0; ent < GameEntities.Length; ent++)
 				{
-					if (links[(int) GameEntities[ent].Id].Assigned == 0)
+					if (!Valid[(int) GameEntities[ent].Id])
 						continue;
 
 					ComponentDataFromEntity[Output[ent]] = components[comp++];
@@ -60,7 +58,9 @@ namespace GameHost.ShareSimuWorldFeature
 			}
 		}
 
-		public JobHandle Deserialize(EntityManager entityManager, NativeArray<GhGameEntity> gameEntities, NativeArray<Entity> output, DataBufferReader reader)
+		public JobHandle Deserialize(EntityManager                 entityManager, ICustomComponentArchetypeAttach attach,
+		                             NativeArray<GhGameEntitySafe> gameEntities,  NativeArray<Entity>             output,
+		                             DataBufferReader              reader)
 		{
 			// Tag Component Board
 			if (Size == 0)
@@ -70,6 +70,7 @@ namespace GameHost.ShareSimuWorldFeature
 			{
 				ComponentDataFromEntity = componentDataFromEntity,
 				GameEntities            = gameEntities,
+				Valid                   = attach.GetValidHandles(),
 				Output                  = output,
 				Reader                  = reader
 			};
@@ -83,10 +84,14 @@ namespace GameHost.ShareSimuWorldFeature
 		public readonly CharBuffer256 GameHostType;
 		public readonly ComponentType UnityType;
 
+		private NativeArray<bool> validHandles;
+
 		public DefaultArchetypeAttach(string ghType)
 		{
 			GameHostType = CharBufferUtility.Create<CharBuffer256>(ghType);
 			UnityType    = typeof(TComponent);
+
+			validHandles = new NativeArray<bool>(1, Allocator.Persistent);
 		}
 
 		public string[] RegisterTypes()
@@ -106,16 +111,40 @@ namespace GameHost.ShareSimuWorldFeature
 			return false;
 		}
 
-		public void OnEntityAdded(EntityManager entityManager, GhGameEntity ghEntity, Entity output)
+		public void TryIncreaseCapacity(int size)
 		{
+			if (validHandles.Length < size)
+			{
+				validHandles.Dispose();
+				validHandles = new NativeArray<bool>(size, Allocator.Persistent);
+			}
+		}
+
+		public void OnEntityAdded(EntityManager entityManager, GhGameEntitySafe ghEntity, Entity output)
+		{
+			validHandles[(int) ghEntity.Id] = true;
+			
 			if (!entityManager.HasComponent(output, UnityType))
 				entityManager.AddComponent(output, UnityType);
 		}
 
-		public void OnEntityRemoved(EntityManager entityManager, GhGameEntity ghEntity, Entity output)
+		public void OnEntityRemoved(EntityManager entityManager, GhGameEntitySafe ghEntity, Entity output)
 		{
+			validHandles[(int) ghEntity.Id] = false;
+			
 			if (entityManager.HasComponent(output, UnityType))
 				entityManager.RemoveComponent(output, UnityType);
+		}
+
+		public NativeArray<bool> GetValidHandles()
+		{
+			return validHandles;
+		}
+
+		~DefaultArchetypeAttach()
+		{
+			if (validHandles.IsCreated)
+				validHandles.Dispose();
 		}
 	}
 }

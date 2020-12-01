@@ -55,15 +55,12 @@ namespace GameHost.ShareSimuWorldFeature.Systems
 			var previous = GetSingleton<InterFrame>();
 			previous.End       = GetSingleton<GameTime>();
 			previous.Range.End = (uint) previous.End.Frame;
-
 			SetSingleton(previous);
 		}
 	}
 
 	public struct InterFrame : IComponentData
 	{
-		public int UnityFrame;
-
 		public GameTime Begin;
 		public GameTime End;
 

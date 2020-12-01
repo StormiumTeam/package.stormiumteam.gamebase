@@ -4,7 +4,7 @@ namespace GameHost
 {
 	public struct ReplicatedGameEntity : IComponentData
 	{
-		public GhGameEntity Source;
-		public uint         ArchetypeId;
+		public GhGameEntitySafe Source;
+		public uint             ArchetypeId;
 	}
 }

@@ -59,7 +59,7 @@ namespace StormiumTeam.GameBase._Camera
 	public struct LocalCameraState : ICameraStateHolder, IComponentData
 	{
 		[SerializeField]
-		private    CameraState data;
+		private CameraState data;
 
 		public unsafe ref CameraState Data
 		{
@@ -108,12 +108,12 @@ namespace StormiumTeam.GameBase._Camera
 		where T : struct, ICameraStateHolder, IComponentData
 	{
 		// RigidTransform size is the same as the BEPU one, but Position and Rotation are reversed (bepu, position first, unity, rotation first)
-		public int Size => sizeof(CameraMode) + sizeof(GhGameEntity) + sizeof(RigidTransform);
-		
-		public void Deserialize(EntityManager em, NativeHashMap<GhGameEntity, Entity> ghEntityToUEntity, ref T component, ref DataBufferReader reader)
+		public int Size => sizeof(CameraMode) + sizeof(GhGameEntitySafe) + sizeof(RigidTransform);
+
+		public void Deserialize(EntityManager em, NativeHashMap<GhGameEntitySafe, Entity> ghEntityToUEntity, ref T component, ref DataBufferReader reader)
 		{
 			component.Data.Mode = reader.ReadValue<CameraMode>();
-			ghEntityToUEntity.TryGetValue(reader.ReadValue<GhGameEntity>(), out component.Data.Target);
+			ghEntityToUEntity.TryGetValue(reader.ReadValue<GhGameEntitySafe>(), out component.Data.Target);
 			component.Data.Offset.pos = reader.ReadValue<float3>();
 			component.Data.Offset.rot = reader.ReadValue<quaternion>();
 		}

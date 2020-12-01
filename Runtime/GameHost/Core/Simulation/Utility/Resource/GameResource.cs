@@ -16,9 +16,9 @@ namespace GameHost.Simulation.Utility.Resource
 			return !left.Equals(right);
 		}
 
-		public readonly GhGameEntity Entity;
+		public readonly GhGameEntitySafe Entity;
 
-		public GameResource(GhGameEntity target)
+		public GameResource(GhGameEntitySafe target)
 		{
 			Entity = target;
 		}

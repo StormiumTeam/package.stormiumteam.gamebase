@@ -2,19 +2,40 @@
 
 namespace GameHost
 {
-	public struct GhGameEntity : IEquatable<GhGameEntity>
+	public struct GhGameEntityHandle : IEquatable<GhGameEntityHandle>
 	{
 		public uint Id;
 
-		public bool Equals(GhGameEntity other)
+		public bool Equals(GhGameEntityHandle other)
 		{
 			return Id == other.Id;
 		}
 
 		public override bool Equals(object obj)
 		{
-			return obj is GhGameEntity other && Equals(other);
+			return obj is GhGameEntityHandle other && Equals(other);
 		} 
+
+		public override int GetHashCode()
+		{
+			return (int) Id;
+		}
+	}
+
+	public struct GhGameEntitySafe : IEquatable<GhGameEntitySafe>
+	{
+		public uint Id;
+		public uint Version;
+
+		public bool Equals(GhGameEntitySafe other)
+		{
+			return Id == other.Id;
+		}
+
+		public override bool Equals(object obj)
+		{
+			return obj is GhGameEntitySafe other && Equals(other);
+		}
 
 		public override int GetHashCode()
 		{

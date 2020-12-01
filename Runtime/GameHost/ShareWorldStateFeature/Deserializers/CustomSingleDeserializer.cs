@@ -11,7 +11,7 @@ namespace GameHost.ShareSimuWorldFeature
 	{
 		public int Size { get; }
 
-		void Deserialize(EntityManager em, NativeHashMap<GhGameEntity, Entity> ghEntityToUEntity, ref TComponent component, ref DataBufferReader reader);
+		void Deserialize(EntityManager em, NativeHashMap<GhGameEntitySafe, Entity> ghEntityToUEntity, ref TComponent component, ref DataBufferReader reader);
 	}
 
 	[BurstCompile]
@@ -20,7 +20,7 @@ namespace GameHost.ShareSimuWorldFeature
 		where TValueDeserializer : struct, IValueDeserializer<TComponent>
 	{
 		private ComponentDataFromEntity<TComponent> componentDataFromEntity;
-		private NativeHashMap<GhGameEntity, Entity> ghToUnityEntityMap;
+		private NativeHashMap<GhGameEntitySafe, Entity> ghToUnityEntityMap;
 
 		private TValueDeserializer deserializer;
 
@@ -40,25 +40,23 @@ namespace GameHost.ShareSimuWorldFeature
 		[BurstCompile]
 		private struct RunJob : IJob
 		{
-			public ComponentDataFromEntity<TComponent> ComponentDataFromEntity;
-			public NativeArray<GhGameEntity>           GameEntities;
-			public NativeArray<Entity>                 Output;
-			public EntityManager                       EntityManager;
-			public NativeHashMap<GhGameEntity, Entity> GhToUnityEntityMap;
+			public ComponentDataFromEntity<TComponent>     ComponentDataFromEntity;
+			public NativeArray<GhGameEntitySafe>           GameEntities;
+			public NativeArray<Entity>                     Output;
+			public NativeArray<bool>                       Valid;
+			public EntityManager                           EntityManager;
+			public NativeHashMap<GhGameEntitySafe, Entity> GhToUnityEntityMap;
 
 			public DataBufferReader Reader;
 
 			public unsafe void Execute()
 			{
-				var links  = new NativeArray<GhComponentMetadata>(Reader.ReadValue<int>(), Allocator.Temp);
-				Reader.ReadDataSafe(links);
-
 				var componentcount = Reader.ReadValue<int>();
 				var deserializer   = default(TValueDeserializer);
 				for (var ent = 0; ent < GameEntities.Length; ent++)
 				{
 					var entity = GameEntities[ent];
-					if (links[(int) entity.Id].Null)
+					if (!Valid[(int) entity.Id])
 						continue;
 
 					TComponent current = default;
@@ -76,19 +74,22 @@ namespace GameHost.ShareSimuWorldFeature
 			}
 		}
 
-		public unsafe JobHandle Deserialize(EntityManager entityManager, NativeArray<GhGameEntity> gameEntities, NativeArray<Entity> output, DataBufferReader reader)
+		public unsafe JobHandle Deserialize(EntityManager                 entityManager, ICustomComponentArchetypeAttach attach,
+		                                    NativeArray<GhGameEntitySafe> gameEntities,  NativeArray<Entity>             output,
+		                                    DataBufferReader              reader)
 		{
 			if (Size == 0)
 				return default;
-			
+
 			var param = new RunJob
 			{
 				ComponentDataFromEntity = componentDataFromEntity,
 				GameEntities            = gameEntities,
+				Valid                   = attach.GetValidHandles(),
 				Output                  = output,
 				EntityManager           = entityManager,
 				GhToUnityEntityMap      = ghToUnityEntityMap,
-				
+
 				Reader = reader
 			};
 			return param.Schedule();

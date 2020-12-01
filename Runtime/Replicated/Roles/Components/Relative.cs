@@ -29,11 +29,11 @@ namespace StormiumTeam.GameBase.Roles.Components
 #if UNITY_5_3_OR_NEWER
 		public struct ValueDeserializer : IValueDeserializer<Relative<TDescription>>
 		{
-			public int Size => UnsafeUtility.SizeOf<GhGameEntity>();
+			public int Size => UnsafeUtility.SizeOf<GhGameEntitySafe>();
 
-			public void Deserialize(EntityManager em, NativeHashMap<GhGameEntity, Entity> ghToUnityEntity, ref Relative<TDescription> component, ref DataBufferReader reader)
+			public void Deserialize(EntityManager em, NativeHashMap<GhGameEntitySafe, Entity> ghToUnityEntity, ref Relative<TDescription> component, ref DataBufferReader reader)
 			{
-				ghToUnityEntity.TryGetValue(reader.ReadValue<GhGameEntity>(), out var unityEntity);
+				ghToUnityEntity.TryGetValue(reader.ReadValue<GhGameEntitySafe>(), out var unityEntity);
 				component = new Relative<TDescription>(unityEntity);
 			}
 		}

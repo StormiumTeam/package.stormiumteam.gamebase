@@ -10,8 +10,11 @@ namespace GameHost.ShareSimuWorldFeature
 	{
 		public int Size { get; }
 
-		void BeginDeserialize(SystemBase system);
-		JobHandle Deserialize(EntityManager   entityManager, NativeArray<GhGameEntity> gameEntities, NativeArray<Entity> output, DataBufferReader reader);
+		void      BeginDeserialize(SystemBase system);
+
+		JobHandle Deserialize(EntityManager                 entityManager, ICustomComponentArchetypeAttach attach,
+		                      NativeArray<GhGameEntitySafe> gameEntities,  NativeArray<Entity>             output,
+		                      DataBufferReader              reader);
 	}
 
 	public interface ICustomComponentArchetypeAttach
@@ -20,7 +23,10 @@ namespace GameHost.ShareSimuWorldFeature
 
 		bool CanAttachToArchetype(NativeArray<GhComponentType> componentTypes, NativeHashMap<CharBuffer256, ComponentTypeDetails> detailMap);
 
-		void OnEntityAdded(EntityManager   entityManager, GhGameEntity ghEntity, Entity output);
-		void OnEntityRemoved(EntityManager entityManager, GhGameEntity ghEntity, Entity output);
+		void TryIncreaseCapacity(int size);
+
+		void              OnEntityAdded(EntityManager   entityManager, GhGameEntitySafe ghEntity, Entity output);
+		void              OnEntityRemoved(EntityManager entityManager, GhGameEntitySafe ghEntity, Entity output);
+		NativeArray<bool> GetValidHandles();
 	}
 }
