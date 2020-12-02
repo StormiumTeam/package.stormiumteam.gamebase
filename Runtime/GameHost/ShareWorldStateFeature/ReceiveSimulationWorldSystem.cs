@@ -287,7 +287,7 @@ namespace GameHost.ShareSimuWorldFeature
 				for (var i = 0; i < entities.Length; i++)
 				{
 					var ent = entities[i];
-					safeEntitiesPtr[(int) ent.Id] = new GhGameEntitySafe {Id = ent.Id, Version = entitiesVersion[(int) ent.Id]};
+					safeEntitiesPtr[i] = new GhGameEntitySafe {Id = ent.Id, Version = entitiesVersion[(int) ent.Id]};
 				}
 
 				using var archetypeUpdates = new NativeList<ArchetypeUpdate>(Allocator.TempJob);
@@ -308,6 +308,11 @@ namespace GameHost.ShareSimuWorldFeature
 				if (archetypeUpdates.Length > 0)
 					isComponentStateWorth = true;
 
+				foreach (var (attach, _) in registerDeserializer.deserializerMap.Values)
+				{
+					attach.TryIncreaseCapacity(entitiesVersion.Length);
+				}
+
 				foreach (var update in archetypeUpdates)
 				{
 					var previousArchetype = 0u;
@@ -316,7 +321,9 @@ namespace GameHost.ShareSimuWorldFeature
 
 					if (previousArchetype > 0)
 						foreach (var attach in archetypeMap[previousArchetype].Attaches)
+						{
 							attach.OnEntityRemoved(EntityManager, update.GhGameEntity, update.UnityEntity);
+						}
 
 					if (update.NewArchetype > 0)
 					{
@@ -328,7 +335,6 @@ namespace GameHost.ShareSimuWorldFeature
 
 						foreach (var attach in archetypeMap[update.NewArchetype].Attaches)
 						{
-							attach.TryIncreaseCapacity(entitiesVersion.Length);
 							attach.OnEntityAdded(EntityManager, update.GhGameEntity, update.UnityEntity);
 						}
 					}
@@ -359,7 +365,7 @@ namespace GameHost.ShareSimuWorldFeature
 			var outputEntities = new NativeArray<Entity>(entities.Length, Allocator.TempJob);
 			Profiler.BeginSample("4.15 Convert Gh to Unity");
 			for (var i = 0; i != entities.Length; i++)
-				outputEntities[i] = ghToUnityEntityMap[handleToSafeMap[entities[i]]];
+				outputEntities[i] = ghToUnityEntityMap[safeEntities[i]];
 			Profiler.EndSample();
 
 			// 4.2 Deserialize Components

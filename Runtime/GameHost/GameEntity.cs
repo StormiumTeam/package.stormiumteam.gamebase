@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace GameHost
 {
-	public struct GhGameEntityHandle : IEquatable<GhGameEntityHandle>
+	public struct GhGameEntityHandle : IEquatable<GhGameEntityHandle>, IComparer<GhGameEntityHandle>
 	{
 		public uint Id;
 
@@ -20,6 +21,11 @@ namespace GameHost
 		{
 			return (int) Id;
 		}
+
+		public int Compare(GhGameEntityHandle x, GhGameEntityHandle y)
+		{
+			return -x.Id.CompareTo(y.Id);
+		}
 	}
 
 	public struct GhGameEntitySafe : IEquatable<GhGameEntitySafe>
@@ -29,7 +35,7 @@ namespace GameHost
 
 		public bool Equals(GhGameEntitySafe other)
 		{
-			return Id == other.Id;
+			return Id == other.Id && Version == other.Version;
 		}
 
 		public override bool Equals(object obj)
@@ -39,7 +45,15 @@ namespace GameHost
 
 		public override int GetHashCode()
 		{
-			return (int) Id;
+			unchecked
+			{
+				return ((int) Id * 397) ^ (int) Version;
+			}
+		}
+
+		public override string ToString()
+		{
+			return $"EntitySafe({Id}:{Version})";
 		}
 	}
 
