@@ -29,19 +29,18 @@ namespace GameHost.Core.RPC.AvailableRpcCommands
 		protected override void OnReceiveReply(GameHostCommandResponse response)
 		{
 			var result = response.Deserialize<Result>();
-			
-			Console.WriteLine(result.ConnectionMap.Count);
+
+			var str = $"GetDisplayedConnectionRpc - Result - {result.ConnectionMap.Count}";
 			foreach (var kvp in result.ConnectionMap)
 			{
-				Console.WriteLine(kvp.Key);
-				Console.WriteLine(kvp.Value.Count);
+				str += $"\n\tAppType={kvp.Key}, Count={kvp.Value.Count}";
 				foreach (var elem in kvp.Value)
 				{
-					Console.WriteLine(elem.Type);
-					Console.WriteLine(elem.Name);
-					Console.WriteLine(elem.Address);
+					str += $"\n\t\tType={elem.Type}, Name={elem.Name}, Addr={elem.Address}";
 				}
 			}
+
+			Console.WriteLine(str);
 			
 			OnReply?.Invoke(result.ConnectionMap);
 		}
