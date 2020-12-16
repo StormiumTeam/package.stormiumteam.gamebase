@@ -20,9 +20,6 @@ namespace StormiumTeam.GameBase.Utility.DOTS
 					return entities[ent];
 			}
 
-			entities.Dispose();
-			relativePlayers.Dispose();
-
 			return default;
 		}
 

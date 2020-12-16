@@ -14,6 +14,7 @@ namespace StormiumTeam.GameBase.Time.Components
 
 		public class Register : RegisterGameHostComponentData<GameTime>
 		{
+			protected override string CustomComponentPath => "GameHost.Simulation.Utility.Time::GameTime";
 		}
 	}
 }
