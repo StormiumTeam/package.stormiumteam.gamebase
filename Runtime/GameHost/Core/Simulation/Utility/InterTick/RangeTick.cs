@@ -42,5 +42,10 @@ namespace GameHost.Simulation.Utility.InterTick
 			
 			return End >= tick.Value && tick.Value >= Begin;
 		}
+		
+		public override string ToString()
+		{
+			return $"({Begin}, {End} ({Length}))";
+		}
 	}
 }

@@ -115,8 +115,11 @@ namespace GameHost.ShareSimuWorldFeature
 		{
 			if (validHandles.Length < size)
 			{
-				validHandles.Dispose();
+				var previousHandles = validHandles;
 				validHandles = new NativeArray<bool>(size, Allocator.Persistent);
+				previousHandles.CopyTo(validHandles);
+
+				previousHandles.Dispose();
 			}
 		}
 
