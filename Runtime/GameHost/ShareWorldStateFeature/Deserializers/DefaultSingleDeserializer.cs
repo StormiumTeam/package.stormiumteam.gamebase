@@ -117,10 +117,10 @@ namespace GameHost.ShareSimuWorldFeature
 			{
 				var previousHandles = validHandles;
 				validHandles = new NativeArray<bool>(size, Allocator.Persistent);
-				previousHandles.CopyTo(validHandles);
+				previousHandles.CopyTo(validHandles.GetSubArray(0, previousHandles.Length));
 
 				previousHandles.Dispose();
-			}
+			} 
 		}
 
 		public void OnEntityAdded(EntityManager entityManager, GhGameEntitySafe ghEntity, Entity output)
