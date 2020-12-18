@@ -32,10 +32,7 @@ namespace StormiumTeam.GameBase.Utility.Pooling
 			InternalAddAsset().ContinueWith(handle =>
 			{
 				if (handle == null)
-				{
-					Debug.LogError($"Asset {AssetPath} does not exist");
 					return;
-				}
 
 				LoadedAsset = handle;
 				foreach (var onLoad in m_EventQueue) onLoad(Object.Instantiate(LoadedAsset));

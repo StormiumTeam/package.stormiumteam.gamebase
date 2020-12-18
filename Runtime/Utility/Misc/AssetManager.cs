@@ -10,7 +10,8 @@ namespace StormiumTeam.GameBase.Utility.Misc
 	[Serializable]
 	public struct AssetPathSerializable
 	{
-		public string bundle, asset;
+		// when editing in a KeyValue format, we want to show the asset first
+		public string asset, bundle;
 	}
 	
 	public struct AssetPath : IEquatable<AssetPath>
@@ -30,7 +31,7 @@ namespace StormiumTeam.GameBase.Utility.Misc
 
 		public override string ToString()
 		{
-			return $"('{Bundle}'/'{Asset}')";
+			return $"(bundle=\"{Bundle}\" asset=\"{Asset}\")";
 		}
 
 		public static implicit operator AssetPath((string bundle, string asset) tuple)   => new AssetPath(tuple.bundle, tuple.asset);
@@ -122,29 +123,52 @@ namespace StormiumTeam.GameBase.Utility.Misc
 
 	public class LocusAssetManager : AssetManager
 	{
-		protected override UniTask<SceneInstance> DoLoadSceneAsync(AssetPath assetPath, LoadSceneMode loadSceneMode, bool activateOnLoad)
+		protected override async UniTask<SceneInstance> DoLoadSceneAsync(AssetPath assetPath, LoadSceneMode loadSceneMode, bool activateOnLoad)
 		{
-			return UniTask.Run(async () =>
+			if (!assetPath.IsCreated)
+				throw new NullReferenceException(nameof(assetPath));
+			
+			await UniTask.Yield();
+			
+			var enumerator = BundleManager.LoadSceneAsync(assetPath.Bundle, assetPath.Asset, loadSceneMode);
+			if (enumerator == null)
 			{
-				var enumerator = BundleManager.LoadSceneAsync(assetPath.Bundle, assetPath.Asset, loadSceneMode);
-				enumerator.allowSceneActivation = activateOnLoad;
-				await enumerator;
-				return new SceneInstance
-				{
-					m_Operation = enumerator,
-					Scene       = SceneManager.GetSceneByPath(assetPath.Asset)
-				};
-			});
+				Debug.LogError($"[AssetManager] Couldn't call LoadSceneAsync on path {assetPath}");
+				return default;
+			}
+			
+			enumerator.allowSceneActivation = activateOnLoad;
+			await enumerator;
+			
+			return new SceneInstance
+			{
+				m_Operation = enumerator,
+				Scene       = SceneManager.GetSceneByPath(assetPath.Asset)
+			};
 		}
 
-		protected override UniTask<TAsset> DoLoadAssetAsync<TAsset>(AssetPath assetPath)
+		protected override async UniTask<TAsset> DoLoadAssetAsync<TAsset>(AssetPath assetPath)
 		{
-			return UniTask.Run(async () =>
+			if (!assetPath.IsCreated)
+				throw new NullReferenceException(nameof(assetPath));
+			
+			await UniTask.Yield();
+			
+			var enumerator = BundleManager.LoadAsync<TAsset>(assetPath.Bundle, assetPath.Asset);
+			if (enumerator == null)
 			{
-				var enumerator = BundleManager.LoadAsync<TAsset>(assetPath.Bundle, assetPath.Asset);
-				await enumerator;
-				return enumerator.Asset;
-			});
+				Debug.LogError($"[AssetManager] Couldn't call LoadAssetAsync on path {assetPath}");
+				return default;
+			}
+			
+			await enumerator;
+			if (enumerator.Asset == null)
+			{
+				Debug.LogError($"[AssetManager] Null asset on {assetPath} ({enumerator.IsDone} {enumerator.Progress})");
+				return default;
+			}
+
+			return enumerator.Asset;
 		}
 
 		protected override void DoRelease(Object obj)

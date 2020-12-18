@@ -68,6 +68,9 @@ namespace StormiumTeam.GameBase.Utility.Misc
 
 		public static Inspection Inspect(string path)
 		{
+			if (string.IsNullOrEmpty(path))
+				throw new NullReferenceException(nameof(path));
+			
 			Inspection inspection = default;
 
 			var firstDotIdx    = path.IndexOf('.');
@@ -86,15 +89,28 @@ namespace StormiumTeam.GameBase.Utility.Misc
 				inspection.ModPack      = asSpan.Slice(firstDotIdx + 1, (asSpan.IndexOf('/') - firstDotIdx) - 1).ToString();
 				inspection.ResourcePath = asSpan.Slice(asSpan.IndexOf('/') + 1).ToString();
 			}
-
 			// Client Resource
-			if (path.StartsWith("cr://"))
+			else if (path.StartsWith("cr://"))
 			{
 				var asSpan = path.AsSpan("cr://".Length);
 
-				inspection.Type = EType.MasterServer;
+				inspection.Type = EType.ClientResource;
 
 				firstDotIdx = asSpan.IndexOf('.');
+
+				inspection.Author       = asSpan.Slice(0, firstDotIdx).ToString();
+				inspection.ModPack      = asSpan.Slice(firstDotIdx + 1, (asSpan.IndexOf('/') - firstDotIdx) - 1).ToString();
+				inspection.ResourcePath = asSpan.Slice(asSpan.IndexOf('/') + 1).ToString();
+			}
+			else
+			{
+				var asSpan = path.AsSpan();
+				inspection.Type = EType.ClientResource;
+				
+				
+				firstDotIdx = asSpan.IndexOf('.');
+				if (firstDotIdx < 0)
+					throw new InvalidOperationException($"ParseError on {path}");
 
 				inspection.Author       = asSpan.Slice(0, firstDotIdx).ToString();
 				inspection.ModPack      = asSpan.Slice(firstDotIdx + 1, (asSpan.IndexOf('/') - firstDotIdx) - 1).ToString();
