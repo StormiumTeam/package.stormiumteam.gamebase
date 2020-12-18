@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 
@@ -12,11 +13,17 @@ namespace GameHost.Native
 			return buffer.Length;
 		}
 
+		[Conditional("ENABLE_UNITY_COLLECTIONS_CHECKS")]
+		private static void TryCapacityOrThrow(int length, int capacity)
+		{
+			if (length > capacity)
+				throw new IndexOutOfRangeException($"{length} > {capacity}");
+		}
+
 		public static void SetLength<TCharBuffer>(this ref TCharBuffer buffer, int length)
 			where TCharBuffer : unmanaged, ICharBuffer
 		{
-			if (length > buffer.Capacity)
-				throw new IndexOutOfRangeException($"{length} > {buffer.Capacity}");
+			TryCapacityOrThrow(length, buffer.Capacity);
 			buffer.Length = length;
 		}
 

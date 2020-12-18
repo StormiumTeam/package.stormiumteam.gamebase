@@ -2,6 +2,7 @@
 using StormiumTeam.GameBase.BaseSystems;
 using StormiumTeam.GameBase.Modules;
 using StormiumTeam.GameBase.Utility.AssetBackend;
+using StormiumTeam.GameBase.Utility.Misc;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
@@ -31,7 +32,7 @@ namespace StormiumTeam.GameBase.Utility.Pooling.BaseSystems
 
 		public int PoolingVersion { get; private set; }
 
-		protected abstract string AddressableAsset { get; }
+		protected abstract AssetPath AddressableAsset { get; }
 
 		protected TBackend LastBackend { get; set; }
 
@@ -56,10 +57,10 @@ namespace StormiumTeam.GameBase.Utility.Pooling.BaseSystems
 
 		protected virtual void CreatePoolPresentation(out AsyncAssetPool<GameObject> pool)
 		{
-			if (AddressableAsset == null)
+			if (AddressableAsset.IsCreated == false)
 				throw new NullReferenceException($"{nameof(AddressableAsset)} is null, did you mean to replace 'CreatePoolPresentation' ?");
 
-			if (AddressableAsset != string.Empty)
+			if (AddressableAsset.IsEmpty == false)
 				pool = new AsyncAssetPool<GameObject>(AddressableAsset);
 			else
 				pool = null;
@@ -123,7 +124,7 @@ namespace StormiumTeam.GameBase.Utility.Pooling.BaseSystems
 			var backend = gameObject.GetComponent<TBackend>();
 			backend.OnReset();
 			backend.SetTarget(EntityManager, target);
-			if (AddressableAsset != string.Empty)
+			if (AddressableAsset.IsEmpty == false)
 				backend.SetPresentationFromPool(m_PresentationPool);
 
 			LastBackend = backend;

@@ -31,7 +31,7 @@ namespace Utility.GameResources
 			lastUpdateFrame = System.Time.ElapsedTime;
 			
 			keyMap.Clear();
-
+			
 			using var keyArray        = resourceQuery.ToComponentDataArray<TResource>(Allocator.Temp);
 			using var replicatedArray = resourceQuery.ToComponentDataArray<ReplicatedGameEntity>(Allocator.Temp);
 			for (var i = 0; i != keyArray.Length; i++)

@@ -1,5 +1,6 @@
 using System;
 using package.stormiumteam.shared.ecs;
+using StormiumTeam.GameBase.Utility.Misc;
 using StormiumTeam.GameBase.Utility.Pooling.BaseSystems;
 using StormiumTeam.GameBase.Utility.Rendering;
 using StormiumTeam.GameBase.Utility.Rendering.BaseSystems;
@@ -128,8 +129,8 @@ namespace StormiumTeam.GameBase._2D
 	[UpdateAfter(typeof(ComputeBackgroundSystem))]
 	public class BackgroundPoolingSystem : PoolingSystem<BackgroundAssetBackend, BackgroundAssetPresentation>
 	{
-		protected override string AddressableAsset            => string.Empty;
-		protected override Type[] AdditionalBackendComponents => new[] {typeof(SortingGroup)};
+		protected override AssetPath AddressableAsset            => AssetPath.Empty;
+		protected override Type[]    AdditionalBackendComponents => new[] {typeof(SortingGroup)};
 
 		protected override EntityQuery GetQuery()
 		{
@@ -140,7 +141,7 @@ namespace StormiumTeam.GameBase._2D
 		{
 			base.SpawnBackend(target);
 
-			if (EntityManager.TryGetComponent(target, out AttachedBackground attached) 
+			if (EntityManager.TryGetComponent(target, out AttachedBackground attached)
 			    && attached.Value != null)
 			{
 				LastBackend.transform.SetParent(attached.Root, false);
@@ -160,7 +161,7 @@ namespace StormiumTeam.GameBase._2D
 	{
 		protected override void PrepareValues()
 		{
-			
+
 		}
 
 		protected override void Render(BackgroundAssetPresentation definition)
@@ -174,7 +175,7 @@ namespace StormiumTeam.GameBase._2D
 
 		protected override void ClearValues()
 		{
-			
+
 		}
 	}
 }

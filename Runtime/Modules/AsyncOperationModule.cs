@@ -1,7 +1,8 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using StormiumTeam.GameBase.Utility.Modules;
 using Unity.Jobs;
-using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace StormiumTeam.GameBase.Modules
 {
@@ -24,15 +25,12 @@ namespace StormiumTeam.GameBase.Modules
 			Handles.Clear();
 		}
 
-		public bool Add<THandle, TData>(AsyncOperationHandle<THandle> handle, TData data)
+		public bool Add<THandle, TData>(UniTask<THandle> handle, TData data)
 			where TData : struct
 		{
-			if (!handle.IsValid())
-				return false;
-			
 			Handles.Add(new HandleDataPair<THandle, TData>
 			{
-				Handle = handle,
+				Handle = handle.AsTask(),
 				Data   = data
 			});
 
@@ -47,18 +45,18 @@ namespace StormiumTeam.GameBase.Modules
 
 		public class BaseHandleDataPair
 		{
-			public AsyncOperationHandle Handle;
+			public Task Handle;
 		}
 
 		public class HandleDataPair<THandle, TData> : BaseHandleDataPair
 			where TData : struct
 		{
-			public TData                         Data;
-			public AsyncOperationHandle<THandle> Generic => Handle.Convert<THandle>();
+			public TData         Data;
+			public Task<THandle> Generic => (Task<THandle>) Handle;
 
-			public void Deconstruct(out AsyncOperationHandle<THandle> handle, out TData data)
+			public void Deconstruct(out Task<THandle> handle, out TData data)
 			{
-				handle = Handle.IsValid() ? Generic : default;
+				handle = Handle != null ? Generic : default;
 				data   = Data;
 			}
 		}

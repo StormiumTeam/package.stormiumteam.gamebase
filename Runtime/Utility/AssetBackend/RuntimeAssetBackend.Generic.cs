@@ -1,6 +1,7 @@
 ﻿using System;
 using package.stormiumteam.shared.ecs;
 using StormiumTeam.GameBase.Utility.AssetBackend.Components;
+using StormiumTeam.GameBase.Utility.Misc;
 using Unity.Entities;
 using UnityEngine;
 
@@ -81,7 +82,7 @@ namespace StormiumTeam.GameBase.Utility.AssetBackend
 			SetPresentation(opResult);
 		}
 
-		public override void SetSingleModel(string key, EntityManager targetEm = default, Entity targetEntity = default)
+		public override void SetSingleModel(AssetPath assetPath, EntityManager targetEm = default, Entity targetEntity = default)
 		{
 			if (presentationPool != null) throw new InvalidOperationException("This object is already using pooling, you can't switch to a single operation anymore.");
 
@@ -97,7 +98,7 @@ namespace StormiumTeam.GameBase.Utility.AssetBackend
 				loadModel.OnLoadSetSubModelFor(targetEm, targetEntity);
 			}
 
-			loadModel.AssetId    = key;
+			loadModel.SetAsset(assetPath);
 			loadModel.SpawnRoot  = transform;
 			loadModel.OnComplete = SetPresentation;
 		}

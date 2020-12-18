@@ -1,8 +1,9 @@
 ﻿using System;
+using Cysharp.Threading.Tasks;
 using StormiumTeam.GameBase.Utility.AssetBackend.Components;
+using StormiumTeam.GameBase.Utility.Misc;
 using Unity.Entities;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 
 namespace StormiumTeam.GameBase.Utility.AssetBackend
 {
@@ -13,7 +14,8 @@ namespace StormiumTeam.GameBase.Utility.AssetBackend
 
 	public class LoadModelFromStringIdBehaviour : MonoBehaviour
 	{
-		private string m_AssetId;
+		public string m_BundleId { get; private set; }
+		public string m_AssetId  { get; private set; }
 
 		private EntityManager m_EntityManager;
 		private Entity        m_EntityToSubModel;
@@ -23,17 +25,19 @@ namespace StormiumTeam.GameBase.Utility.AssetBackend
 
 		public Transform SpawnRoot;
 
-		public string AssetId
+		public void SetAsset(in AssetPath assetPath)
 		{
-			get => m_AssetId;
-			set
-			{
-				if (m_AssetId == value)
-					return;
+			SetAsset(assetPath.Bundle, assetPath.Asset);
+		}
 
-				m_AssetId = value;
-				Pop();
-			}
+		public void SetAsset(string bundle, string asset)
+		{
+			if (m_BundleId == bundle && m_AssetId == asset)
+				return;
+			
+			m_BundleId = bundle;
+			m_AssetId  = asset;
+			Pop();
 		}
 
 		private void OnEnable()
@@ -47,9 +51,13 @@ namespace StormiumTeam.GameBase.Utility.AssetBackend
 		{
 			Depop();
 
-			Addressables.InstantiateAsync(m_AssetId, SpawnRoot).Completed += o =>
+			AssetManager.LoadAssetAsync<GameObject>((m_BundleId, m_AssetId)).ContinueWith(go =>
 			{
-				m_Result = o.Result;
+				if (go == null)
+					throw new InvalidOperationException($"No asset named '{m_AssetId}' in bundle '{m_BundleId}' exists.");
+
+				m_Result = go;
+				m_Result.transform.SetParent(SpawnRoot);
 
 				if (m_EntityManager.World?.IsCreated == false)
 				{
@@ -63,16 +71,16 @@ namespace StormiumTeam.GameBase.Utility.AssetBackend
 				m_EntityManager.AddComponentData(gameObjectEntity.Entity, new ModelParent {Parent = m_EntityToSubModel});
 
 				var listeners = m_Result.GetComponents<IOnModelLoadedListener>();
-				foreach (var listener in listeners) listener.React(m_EntityToSubModel, m_EntityManager, gameObject);
+				foreach (var listener in listeners) listener.React(m_EntityToSubModel, m_EntityManager, go);
 
 				if (OnComplete?.Invoke(m_Result) == true) OnComplete = null;
-			};
+			});
 		}
 
 		private void Depop()
 		{
 			if (m_Result)
-				Addressables.ReleaseInstance(m_Result);
+				AssetManager.Release(m_Result);
 
 			m_Result = null;
 		}

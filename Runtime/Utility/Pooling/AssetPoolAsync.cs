@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
+using StormiumTeam.GameBase.Utility.Misc;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
-using UnityEngine.ResourceManagement.AsyncOperations;
+using Object = UnityEngine.Object;
 
 namespace StormiumTeam.GameBase.Utility.Pooling
 {
@@ -14,33 +16,39 @@ namespace StormiumTeam.GameBase.Utility.Pooling
 
 		private readonly Queue<T> m_ObjectPool;
 
-		public string AssetId;
+		public AssetPath AssetPath;
 
 		// Is the pool still valid?
 		public bool IsValid;
 		public T    LoadedAsset;
 
-		public AsyncAssetPool(string id)
+		public AsyncAssetPool(AssetPath assetPath)
 		{
-			AssetId = id;
-			IsValid = true;
+			AssetPath = assetPath;
+			IsValid   = true;
 
 			m_ObjectPool = new Queue<T>();
 			m_EventQueue = new List<OnLoad>();
 
-			InternalAddAsset().Completed += handle =>
+			InternalAddAsset().ContinueWith(handle =>
 			{
-				LoadedAsset = handle.Result;
+				if (handle == null)
+				{
+					Debug.LogError($"Asset {AssetPath} does not exist");
+					return;
+				}
+
+				LoadedAsset = handle;
 				foreach (var onLoad in m_EventQueue) onLoad(Object.Instantiate(LoadedAsset));
 
 				m_EventQueue.Clear();
-			};
+			});
 		}
 
-		public AsyncAssetPool(T origin, string id = null)
+		public AsyncAssetPool(T origin, AssetPath assetPath = default)
 		{
-			AssetId = id;
-			IsValid = true;
+			AssetPath = assetPath;
+			IsValid   = true;
 
 			m_ObjectPool = new Queue<T>();
 			m_EventQueue = new List<OnLoad>();
@@ -89,9 +97,9 @@ namespace StormiumTeam.GameBase.Utility.Pooling
 			m_ObjectPool.Clear();
 		}
 
-		private AsyncOperationHandle<T> InternalAddAsset()
+		private UniTask<T> InternalAddAsset()
 		{
-			if (LoadedAsset == null) return Addressables.LoadAssetAsync<T>(AssetId);
+			if (LoadedAsset == null) return AssetManager.LoadAssetAsync<T>(AssetPath);
 
 			Debug.LogError("???????????????");
 			return default;

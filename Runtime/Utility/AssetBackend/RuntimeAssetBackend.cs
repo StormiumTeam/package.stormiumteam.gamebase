@@ -2,6 +2,7 @@
 using package.stormiumteam.shared.ecs;
 using StormiumTeam.GameBase.Utility.AssetBackend.Components;
 using StormiumTeam.GameBase.Utility.DOTS.xMonoBehaviour;
+using StormiumTeam.GameBase.Utility.Misc;
 using StormiumTeam.GameBase.Utility.Pooling;
 using Unity.Entities;
 using UnityEngine;
@@ -26,7 +27,7 @@ namespace StormiumTeam.GameBase.Utility.AssetBackend
 		public abstract object GetPresentationBoxed();
 
 		internal abstract void OnCompletePoolDequeue(GameObject result);
-		public abstract   void SetSingleModel(string            key, EntityManager em = default, Entity ent = default);
+		public abstract   void SetSingleModel(AssetPath            assetPath, EntityManager em = default, Entity ent = default);
 		internal abstract bool SetPresentation(GameObject       obj);
 		public abstract   void ReturnPresentation(bool          unsetChildren = true);
 

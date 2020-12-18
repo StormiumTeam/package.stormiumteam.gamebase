@@ -1,15 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Cysharp.Threading.Tasks;
 using StormiumTeam.GameBase.Authoring;
 using StormiumTeam.GameBase.Data;
+using StormiumTeam.GameBase.Utility.Misc;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Transforms;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
-using UnityEngine.ResourceManagement.AsyncOperations;
-using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.SceneManagement;
 
 namespace StormiumTeam.GameBase.Systems
@@ -17,16 +16,16 @@ namespace StormiumTeam.GameBase.Systems
 	[AlwaysUpdateSystem]
 	public class MapManager : ComponentSystem
 	{
-		private EntityQuery                               m_ExecutingQuery;
-		private EntityQuery                               m_ForceDataQuery;
-		private EntityQuery                               m_LoadOperationQuery;
-		private List<AsyncOperationHandle<SceneInstance>> m_LoadOperations;
+		private EntityQuery                  m_ExecutingQuery;
+		private EntityQuery                  m_ForceDataQuery;
+		private EntityQuery                  m_LoadOperationQuery;
+		private List<UniTask<SceneInstance>> m_LoadOperations;
 
-		private Dictionary<string, JMapFormat>            m_MapCatalog;
-		private EntityQuery                               m_OperationQuery;
-		private EntityQuery                               m_RequestLoadQuery;
-		private EntityQuery                               m_RequestUnloadQuery;
-		private List<AsyncOperationHandle<SceneInstance>> m_UnloadOperations;
+		private Dictionary<string, JMapFormat> m_MapCatalog;
+		private EntityQuery                    m_OperationQuery;
+		private EntityQuery                    m_RequestLoadQuery;
+		private EntityQuery                    m_RequestUnloadQuery;
+		private List<UniTask<SceneInstance>>   m_UnloadOperations;
 
 		private EntityQuery m_MapComponentQuery;
 
@@ -35,7 +34,7 @@ namespace StormiumTeam.GameBase.Systems
 		public bool IsMapBeingLoaded => m_LoadOperationQuery.CalculateEntityCount() > 0;
 		public bool AnyOperation     => m_OperationQuery.CalculateEntityCount() > 0;
 
-		public IReadOnlyList<AsyncOperationHandle<SceneInstance>> GetLoadOperations()
+		public IReadOnlyList<UniTask<SceneInstance>> GetLoadOperations()
 		{
 			return m_LoadOperations;
 		}
@@ -50,8 +49,8 @@ namespace StormiumTeam.GameBase.Systems
 			base.OnCreate();
 
 			m_MapCatalog       = new Dictionary<string, JMapFormat>(16);
-			m_LoadOperations   = new List<AsyncOperationHandle<SceneInstance>>();
-			m_UnloadOperations = new List<AsyncOperationHandle<SceneInstance>>();
+			m_LoadOperations   = new List<UniTask<SceneInstance>>();
+			m_UnloadOperations = new List<UniTask<SceneInstance>>();
 
 			m_ExecutingQuery     = GetEntityQuery(typeof(ExecutingMapData));
 			m_RequestUnloadQuery = GetEntityQuery(typeof(RequestMapUnload));
@@ -163,8 +162,11 @@ namespace StormiumTeam.GameBase.Systems
 
 			for (int s = 0, length = scenes.Length; s != length; s++)
 			{
-				Debug.Log($"Loading game map: {mapFormat.addrPrefix + scenes[s]}");
-				m_LoadOperations.Add(Addressables.LoadSceneAsync(mapFormat.addrPrefix + scenes[s], LoadSceneMode.Additive));
+				Debug.Log($"Loading game map: {mapFormat.addrPrefix + scenes[s]} (bundle={mapFormat.bundle})");
+				
+				AssetPath assetPath = (mapFormat.bundle, mapFormat.addrPrefix + scenes[s]);
+				// We preserve the task so that we can await multiple time to it
+				m_LoadOperations.Add(AssetManager.LoadSceneAsync(assetPath, LoadSceneMode.Additive).Preserve());
 			}
 
 			EntityManager.CreateEntity(typeof(AsyncMapOperation), typeof(OperationMapLoadTag));
@@ -185,7 +187,7 @@ namespace StormiumTeam.GameBase.Systems
 			var loaded = 0;
 			foreach (var op in m_LoadOperations)
 			{
-				if (!op.IsDone)
+				if (op.Status == UniTaskStatus.Pending)
 					continue;
 				loaded++;
 			}
@@ -205,8 +207,11 @@ namespace StormiumTeam.GameBase.Systems
 
 			for (var i = 0; i != m_LoadOperations.Count; i++)
 			{
-				Debug.Log($"Adding scene: {m_LoadOperations[i].Result.Scene.name}");
-				sceneBuffer.Add(new MapScene {Value = m_LoadOperations[i].Result.Scene});
+				var result = m_LoadOperations[i]
+				             .GetAwaiter()
+				             .GetResult();
+				Debug.Log($"Adding scene: {result.Scene.name}");
+				sceneBuffer.Add(new MapScene {Value = result.Scene});
 			}
 			
 			EntityManager.DestroyEntity(m_LoadOperationQuery);
@@ -224,6 +229,7 @@ namespace StormiumTeam.GameBase.Systems
 		{
 			public string   name;
 			public string   description;
+			public string   bundle;
 			public string   addrPrefix;
 			public string[] clientScenes;
 			public string[] serverScenes;

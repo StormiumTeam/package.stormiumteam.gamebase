@@ -7,8 +7,6 @@
         "Unity.ugui",
         "Unity.Networking.Transport",
         "Unity.InputSystem",
-        "Unity.Addressables",
-        "Unity.ResourceManager",
         "Unity.Entities",
         "Unity.Entities.Hybrid",
         "Unity.Rendering.Hybrid",
@@ -17,7 +15,9 @@
         "Unity.Mathematics",
         "Unity.Collections",
         "Unity.Jobs",
-        "Unity.Burst"
+        "Unity.Burst",
+        "Unity.Locus.BundleSystem",
+        "UniTask"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
