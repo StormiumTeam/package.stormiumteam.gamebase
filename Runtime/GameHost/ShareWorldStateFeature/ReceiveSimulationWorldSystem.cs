@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using GameHost.Native;
 using K4os.Compression.LZ4;
 using package.stormiumteam.shared;

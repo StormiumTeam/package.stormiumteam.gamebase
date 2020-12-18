@@ -7,7 +7,13 @@ using Object = UnityEngine.Object;
 
 namespace StormiumTeam.GameBase.Utility.Misc
 {
-	public struct AssetPath
+	[Serializable]
+	public struct AssetPathSerializable
+	{
+		public string bundle, asset;
+	}
+	
+	public struct AssetPath : IEquatable<AssetPath>
 	{
 		public bool IsCreated => Bundle != null && Asset != null;
 		public bool IsEmpty   => Bundle == string.Empty && Asset == string.Empty;
@@ -29,6 +35,35 @@ namespace StormiumTeam.GameBase.Utility.Misc
 
 		public static implicit operator AssetPath((string bundle, string asset) tuple)   => new AssetPath(tuple.bundle, tuple.asset);
 		public static implicit operator AssetPath(in ResPath                    resPath) => new AssetPath(resPath.Author + "." + resPath.ModPack, resPath.Resource);
+		public static implicit operator AssetPath(in AssetPathSerializable             serializable)   => new AssetPath(serializable.bundle, serializable.asset);
+
+		public bool Equals(AssetPath other)
+		{
+			return Bundle == other.Bundle && Asset == other.Asset;
+		}
+
+		public override bool Equals(object obj)
+		{
+			return obj is AssetPath other && Equals(other);
+		}
+
+		public override int GetHashCode()
+		{
+			unchecked
+			{
+				return ((Bundle != null ? Bundle.GetHashCode() : 0) * 397) ^ (Asset != null ? Asset.GetHashCode() : 0);
+			}
+		}
+
+		public static bool operator ==(AssetPath left, AssetPath right)
+		{
+			return left.Equals(right);
+		}
+
+		public static bool operator !=(AssetPath left, AssetPath right)
+		{
+			return !left.Equals(right);
+		}
 	}
 	
 	public struct SceneInstance
@@ -89,7 +124,7 @@ namespace StormiumTeam.GameBase.Utility.Misc
 	{
 		protected override UniTask<SceneInstance> DoLoadSceneAsync(AssetPath assetPath, LoadSceneMode loadSceneMode, bool activateOnLoad)
 		{
-			return UniTask.Create(async () =>
+			return UniTask.Run(async () =>
 			{
 				var enumerator = BundleManager.LoadSceneAsync(assetPath.Bundle, assetPath.Asset, loadSceneMode);
 				enumerator.allowSceneActivation = activateOnLoad;
@@ -104,7 +139,7 @@ namespace StormiumTeam.GameBase.Utility.Misc
 
 		protected override UniTask<TAsset> DoLoadAssetAsync<TAsset>(AssetPath assetPath)
 		{
-			return UniTask.Create(async () =>
+			return UniTask.Run(async () =>
 			{
 				var enumerator = BundleManager.LoadAsync<TAsset>(assetPath.Bundle, assetPath.Asset);
 				await enumerator;

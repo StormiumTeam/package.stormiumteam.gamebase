@@ -1,6 +1,5 @@
 using System;
 using GameHost.ShareSimuWorldFeature;
-using GameHost.Simulation.Utility.Resource.Components;
 using GameHost.Simulation.Utility.Resource.Interfaces;
 using package.stormiumteam.shared.ecs;
 using Unity.Entities;

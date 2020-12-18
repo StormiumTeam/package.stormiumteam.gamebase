@@ -1,4 +1,3 @@
-using GameHost;
 using GameHost.Simulation.Features.ShareWorldState.BaseSystems;
 using Unity.Entities;
 
