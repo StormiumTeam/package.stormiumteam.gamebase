@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using DefaultNamespace.Utility.DOTS;
 using StormiumTeam.GameBase.Utility.AssetBackend;
 using Unity.Entities;
@@ -8,7 +9,14 @@ using Object = UnityEngine.Object;
 
 namespace StormiumTeam.GameBase.Utility.Pooling
 {
-	public class AssetPool<T>
+	public interface IAssetPool<T> : IDisposable
+	{
+		UniTask Warm();
+		void    Enqueue(T                obj);
+		void    Dequeue(OnAssetLoaded<T> onComplete);
+	}
+
+	public class AssetPool<T> : IAssetPool<T>
 		where T : Object
 	{
 		private readonly Func<AssetPool<T>, T> m_CreateFunction;
@@ -28,6 +36,12 @@ namespace StormiumTeam.GameBase.Utility.Pooling
 
 		public int LastDequeueIndex { get; private set; }
 
+		// There is no need to warm the Pool since it's not async
+		public UniTask Warm()
+		{
+			return UniTask.CompletedTask;
+		}
+
 		public void Enqueue(T obj)
 		{
 			m_ObjectPool.Enqueue(obj);
@@ -41,7 +55,7 @@ namespace StormiumTeam.GameBase.Utility.Pooling
 			{
 			}
 
-			if (m_ObjectPool.Count > 0)
+			if (obj != null)
 				return obj;
 
 			using (new SetTemporaryInjectionWorld(m_SpawnWorld ?? World.DefaultGameObjectInjectionWorld))
@@ -61,6 +75,9 @@ namespace StormiumTeam.GameBase.Utility.Pooling
 			return obj;
 		}
 
+		// this method is not public since we don't want caller of AssetPool to cause any GC alloc when dequeuing
+		void IAssetPool<T>.Dequeue(OnAssetLoaded<T> complete) => complete(Dequeue());
+
 		public void AddElements(int size)
 		{
 			for (var i = 0; i != size; i++) Enqueue(Dequeue());
@@ -69,6 +86,18 @@ namespace StormiumTeam.GameBase.Utility.Pooling
 		public int IndexOf(T obj)
 		{
 			return m_Objects.IndexOf(obj);
+		}
+		
+		public void SafeUnload()
+		{
+			foreach (var obj in m_ObjectPool) Object.Destroy(obj);
+			
+			m_ObjectPool.Clear();
+		}
+
+		public void Dispose()
+		{
+			SafeUnload();
 		}
 	}
 }

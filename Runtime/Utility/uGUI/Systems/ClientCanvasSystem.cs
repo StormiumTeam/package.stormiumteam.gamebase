@@ -63,8 +63,11 @@ namespace StormiumTeam.GameBase.Utility.uGUI.Systems
 		{
 			var gameObject = new GameObject($"Canvas: {name}#{Canvas.Count}",
 				typeof(Canvas),
-				typeof(CanvasScaler),
-				typeof(GraphicRaycaster));
+				typeof(CanvasScaler));
+			
+			if (defaultAddRaycaster)
+				gameObject.AddComponent<GraphicRaycaster>();
+			
 			var canvas = gameObject.GetComponent<Canvas>();
 			hack1 = canvas.sortingOrder;
 			hack0 = canvas.sortingLayerName;

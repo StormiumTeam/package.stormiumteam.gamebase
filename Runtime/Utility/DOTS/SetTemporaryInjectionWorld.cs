@@ -10,7 +10,7 @@ namespace DefaultNamespace.Utility.DOTS
 		public SetTemporaryInjectionWorld(World newWorld)
 		{
 			m_PreviousWorld                       = World.DefaultGameObjectInjectionWorld;
-			World.DefaultGameObjectInjectionWorld = newWorld;
+			World.DefaultGameObjectInjectionWorld = newWorld ?? m_PreviousWorld;
 		}
 
 		public void Dispose()

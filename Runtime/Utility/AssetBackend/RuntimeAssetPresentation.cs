@@ -6,13 +6,12 @@ using UnityEngine;
 namespace StormiumTeam.GameBase.Utility.AssetBackend
 {
 	[RequireComponent(typeof(GameObjectEntity))] // todo: use the new Converting system
-	public abstract class RuntimeAssetPresentation<TMonoPresentation> : MonoBehaviour
-		where TMonoPresentation : RuntimeAssetPresentation<TMonoPresentation>
+	public abstract class RuntimeAssetPresentation : MonoBehaviour
 	{
-		private List<IBackendReceiver>                 m_Receivers;
-		public  RuntimeAssetBackend<TMonoPresentation> Backend { get; protected set; }
+		private List<IBackendReceiver>  m_Receivers;
+		public  RuntimeAssetBackendBase Backend { get; protected set; }
 
-		internal void SetBackend(RuntimeAssetBackend<TMonoPresentation> backend)
+		internal void SetBackend(RuntimeAssetBackendBase backend)
 		{
 			Backend     = backend;
 			m_Receivers = new List<IBackendReceiver>();

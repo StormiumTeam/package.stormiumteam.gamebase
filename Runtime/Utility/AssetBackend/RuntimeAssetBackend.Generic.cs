@@ -8,7 +8,7 @@ using UnityEngine;
 namespace StormiumTeam.GameBase.Utility.AssetBackend
 {
 	public abstract class RuntimeAssetBackend<TMonoPresentation> : RuntimeAssetBackendBase
-		where TMonoPresentation : RuntimeAssetPresentation<TMonoPresentation>
+		where TMonoPresentation : RuntimeAssetPresentation
 	{
 		public TMonoPresentation Presentation            { get; protected set; }
 		public bool              HasIncomingPresentation => m_IncomingPresentation || Presentation != null;
@@ -43,6 +43,8 @@ namespace StormiumTeam.GameBase.Utility.AssetBackend
 			}
 
 			var previousWorld = World.DefaultGameObjectInjectionWorld;
+
+			Debug.Log($"{DstEntityManager == null} {DstEntityManager.IsCreated}");
 			if (DstEntityManager.World?.IsCreated == true)
 				World.DefaultGameObjectInjectionWorld = DstEntityManager.World;
 

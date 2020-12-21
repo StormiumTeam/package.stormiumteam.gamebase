@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace StormiumTeam.GameBase._2D
 {
-	public class BackgroundAssetPresentation : RuntimeAssetPresentation<BackgroundAssetPresentation>
+	public class BackgroundAssetPresentation : RuntimeAssetPresentation
 	{
 		public float width;
 

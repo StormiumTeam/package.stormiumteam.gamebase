@@ -216,6 +216,7 @@ namespace StormiumTeam.GameBase.Utility.AssetBackend
 			DisableNextUpdate     = false;
 			ReturnToPoolOnDisable = false;
 
+			Console.WriteLine($"Enqueue again {rootPool != null}");
 			if (rootPool != null)
 				rootPool.Enqueue(gameObject);
 			//transform.SetParent(null, false);

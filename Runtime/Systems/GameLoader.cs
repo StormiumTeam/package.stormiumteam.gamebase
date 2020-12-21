@@ -9,7 +9,7 @@ using UnityEngine.LowLevel;
 
 namespace StormiumTeam.GameBase.Systems
 {
-	public static class LoadBundles
+	public static class GameLoader
 	{
 		public class Bootstrap : ICustomBootstrap
 		{
@@ -39,9 +39,11 @@ namespace StormiumTeam.GameBase.Systems
 			private void Awake()
 			{
 				BundleManager.LogMessages = true;
-				
+
 				operation = BundleManager.Initialize();
 				StartCoroutine(CreateWorld());
+
+				DontDestroyOnLoad(gameObject);
 			}
 
 			private IEnumerator CreateWorld()
@@ -52,12 +54,23 @@ namespace StormiumTeam.GameBase.Systems
 				DefaultWorldInitialization.Initialize("Default World");
 				if (!PlayerLoopHelper.IsInjectedUniTaskPlayerLoop())
 					Debug.LogError("Not Injected");
+
+				Loaded = true;
+			}
+
+			private void OnDestroy()
+			{
+				Loaded = false;
 			}
 		}
+
+		public static bool Loaded { get; private set; }
 
 		[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
 		static void Initialize()
 		{
+			Loaded = false;
+			
 			// ReSharper disable ObjectCreationAsStatement
 			new GameObject("Start", typeof(__Start));
 			// ReSharper restore ObjectCreationAsStatement

@@ -1,14 +1,31 @@
+using System.Collections;
 using StormiumTeam.GameBase.Bootstrapping;
+using StormiumTeam.GameBase.Systems;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 
 namespace StormiumTeam.GameBase.Authoring
 {
-	public class BootstrapAuthoring : MonoBehaviour, IConvertGameObjectToEntity
+	public class BootstrapAuthoring : MonoBehaviour
 	{
 		public string   Name;
 		public string[] Parameters;
+
+		private IEnumerator Start()
+		{
+			while (!GameLoader.Loaded)
+				yield return null;
+
+			// Make sure that the systems are properly initialized
+			yield return null;
+
+			var world = World.DefaultGameObjectInjectionWorld;
+			Debug.LogWarning($"Injecting to {world.Name}");
+			
+			Convert(world.EntityManager.CreateEntity(), world.EntityManager, null);
+			Destroy(gameObject);
+		}
 
 		public void Convert(Entity entity, EntityManager dstManager, GameObjectConversionSystem conversionSystem)
 		{

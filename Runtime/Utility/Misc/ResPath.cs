@@ -30,6 +30,12 @@ namespace StormiumTeam.GameBase.Utility.Misc
 
 		public ResPath(string fullPath)
 		{
+			if (string.IsNullOrEmpty(fullPath))
+			{
+				this = default;
+				return;
+			}
+
 			computedFullString = fullPath;
 
 			var inspection = Inspect(fullPath);

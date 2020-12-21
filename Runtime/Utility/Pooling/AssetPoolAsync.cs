@@ -6,12 +6,12 @@ using Object = UnityEngine.Object;
 
 namespace StormiumTeam.GameBase.Utility.Pooling
 {
-	public class AsyncAssetPool<T>
+	public delegate void OnAssetLoaded<in T>(T result);
+	
+	public class AsyncAssetPool<T> : IAssetPool<T>
 		where T : Object
 	{
-		public delegate void OnLoad(T result);
-
-		private readonly List<OnLoad> m_EventQueue;
+		private readonly List<OnAssetLoaded<T>> m_EventQueue;
 
 		private readonly Queue<T> m_ObjectPool;
 
@@ -27,7 +27,7 @@ namespace StormiumTeam.GameBase.Utility.Pooling
 			IsValid   = true;
 
 			m_ObjectPool = new Queue<T>();
-			m_EventQueue = new List<OnLoad>();
+			m_EventQueue = new List<OnAssetLoaded<T>>();
 
 			InternalAddAsset().ContinueWith(handle =>
 			{
@@ -47,9 +47,15 @@ namespace StormiumTeam.GameBase.Utility.Pooling
 			IsValid   = true;
 
 			m_ObjectPool = new Queue<T>();
-			m_EventQueue = new List<OnLoad>();
+			m_EventQueue = new List<OnAssetLoaded<T>>();
 
 			LoadedAsset = origin;
+		}
+
+		public async UniTask Warm()
+		{
+			while (LoadedAsset == null)
+				await UniTask.Yield();
 		}
 
 		public void Enqueue(T obj)
@@ -57,13 +63,13 @@ namespace StormiumTeam.GameBase.Utility.Pooling
 			m_ObjectPool.Enqueue(obj);
 		}
 
-		public void StopDequeue(OnLoad function)
+		public void StopDequeue(OnAssetLoaded<T> function)
 		{
 			while (m_EventQueue.Contains(function))
 				m_EventQueue.Remove(function);
 		}
 
-		public void Dequeue(OnLoad complete)
+		public void Dequeue(OnAssetLoaded<T> complete)
 		{
 			if (m_ObjectPool.Count == 0)
 			{
@@ -91,6 +97,11 @@ namespace StormiumTeam.GameBase.Utility.Pooling
 
 			IsValid = false;
 			m_ObjectPool.Clear();
+		}
+		
+		public void Dispose()
+		{
+			SafeUnload();
 		}
 
 		private UniTask<T> InternalAddAsset()

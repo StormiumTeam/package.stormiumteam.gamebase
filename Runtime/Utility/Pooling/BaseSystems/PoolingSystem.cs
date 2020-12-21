@@ -11,13 +11,13 @@ namespace StormiumTeam.GameBase.Utility.Pooling.BaseSystems
 {
 	public abstract class PoolingSystem<TBackend, TPresentation> : PoolingSystem<TBackend, TPresentation, GetAllBackendModule.AlwaysValid>
 		where TBackend : RuntimeAssetBackendBase
-		where TPresentation : RuntimeAssetPresentation<TPresentation>
+		where TPresentation : RuntimeAssetPresentation
 	{
 	}
 
 	public abstract class PoolingSystem<TBackend, TPresentation, TCheckValidity> : AbsGameBaseSystem
 		where TBackend : RuntimeAssetBackendBase
-		where TPresentation : RuntimeAssetPresentation<TPresentation>
+		where TPresentation : RuntimeAssetPresentation
 		where TCheckValidity : struct, ICheckValidity
 	{
 		private AssetPool<GameObject> m_BackendPool;

@@ -17,30 +17,30 @@ namespace StormiumTeam.GameBase.Utility.Rendering
 		public Camera        Camera        { get; private set; }
 		public AudioListener AudioListener { get; private set; }
 
+		public ClientCreateCameraSystem()
+		{
+			GameObject gameObject;
+			gameObject = new GameObject($"(World: {World.DefaultGameObjectInjectionWorld.Name}) GameCamera",
+				typeof(Camera),
+				typeof(GameCamera),
+				typeof(GameObjectEntity));
+			Camera                  = gameObject.GetComponent<Camera>();
+			Camera.orthographicSize = 10;
+			Camera.fieldOfView      = 60;
+			Camera.nearClipPlane    = 0.025f;
+
+			gameObject.transform.position = new Vector3(0, 0, -100);
+
+			var listenerGo = new GameObject($"(World: {World.DefaultGameObjectInjectionWorld.Name}) AudioListener", typeof(AudioListener));
+			AudioListener = listenerGo.GetComponent<AudioListener>();
+			
+			gameObject.SetActive(false);
+		}
+
 		protected override void OnCreate()
 		{
 			base.OnCreate();
-
-			GameObject gameObject;
-			using (new SetTemporaryInjectionWorld(World))
-			{
-				gameObject = new GameObject($"(World: {World.Name}) GameCamera",
-					typeof(Camera),
-					typeof(GameCamera),
-					typeof(GameObjectEntity));
-				Camera                  = gameObject.GetComponent<Camera>();
-				Camera.orthographicSize = 10;
-				Camera.fieldOfView      = 60;
-				Camera.nearClipPlane    = 0.025f;
-
-				gameObject.transform.position = new Vector3(0, 0, -100);
-
-				var listenerGo = new GameObject($"(World: {World.Name}) AudioListener", typeof(AudioListener));
-				AudioListener = listenerGo.GetComponent<AudioListener>();
-			}
-
-			gameObject.SetActive(false);
-
+			
 			InternalSetActive(true);
 		}
 

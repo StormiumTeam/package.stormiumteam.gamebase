@@ -151,9 +151,7 @@ namespace StormiumTeam.GameBase.Utility.Misc
 		{
 			if (!assetPath.IsCreated)
 				throw new NullReferenceException(nameof(assetPath));
-			
-			await UniTask.Yield();
-			
+
 			var enumerator = BundleManager.LoadAsync<TAsset>(assetPath.Bundle, assetPath.Asset);
 			if (enumerator == null)
 			{
@@ -167,7 +165,7 @@ namespace StormiumTeam.GameBase.Utility.Misc
 				Debug.LogError($"[AssetManager] Null asset on {assetPath} ({enumerator.IsDone} {enumerator.Progress})");
 				return default;
 			}
-
+			
 			return enumerator.Asset;
 		}
 
