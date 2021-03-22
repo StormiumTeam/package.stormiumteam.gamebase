@@ -75,8 +75,21 @@ namespace StormiumTeam.GameBase.Utility.Misc
 		public static Inspection Inspect(string path)
 		{
 			if (string.IsNullOrEmpty(path))
-				throw new NullReferenceException(nameof(path));
-			
+			{
+				if (path == null)
+					throw new NullReferenceException(nameof(path));
+
+				return new Inspection()
+				{
+					IsCore       = false,
+					IsGUID       = false,
+					Author       = string.Empty,
+					ModPack      = string.Empty,
+					ResourcePath = string.Empty,
+					Type         = EType.MasterServer
+				};
+			}
+
 			Inspection inspection = default;
 
 			var firstDotIdx    = path.IndexOf('.');

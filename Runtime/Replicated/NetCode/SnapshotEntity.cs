@@ -1,3 +1,4 @@
+using GameHost.ShareSimuWorldFeature;
 using GameHost.Simulation.Features.ShareWorldState.BaseSystems;
 using Unity.Entities;
 
@@ -16,6 +17,8 @@ namespace Replicated.NetCode
 		public class Register : RegisterGameHostComponentData<SnapshotEntity>
 		{
 			protected override string CustomComponentPath => "GameHost.Revolution.Snapshot.Systems.Components::SnapshotEntity";
+			
+			protected override ICustomComponentDeserializer CustomDeserializer => new DefaultSingleDeserializer<SnapshotEntity>();
 		}
 	}
 }

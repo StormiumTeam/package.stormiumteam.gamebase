@@ -21,7 +21,7 @@ namespace GameHost.ShareSimuWorldFeature
 		private float m_NextPingDelay;
 		private Peer  m_Peer;
 
-		private const int MaxSimulationFrames = 4;
+		private const int MaxSimulationFrames = 8;
 
 		private void ConnectionLost(bool forcefullyTerminated)
 		{

@@ -17,6 +17,7 @@
         "Unity.Jobs",
         "Unity.Burst",
         "Unity.Locus.BundleSystem",
+        "Unity.Profiling.Core",
         "UniTask"
     ],
     "includePlatforms": [],

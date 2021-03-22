@@ -1,20 +1,24 @@
 using System;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using GameHost.Core.IO;
 using GameHost.Native;
 using LiteNetLib;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using RevolutionSnapshot.Core.Buffers;
+using UnityEngine;
 
 namespace GameHost.Core.RPC
 {
 	public class RpcListener : INetEventListener
 	{
-		private RpcCollectionSystem collection;
-
-		public RpcListener(RpcCollectionSystem collection)
+		private LiteNetLibRpcClient client;
+		
+		public RpcListener(LiteNetLibRpcClient client)
 		{
-			this.collection = collection;
+			this.client = client;
 		}
 
 		public virtual void OnPeerConnected(NetPeer peer)
@@ -34,37 +38,45 @@ namespace GameHost.Core.RPC
 		public virtual void OnNetworkReceive(NetPeer peer, NetPacketReader reader, DeliveryMethod deliveryMethod)
 		{
 			Console.WriteLine("received data");
-			
-			var type = reader.GetString();
-			switch (type)
+
+			var str      = reader.GetString();
+			var document = JObject.Parse(str);
+
+			var jsonRpcProperty = document["jsonrpc"];
+			if (jsonRpcProperty is null)
+				throw new InvalidOperationException("no jsonrpc property");
+
+			var methodProperty = document["method"];
+			if (methodProperty is null && document["error"] is null)
+				throw new InvalidOperationException("no method property");
+
+			var resultProperty = document["result"];
+			var idProperty     = document["id"];
+			var paramsProperty = document["params"];
+			var errorProperty  = document["error"];
+	
+			Debug.Assert(jsonRpcProperty.ToObject<string>() == "2.0", "jsonRpcProperty.ToObject<string>() == '2.0'");
+			Debug.LogError(jsonRpcProperty.ToObject<string>());
+
+			switch (resultProperty != null)
 			{
-				case nameof(RpcMessageType.Command):
-				{
-					var commandType = reader.GetString();
-					var commandId   = reader.GetString();
+				case true when paramsProperty != null:
+					throw new InvalidOperationException("can't be a request and a response at the same time");
+				case true when idProperty == null:
+					throw new InvalidOperationException("follow-up required but no id present");
+			}
 
-					var response = new GameHostCommandResponse
-					{
-						Connection = new TransportConnection {Id = (uint) peer.Id, Version = 1},
-						Command    = CharBufferUtility.Create<CharBuffer128>(commandId),
-						Data       = new DataBufferReader(reader.GetRemainingBytesSegment())
-					};
-					switch (commandType)
-					{
-						case nameof(RpcCommandType.Send):
-						{
-							collection.TriggerCommandRequest(response);
-							break;
-						}
-						case nameof(RpcCommandType.Reply):
-						{
-							collection.TriggerCommandReply(response);
-							break;
-						}
-					}
-
-					break;
-				}
+			if (resultProperty != null)
+			{
+				client.AddResponse(methodProperty, resultProperty, idProperty);
+			}
+			else if (errorProperty == null)
+			{
+				client.AddRequestOrNotification(methodProperty, paramsProperty, idProperty);
+			}
+			else
+			{
+				client.AddError(errorProperty, idProperty);
 			}
 		}
 

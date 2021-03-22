@@ -154,12 +154,10 @@ namespace StormiumTeam.GameBase.Utility.Misc
 
 			var enumerator = BundleManager.LoadAsync<TAsset>(assetPath.Bundle, assetPath.Asset);
 			if (enumerator == null)
-			{
-				Debug.LogError($"[AssetManager] Couldn't call LoadAssetAsync on path {assetPath}");
-				return default;
-			}
+				return null;
 			
 			await enumerator;
+			
 			if (enumerator.Asset == null)
 			{
 				Debug.LogError($"[AssetManager] Null asset on {assetPath} ({enumerator.IsDone} {enumerator.Progress})");

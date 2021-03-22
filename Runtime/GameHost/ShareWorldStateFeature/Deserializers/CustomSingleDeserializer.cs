@@ -52,6 +52,9 @@ namespace GameHost.ShareSimuWorldFeature
 			public unsafe void Execute()
 			{
 				var componentcount = Reader.ReadValue<int>();
+				if (componentcount == 0)
+					return;
+				
 				var deserializer   = default(TValueDeserializer);
 				for (var ent = 0; ent < GameEntities.Length; ent++)
 				{

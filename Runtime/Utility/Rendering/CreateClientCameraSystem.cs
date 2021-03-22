@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using DefaultNamespace.Utility.DOTS;
 using package.stormiumteam.shared.ecs;
 using StormiumTeam.GameBase.BaseSystems;
@@ -6,35 +8,83 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering;
+using UnityEngine.Rendering;
+using UnityEngine.UI;
+using Object = UnityEngine.Object;
 
 namespace StormiumTeam.GameBase.Utility.Rendering
 {
 	[UpdateInGroup(typeof(PresentationSystemGroup))]
+	[AlwaysUpdateSystem]
 	public class ClientCreateCameraSystem : AbsGameBaseSystem
 	{
 		private bool m_PreviousState;
 
 		public Camera        Camera        { get; private set; }
+		public Camera        UICamera      { get; private set; }
 		public AudioListener AudioListener { get; private set; }
+
+		public RenderTexture UIRenderTexture { get; private set; }
+		public Canvas        UICanvas        { get; private set; }
 
 		public ClientCreateCameraSystem()
 		{
-			GameObject gameObject;
-			gameObject = new GameObject($"(World: {World.DefaultGameObjectInjectionWorld.Name}) GameCamera",
-				typeof(Camera),
-				typeof(GameCamera),
-				typeof(GameObjectEntity));
-			Camera                  = gameObject.GetComponent<Camera>();
-			Camera.orthographicSize = 10;
-			Camera.fieldOfView      = 60;
-			Camera.nearClipPlane    = 0.025f;
+			static Camera createCamera(string name, params Type[] additionalComponents)
+			{
+				GameObject gameObject;
+				gameObject = new GameObject($"(World: {World.DefaultGameObjectInjectionWorld.Name}) {name}", additionalComponents.Concat(new [] {typeof(Camera)}).ToArray());
+				
+				var camera                  = gameObject.GetComponent<Camera>();
+				camera.orthographicSize = 10;
+				camera.fieldOfView      = 60;
+				camera.nearClipPlane    = 0.025f;
 
-			gameObject.transform.position = new Vector3(0, 0, -100);
+				gameObject.transform.position = new Vector3(0, 0, -100);
+			
+				gameObject.SetActive(false);
+
+				return camera;
+			}
+
+			Camera   = createCamera("GameCamera", typeof(GameCamera), typeof(GameObjectEntity));
+			UICamera = createCamera("UICamera");
+
+			UICamera.cullingMask              = 0;
+			UICamera.eventMask                = 0;
+			UICamera.overrideSceneCullingMask = 0;
+			UICamera.useOcclusionCulling      = false;
+
+			UIRenderTexture = new RenderTexture(new RenderTextureDescriptor(1920, 1080, GraphicsFormat.R8G8B8A8_SRGB, 24)
+			{
+				sRGB        = true,
+				msaaSamples = 2
+			})
+			{
+				filterMode = FilterMode.Trilinear
+			};
+			UICanvas            = new GameObject("UICanvas", new[] {typeof(Canvas)}).GetComponent<Canvas>();
+			UICanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+
+			var rawImage = new GameObject("RawImageObject", typeof(RectTransform), typeof(CanvasRenderer), typeof(RawImage));
+			rawImage.GetComponent<RawImage>().texture = UIRenderTexture;
+
+			rawImage.transform.parent = UICanvas.transform;
+			rawImage.transform.localScale = Vector3.one;
+
+			var rt = rawImage.GetComponent<RectTransform>();
+			rt.anchorMin        = new Vector2(0, 0);
+			rt.anchorMax        = new Vector2(1, 1);
+			rt.sizeDelta        = Vector2.zero;
+			rt.anchoredPosition = Vector2.zero;
+			rt.pivot            = new Vector2(0.5f, 0.5f);
+
+			UICamera.orthographic = true;
+
+			UICamera.targetTexture = UIRenderTexture;
 
 			var listenerGo = new GameObject($"(World: {World.DefaultGameObjectInjectionWorld.Name}) AudioListener", typeof(AudioListener));
 			AudioListener = listenerGo.GetComponent<AudioListener>();
-			
-			gameObject.SetActive(false);
 		}
 
 		protected override void OnCreate()
@@ -46,6 +96,13 @@ namespace StormiumTeam.GameBase.Utility.Rendering
 
 		protected override void OnUpdate()
 		{
+			if (UIRenderTexture.width != Screen.width || UIRenderTexture.height != Screen.height)
+			{
+				UIRenderTexture.Release();
+				UIRenderTexture.width  = Screen.width;
+				UIRenderTexture.height = Screen.height;
+				UIRenderTexture.Create();
+			}
 		}
 
 		protected override void OnDestroy()
@@ -54,7 +111,11 @@ namespace StormiumTeam.GameBase.Utility.Rendering
 
 			if (Camera != null)
 				Object.Destroy(Camera.gameObject);
-			Camera = null;
+			if (UICamera != null)
+				Object.Destroy(UICamera.gameObject);
+			
+			Camera   = null;
+			UICamera = null;
 		}
 
 		internal void InternalSetActive(bool state)
@@ -67,6 +128,7 @@ namespace StormiumTeam.GameBase.Utility.Rendering
 			using (new SetTemporaryInjectionWorld(World))
 			{
 				Camera.gameObject.SetActive(state);
+				UICamera.gameObject.SetActive(state);
 			}
 
 			var e = Camera.GetComponent<GameObjectEntity>().Entity;

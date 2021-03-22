@@ -43,8 +43,7 @@ namespace StormiumTeam.GameBase.Utility.AssetBackend
 			}
 
 			var previousWorld = World.DefaultGameObjectInjectionWorld;
-
-			Debug.Log($"{DstEntityManager == null} {DstEntityManager.IsCreated}");
+			
 			if (DstEntityManager.World?.IsCreated == true)
 				World.DefaultGameObjectInjectionWorld = DstEntityManager.World;
 
@@ -81,7 +80,10 @@ namespace StormiumTeam.GameBase.Utility.AssetBackend
 			var listeners = opResult.GetComponents<IOnModelLoadedListener>();
 			foreach (var listener in listeners) listener.React(DstEntity, DstEntityManager, gameObject);
 
-			SetPresentation(opResult);
+			if (!SetPresentation(opResult))
+			{
+				Destroy(opResult);
+			}
 		}
 
 		public override void SetSingleModel(AssetPath assetPath, EntityManager targetEm = default, Entity targetEntity = default)
@@ -113,6 +115,14 @@ namespace StormiumTeam.GameBase.Utility.AssetBackend
 			tr.localScale    = Vector3.one;
 
 			Presentation = gameObject.GetComponent<TMonoPresentation>();
+			if (!Presentation)
+			{
+				m_IncomingPresentation = false;
+				
+				Debug.LogError($"{gameObject.name} has an invalid presentation PresentationType={typeof(TMonoPresentation)}", gameObject);
+				return false;
+			}
+			
 			Presentation.OnReset();
 			Presentation.SetBackend(this);
 

@@ -45,7 +45,13 @@ namespace GameHost.ShareSimuWorldFeature
 
 			public void Execute()
 			{
-				var components = new NativeArray<TComponent>(Reader.ReadValue<int>(), Allocator.Temp);
+				var components = new NativeArray<TComponent>(Reader.ReadValue<int>(), 
+					Allocator.Temp,
+					NativeArrayOptions.UninitializedMemory);
+
+				if (components.Length == 0)
+					return;
+				
 				var comp       = 0;
 				Reader.ReadDataSafe(components);
 				for (var ent = 0; ent < GameEntities.Length; ent++)

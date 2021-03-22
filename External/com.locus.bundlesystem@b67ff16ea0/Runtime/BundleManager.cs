@@ -88,21 +88,17 @@ namespace BundleSystem
         {
             foreach (var kv in s_AssetBundles)
                 kv.Value.Bundle.Unload(false);
-            
+
             s_AssetBundles.Clear();
             s_LocalBundles.Clear();
             s_SceneNames.Clear();
             s_TrackingObjects.Clear();
             s_TrackingOwners.Clear();
-            s_TrackingGameObjects.Clear();
             s_BundleRefCounts.Clear();
             s_BundleDirectUseCount.Clear();
             s_WeakRefPool.Clear();
             s_SceneRootObjectCache.Clear();
-            #if UNITY_EDITOR
-            s_AssetListForEditor.Clear();
-            #endif
-
+            
             Initialized = false;
         }
 

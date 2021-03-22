@@ -47,7 +47,7 @@ namespace BundleSystem
             {
                 m_InnerList.Clear();
             }
-            
+
             public void Add(T item)
             {
                 m_InnerList.Add(item);

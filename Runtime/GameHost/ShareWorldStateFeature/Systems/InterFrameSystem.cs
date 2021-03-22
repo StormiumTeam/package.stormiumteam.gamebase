@@ -55,6 +55,7 @@ namespace GameHost.ShareSimuWorldFeature.Systems
 			var previous = GetSingleton<InterFrame>();
 			previous.End       = GetSingleton<GameTime>();
 			previous.Range.End = (uint) previous.End.Frame;
+			previous.Call++;
 			SetSingleton(previous);
 		}
 	}
@@ -65,5 +66,6 @@ namespace GameHost.ShareSimuWorldFeature.Systems
 		public GameTime End;
 
 		public RangeTick Range;
+		public int       Call;
 	}
 }

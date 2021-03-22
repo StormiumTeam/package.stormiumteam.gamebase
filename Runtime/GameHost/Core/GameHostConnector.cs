@@ -1,13 +1,16 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
 using GameHost.Core.IO;
 using GameHost.Core.RPC;
+using GameHost.Core.RPC.Interfaces;
 using GameHost.Native;
 using LiteNetLib;
 using LiteNetLib.Utils;
 using RevolutionSnapshot.Core.Buffers;
 using StormiumTeam.GameBase.BaseSystems;
 using Unity.Entities;
+using UnityEngine.Events;
 
 namespace GameHost.Core
 {
@@ -15,62 +18,58 @@ namespace GameHost.Core
 	public class GameHostConnector : AbsGameBaseSystem
 	{
 		public event Action Connected;
-		
-		private RpcListener listener;
-		
-		public  NetManager  Client;
+		public RpcClient    RpcClient   { get; }
+		public bool         IsConnected { get; private set; }
 
-		protected override void OnCreate()
+		public GameHostConnector()
 		{
-			base.OnCreate();
-			Client = new NetManager(listener = new RpcListener(World.GetExistingSystem<RpcCollectionSystem>()));
+			var client = new LiteNetLibRpcClient();
 
-			listener.Connected += () =>
-			{
-				Console.WriteLine("Reiter");
-				Connected?.Invoke();
-			};
+			Connected += () => IsConnected = true;
+
+			client.SubscribeConnected(Connected);
+
+			RpcClient = client;
 		}
 
 		protected override void OnUpdate()
 		{
-			if (Client.IsRunning)
-				Client.PollEvents();
+			RpcClient.Poll();
 		}
 
 		public void Connect(IPEndPoint ep)
 		{
-			Client.Start();
-			Client.Connect(ep, "GAMEHOST.CLIENT.V1");
+			IsConnected = false;
+			(RpcClient as LiteNetLibRpcClient).ConnectTo(ep);
 		}
 
-		public void BroadcastRequest(CharBuffer128 command, DataBufferWriter data)
+		private Dictionary<Type, UnityEventBase> notificationToUEventMap = new Dictionary<Type, UnityEventBase>();
+
+		public UnityEvent<T> GetNotificationEvent<T>()
+			where T : IGameHostRpcPacket, new()
 		{
-			Console.WriteLine("send data!");
+			if (!notificationToUEventMap.ContainsKey(typeof(T)))
+			{
+				var uEvent = new UnityEvent<T>();
+				RpcClient.SubscribeNotification<T>(notification => { uEvent.Invoke(notification); });
+
+				notificationToUEventMap[typeof(T)] = uEvent;
+
+				return uEvent;
+			}
+
+			return notificationToUEventMap[typeof(T)] as UnityEvent<T>;
+		}
+
+		protected override void OnDestroy()
+		{
+			base.OnDestroy();
 			
-			var writer = new NetDataWriter(true);
-			writer.Put(nameof(RpcMessageType.Command));
-			writer.Put(nameof(RpcCommandType.Send));
-			writer.Put(command.ToString());
-			if (data.IsCreated)
-				writer.Put(data.Span.ToArray());
+			foreach (var uevent in notificationToUEventMap)
+				uevent.Value.RemoveAllListeners();
 
-			Client.SendToAll(writer, DeliveryMethod.ReliableOrdered);
-		}
-
-		public void SendReply(TransportConnection connection, CharBuffer128 command, DataBufferWriter data)
-		{
-			var peer = Client.GetPeerById((int) connection.Id);
-			if (peer == null)
-				throw new InvalidOperationException($"Peer '{connection.Id}' not existing");
-
-			var writer = new NetDataWriter(true, data.Length);
-			writer.Put(nameof(RpcMessageType.Command));
-			writer.Put(nameof(RpcCommandType.Reply));
-			writer.Put(command.ToString());
-			writer.Put(data.Span.ToArray());
-
-			peer.Send(writer, DeliveryMethod.ReliableOrdered);
+			notificationToUEventMap.Clear();
+			notificationToUEventMap = null;
 		}
 	}
 }

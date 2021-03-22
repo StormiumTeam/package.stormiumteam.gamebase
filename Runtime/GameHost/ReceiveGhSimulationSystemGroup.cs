@@ -28,6 +28,8 @@ namespace GameHost
 
 	public class ReceiveGhSimulationSystemGroup : ComponentSystemGroup
 	{
+		public int Index { get; set; }
+
 		protected override void OnUpdate()
 		{
 		}

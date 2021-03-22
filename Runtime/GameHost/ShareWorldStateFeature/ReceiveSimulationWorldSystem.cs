@@ -4,6 +4,7 @@ using K4os.Compression.LZ4;
 using package.stormiumteam.shared;
 using package.stormiumteam.shared.ecs;
 using RevolutionSnapshot.Core.Buffers;
+using StormiumTeam.GameBase.Utility.Misc.ProfilerModules;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -70,6 +71,7 @@ namespace GameHost.ShareSimuWorldFeature
 				EntityManager.DestroyEntity(query);
 
 			ghToUnityEntityMap.Clear();
+			handleToSafeMap.Clear();
 			typeDetailMapFromRow.Clear();
 			typeDetailMapFromName.Clear();
 
@@ -85,8 +87,12 @@ namespace GameHost.ShareSimuWorldFeature
 
 		public unsafe JobHandle OnNewMessage(ref DataBufferReader reader, bool isComponentStateWorth)
 		{
-			var       compressedSize     = reader.ReadValue<int>();
-			var       uncompressedSize   = reader.ReadValue<int>();
+			var compressedSize   = reader.ReadValue<int>();
+			var uncompressedSize = reader.ReadValue<int>();
+
+			GameHostWorldProfilerCounter.ReceivedCompressedMemory.Value   = compressedSize;
+			GameHostWorldProfilerCounter.ReceivedUncompressedMemory.Value = uncompressedSize;
+
 			using var compressedMemory   = new NativeArray<byte>(compressedSize, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 			using var uncompressedMemory = new NativeArray<byte>(uncompressedSize, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 			reader.ReadDataSafe(compressedMemory);
@@ -153,10 +159,12 @@ namespace GameHost.ShareSimuWorldFeature
 
 			public void Execute()
 			{
-				for (uint ent = 1; ent < entitiesArchetype.Length; ent++)
+				for (uint ent = 0; ent < entitiesArchetype.Length; ent++)
 				{
-					handleToSafeMap.TryGetValue(new GhGameEntityHandle {Id = ent}, out var safe);
-					if (entitiesArchetype[(int) ent] == 0 && ghToUnityEntityMap.TryGetValue(safe, out var unityEntity))
+					var handle = new GhGameEntityHandle {Id = ent};
+					handleToSafeMap.TryGetValue(handle, out var safe);
+					if ((entitiesArchetype[(int) ent] == 0 || safe.Version != entitiesVersion[(int) ent])
+					    && ghToUnityEntityMap.TryGetValue(safe, out var unityEntity))
 					{
 						archetypeUpdates.Add(new ArchetypeUpdate
 						{
@@ -166,7 +174,7 @@ namespace GameHost.ShareSimuWorldFeature
 						});
 
 						ghToUnityEntityMap.Remove(safe);
-						handleToSafeMap.Remove(new GhGameEntityHandle {Id = ent});
+						handleToSafeMap.Remove(handle);
 					}
 				}
 
@@ -179,21 +187,19 @@ namespace GameHost.ShareSimuWorldFeature
 					var archetypeUpdate = false;
 					if (!ghToUnityEntityMap.TryGetValue(safe, out var unityEntity))
 					{
+						if (handleToSafeMap.ContainsKey(handle))
+							Debug.LogError($"The entity {safe} already exist in handle format?");
+						
 						ghToUnityEntityMap[safe] = unityEntity = EntityManager.CreateEntity(defaultSpawnArchetype);
 						handleToSafeMap[handle]  = safe;
-						EntityManager.SetComponentData(unityEntity, new ReplicatedGameEntity
-						{
-							Source      = safe,
-							ArchetypeId = archetype
-						});
-						archetypeUpdate = true;
+						archetypeUpdate          = true;
 					}
 					else
 					{
 						if (EntityManager.GetComponentData<ReplicatedGameEntity>(unityEntity).ArchetypeId != archetype)
 							archetypeUpdate = true;
 					}
-
+					
 					if (archetypeUpdate)
 					{
 						archetypeUpdates.Add(new ArchetypeUpdate
@@ -305,11 +311,13 @@ namespace GameHost.ShareSimuWorldFeature
 				}.Run();
 
 				if (archetypeUpdates.Length > 0)
-					isComponentStateWorth = true;
-
-				foreach (var (attach, _) in registerDeserializer.deserializerMap.Values)
 				{
-					attach.TryIncreaseCapacity(entitiesVersion.Length);
+					isComponentStateWorth = true;
+					
+					foreach (var (attach, _) in registerDeserializer.deserializerMap.Values)
+					{
+						attach.TryIncreaseCapacity(entitiesVersion.Length);
+					}
 				}
 
 				foreach (var update in archetypeUpdates)
@@ -336,18 +344,19 @@ namespace GameHost.ShareSimuWorldFeature
 						{
 							attach.OnEntityAdded(EntityManager, update.GhGameEntity, update.UnityEntity);
 						}
+						
+#if UNITY_EDITOR
+						EntityManager.SetName(update.UnityEntity, $"GameHost#{update.GhGameEntity.Id}");
+#endif
 					}
 					else
 						EntityManager.DestroyEntity(update.UnityEntity);
-
-#if UNITY_EDITOR
-					EntityManager.SetName(update.UnityEntity, $"GameHost Entity #{update.GhGameEntity.Id})");
-#endif
 				}
 			}
 			else
 			{
 				ghToUnityEntityMap.Clear();
+				handleToSafeMap.Clear();
 				return default;
 			}
 
@@ -376,6 +385,12 @@ namespace GameHost.ShareSimuWorldFeature
 				deps.Add(OnReadComponent(ref componentTypeBuffer, i, safeEntities, outputEntities, componentTypes));
 
 				reader.CurrReadIndex += skip - sizeof(int);
+				
+				// Schedule some jobs at some point
+				if (i == 64)
+					JobHandle.ScheduleBatchedJobs();
+				if (i == 128)
+					JobHandle.ScheduleBatchedJobs();
 			}
 
 			Profiler.BeginSample("ScheduleBatched");

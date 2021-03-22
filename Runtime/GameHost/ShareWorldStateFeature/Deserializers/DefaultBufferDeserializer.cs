@@ -42,6 +42,9 @@ namespace GameHost.ShareSimuWorldFeature
 			public void Execute()
 			{
 				var count = Reader.ReadValue<int>();
+				if (count == 0)
+					return;
+				
 				for (var ent = 0; ent < GameEntities.Length; ent++)
 				{
 					var entity = GameEntities[ent];
@@ -51,7 +54,9 @@ namespace GameHost.ShareSimuWorldFeature
 					var buffer = BufferFromEntity[Output[ent]];
 					buffer.Clear();
 
-					var rawData = new NativeArray<TComponent>(Reader.ReadValue<int>() / UnsafeUtility.SizeOf<TComponent>(), Allocator.Temp);
+					var rawData = new NativeArray<TComponent>(Reader.ReadValue<int>() / UnsafeUtility.SizeOf<TComponent>(), 
+						Allocator.Temp,
+						NativeArrayOptions.UninitializedMemory);
 					Reader.ReadDataSafe(rawData);
 
 					buffer.CopyFrom(rawData);
