@@ -21,18 +21,18 @@ namespace StormiumTeam.GameBase.Utility.Misc
 		[SerializeField]
 		private List<Obj> presentationObjects;
 
-		private Dictionary<string, object> m_EntityObjects;
+		private Dictionary<string, Obj> m_EntityObjects;
 
-		public Dictionary<string, object> EntityObjects
+		public Dictionary<string, Obj> EntityObjects
 		{
 			get
 			{
 				if (m_EntityObjects == null || m_EntityObjects.Count != presentationObjects.Count)
 				{
-					m_EntityObjects = new Dictionary<string, object>();
+					m_EntityObjects = new Dictionary<string, Obj>();
 					foreach (var obj in presentationObjects)
 					{
-						m_EntityObjects[obj.Key] = obj.Object;
+						m_EntityObjects[obj.Key] = obj;
 					}
 				}
 
@@ -47,7 +47,17 @@ namespace StormiumTeam.GameBase.Utility.Misc
 			if (!EntityObjects.TryGetValue(toSearch, out var baseObj))
 				return false;
 
-			obj = (T) baseObj;
+			obj = (T) baseObj.Object;
+			return true;
+		}
+
+		public bool TryGetFloat(string toSearch, out float obj, float defValue = default)
+		{
+			obj = defValue;
+			if (!EntityObjects.TryGetValue(toSearch, out var baseObj))
+				return false;
+
+			obj = baseObj.Float;
 			return true;
 		}
 	}

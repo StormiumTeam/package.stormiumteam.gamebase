@@ -24,12 +24,18 @@ namespace GameHost.Core
 		public GameHostConnector()
 		{
 			var client = new LiteNetLibRpcClient();
-
-			Connected += () => IsConnected = true;
-
-			client.SubscribeConnected(Connected);
+			
+			client.SubscribeConnected(onConnected);
 
 			RpcClient = client;
+		}
+
+		private void onConnected()
+		{
+			Console.WriteLine("onConnected");
+			
+			IsConnected = true;
+			Connected?.Invoke();
 		}
 
 		protected override void OnUpdate()

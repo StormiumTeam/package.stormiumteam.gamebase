@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using GameHost.Native;
 using K4os.Compression.LZ4;
 using package.stormiumteam.shared;
@@ -10,6 +11,7 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
+using Unity.Jobs.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.Profiling;
 
@@ -36,7 +38,7 @@ namespace GameHost.ShareSimuWorldFeature
 		public NativeHashMap<CharBuffer256, ComponentTypeDetails>   typeDetailMapFromName;
 		public NativeHashMap<GhComponentType, ComponentTypeDetails> typeDetailMapFromRow;
 
-		private Dictionary<GhComponentType, (ICustomComponentDeserializer serializer, ICustomComponentArchetypeAttach attach)> componentTypeToDeserializer;
+		private (ICustomComponentDeserializer serializer, ICustomComponentArchetypeAttach attach)[] componentTypeToDeserializer;
 
 		protected override void OnCreate()
 		{
@@ -52,7 +54,7 @@ namespace GameHost.ShareSimuWorldFeature
 
 			defaultSpawnArchetype = EntityManager.CreateArchetype(typeof(ReplicatedGameEntity));
 
-			componentTypeToDeserializer = new Dictionary<GhComponentType, (ICustomComponentDeserializer, ICustomComponentArchetypeAttach)>();
+			componentTypeToDeserializer = Array.Empty<(ICustomComponentDeserializer serializer, ICustomComponentArchetypeAttach attach)>();
 		}
 
 		protected override void OnUpdate()
@@ -82,7 +84,7 @@ namespace GameHost.ShareSimuWorldFeature
 			}
 
 			archetypeMap.Clear();
-			componentTypeToDeserializer.Clear();
+			Array.Clear(componentTypeToDeserializer, 0, componentTypeToDeserializer.Length);
 		}
 
 		public unsafe JobHandle OnNewMessage(ref DataBufferReader reader, bool isComponentStateWorth)
@@ -126,6 +128,13 @@ namespace GameHost.ShareSimuWorldFeature
 					for (var i = 0; i < ComponentTypeOutput.Length; i++)
 					{
 						var componentType = ComponentTypeOutput[i];
+						if (typeDetailMapFromRow.ContainsKey(componentType))
+						{
+							reader.SkipValue<int>();
+							reader.SkipBuffer();
+							continue;
+						}
+
 						details.Row  = componentType;
 						details.Size = reader.ReadValue<int>();
 						details.Name = reader.ReadBuffer<CharBuffer256>();
@@ -375,8 +384,24 @@ namespace GameHost.ShareSimuWorldFeature
 			for (var i = 0; i != entities.Length; i++)
 				outputEntities[i] = ghToUnityEntityMap[safeEntities[i]];
 			Profiler.EndSample();
+			
+			// 4.2 Increase map array, if it's bigger try to instantiate deserializers
+			if (componentTypes.Length > componentTypeToDeserializer.Length)
+			{
+				var start = componentTypeToDeserializer.Length;
+				
+				Array.Resize(ref componentTypeToDeserializer, componentTypes.Length);
 
-			// 4.2 Deserialize Components
+				for (; start < componentTypes.Length; start++)
+				{
+					var componentDetails = typeDetailMapFromRow[componentTypes[start]];
+					var (deserializer, attach) = registerDeserializer.Get(componentDetails.Size, componentDetails.Name);
+
+					componentTypeToDeserializer[start] = (attach, deserializer);
+				}
+			}
+
+			// 4.3 Deserialize Components
 			var deps = new NativeList<JobHandle>(Allocator.Temp);
 			for (var i = 0; i < componentTypes.Length; i++)
 			{
@@ -387,10 +412,13 @@ namespace GameHost.ShareSimuWorldFeature
 				reader.CurrReadIndex += skip - sizeof(int);
 				
 				// Schedule some jobs at some point
-				if (i == 64)
-					JobHandle.ScheduleBatchedJobs();
-				if (i == 128)
-					JobHandle.ScheduleBatchedJobs();
+				if (JobsUtility.JobWorkerCount > 0)
+				{
+					if (i == 64)
+						JobHandle.ScheduleBatchedJobs();
+					if (i == 128)
+						JobHandle.ScheduleBatchedJobs();
+				}
 			}
 
 			Profiler.BeginSample("ScheduleBatched");
@@ -409,22 +437,7 @@ namespace GameHost.ShareSimuWorldFeature
 #if PROFILE_DEBUG
 			Profiler.BeginSample("Get Deserializer");
 #endif
-			ICustomComponentArchetypeAttach attach       = null;
-			ICustomComponentDeserializer    deserializer = null;
-			if (!componentTypeToDeserializer.TryGetValue(componentTypes[index], out var outTuple))
-			{
-				var componentDetails = typeDetailMapFromRow[componentTypes[index]];
-				var tuple            = registerDeserializer.Get(componentDetails.Size, componentDetails.Name);
-				deserializer = tuple.deserializer;
-				attach       = tuple.attach;
-
-				componentTypeToDeserializer[componentTypes[index]] = (deserializer, attach);
-			}
-			else
-			{
-				deserializer = outTuple.serializer;
-				attach       = outTuple.attach;
-			}
+			var (deserializer, attach) = componentTypeToDeserializer[index];
 #if PROFILE_DEBUG
 			Profiler.EndSample();
 #endif

@@ -99,6 +99,12 @@ namespace StormiumTeam.GameBase.Utility.Misc
 	{
 		private static AssetManager Instance = new LocusAssetManager();
 
+		public static TAsset LoadAsset<TAsset>(AssetPath assetPath)
+			where TAsset : Object
+		{
+			return Instance.DoLoadAsset<TAsset>(assetPath);
+		}
+
 		public static UniTask<TAsset> LoadAssetAsync<TAsset>(AssetPath assetPath)
 			where TAsset : Object
 		{
@@ -117,8 +123,10 @@ namespace StormiumTeam.GameBase.Utility.Misc
 
 		protected abstract UniTask<SceneInstance> DoLoadSceneAsync(AssetPath assetPath, LoadSceneMode loadSceneMode,
 		                                                           bool      activateOnLoad);
-		protected abstract UniTask<TAsset>        DoLoadAssetAsync<TAsset>(AssetPath assetPath) where TAsset : Object;
-		protected abstract void                   DoRelease(Object                   obj);
+
+		protected abstract UniTask<TAsset> DoLoadAssetAsync<TAsset>(AssetPath assetPath) where TAsset : Object;
+		protected abstract TAsset          DoLoadAsset<TAsset>(AssetPath      assetPath) where TAsset : Object;
+		protected abstract void            DoRelease(Object                   obj);
 	}
 
 	public class LocusAssetManager : AssetManager
@@ -165,6 +173,14 @@ namespace StormiumTeam.GameBase.Utility.Misc
 			}
 			
 			return enumerator.Asset;
+		}
+
+		protected override TAsset DoLoadAsset<TAsset>(AssetPath assetPath)
+		{
+			if (!assetPath.IsCreated)
+				throw new NullReferenceException(nameof(assetPath));
+
+			return BundleManager.Load<TAsset>(assetPath.Bundle, assetPath.Asset);
 		}
 
 		protected override void DoRelease(Object obj)

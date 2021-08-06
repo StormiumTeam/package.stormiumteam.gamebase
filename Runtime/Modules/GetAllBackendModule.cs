@@ -1,4 +1,5 @@
-﻿using StormiumTeam.GameBase.Utility.AssetBackend.Components;
+﻿using System;
+using StormiumTeam.GameBase.Utility.AssetBackend.Components;
 using StormiumTeam.GameBase.Utility.Modules;
 using Unity.Burst;
 using Unity.Collections;
@@ -34,6 +35,26 @@ namespace StormiumTeam.GameBase.Modules
 	{
 	}
 
+	public struct CreatedBySystem : ISharedComponentData, IEquatable<CreatedBySystem>
+	{
+		public Type System;
+
+		public bool Equals(CreatedBySystem other)
+		{
+			return Equals(System, other.System);
+		}
+
+		public override bool Equals(object obj)
+		{
+			return obj is CreatedBySystem other && Equals(other);
+		}
+
+		public override int GetHashCode()
+		{
+			return (System != null ? System.GetHashCode() : 0);
+		}
+	}
+
 	public class GetAllBackendModule<T, TCheckValid> : BaseSystemModule
 		where T : MonoBehaviour
 		where TCheckValid : struct, ICheckValidity
@@ -53,11 +74,13 @@ namespace StormiumTeam.GameBase.Modules
 
 		protected override void OnEnable()
 		{
-			m_BackendQuery             = System.EntityManager.CreateEntityQuery(typeof(T), typeof(ModelParent));
+			m_BackendQuery             = System.EntityManager.CreateEntityQuery(typeof(T), typeof(ModelParent), typeof(CreatedBySystem));
 			MissingTargets             = new NativeList<Entity>(Allocator.Persistent);
 			BackendWithoutModel        = new NativeList<Entity>(Allocator.Persistent);
 			AttachedBackendDestination = new NativeList<ModelParent>(Allocator.Persistent);
 			AttachedBackendEntities    = new NativeList<Entity>(Allocator.Persistent);
+			
+			m_BackendQuery.SetSharedComponentFilter(new CreatedBySystem { System = System.GetType() });
 		}
 
 		protected override void OnUpdate(ref JobHandle jobHandle)

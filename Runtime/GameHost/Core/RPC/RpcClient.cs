@@ -90,6 +90,8 @@ namespace GameHost.Core.RPC
 
 		public void ConnectTo(IPEndPoint endPoint)
 		{
+			Console.WriteLine("connecting to " + endPoint.ToString());
+			
 			netManager.Start();
 			netManager.Connect(endPoint, "GAMEHOST.CLIENT.V2");
 		}

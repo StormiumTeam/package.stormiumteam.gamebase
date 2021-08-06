@@ -127,6 +127,10 @@ namespace StormiumTeam.GameBase.Utility.Pooling.BaseSystems
 			if (AddressableAsset.IsEmpty == false)
 				backend.SetPresentationFromPool(m_PresentationPool);
 
+			if (!EntityManager.Exists(backend.BackendEntity))
+				Debug.LogError($"no entity ???? {backend.BackendEntity} <-> {backend.GetComponent<GameObjectEntity>().Entity}, {backend.GetComponent<GameObjectEntity>().World?.Name} <-> {World.Name}");
+			EntityManager.AddSharedComponentData(backend.BackendEntity, new CreatedBySystem { System = this.GetType() });
+
 			LastBackend = backend;
 		}
 	}

@@ -108,6 +108,16 @@ namespace RevolutionSnapshot.Core.Buffers
 			return val;
 		}
 
+		public void SkipValue<T>(DataBufferMarker marker = default)
+			where T : struct
+		{
+			var size      = UnsafeUtility.SizeOf<T>();
+			var readIndex = GetReadIndexAndSetNew(marker, size);
+
+			// Set it for later usage
+			CurrReadIndex = readIndex + size;
+		}
+
 		public DataBufferMarker CreateMarker(int index)
 		{
 			return new DataBufferMarker(index);
@@ -221,6 +231,16 @@ namespace RevolutionSnapshot.Core.Buffers
 			using var array  = new NativeArray<char>(length, Allocator.Temp);
 			ReadDataSafe(array, marker);
 			return CharBufferUtility.Create<TCharBuffer>(array);
+		}
+
+		public void SkipBuffer(DataBufferMarker marker = default(DataBufferMarker))
+		{
+			var length = ReadValue<int>();
+
+			var size      = length * sizeof(char);
+			var readIndex = GetReadIndexAndSetNew(marker, size);
+			// Set it for later usage
+			CurrReadIndex = readIndex + size;
 		}
 	}
 }

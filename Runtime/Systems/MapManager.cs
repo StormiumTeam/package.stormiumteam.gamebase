@@ -68,6 +68,9 @@ namespace StormiumTeam.GameBase.Systems
 				var id     = new FileInfo(file).Name.Replace(".json", string.Empty);
 				var format = JsonUtility.FromJson<JMapFormat>(txt);
 
+				if (!string.IsNullOrEmpty(format.id))
+					id = format.id;
+				
 				Debug.Log($"Added Map({id}) [name: {format.name}]");
 
 				AddMapToCatalog(id, format);
@@ -227,6 +230,8 @@ namespace StormiumTeam.GameBase.Systems
 		[Serializable]
 		public struct JMapFormat
 		{
+			public string id;
+			
 			public string   name;
 			public string   description;
 			public string   bundle;

@@ -2,6 +2,7 @@
 using package.stormiumteam.shared.ecs;
 using Unity.Entities;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 namespace StormiumTeam.GameBase.Utility.AssetBackend
 {
@@ -49,7 +50,15 @@ namespace StormiumTeam.GameBase.Utility.AssetBackend
 		public virtual void OnSystemUpdate()
 		{
 			foreach (var r in m_Receivers)
+			{
+#if UNITY_EDITOR || DEBUG
+				//Profiler.BeginSample(r.ToString());
+#endif
 				r.OnPresentationSystemUpdate();
+#if UNITY_EDITOR || DEBUG
+				//Profiler.EndSample();
+#endif
+			}
 		}
 	}
 }

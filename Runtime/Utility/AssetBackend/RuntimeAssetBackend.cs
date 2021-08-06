@@ -56,7 +56,10 @@ namespace StormiumTeam.GameBase.Utility.AssetBackend
 			Debug.Assert(m_Enabled, "m_Enabled");
 
 			var gameObjectEntity                        = GetComponent<GameObjectEntity>();
-			if (gameObjectEntity != null) BackendEntity = gameObjectEntity.Entity;
+			if (!gameObjectEntity)
+				gameObjectEntity = gameObject.AddComponent<GameObjectEntity>();
+			
+			BackendEntity = gameObjectEntity.Entity;
 
 			if (DstEntity == default || DstEntityManager.World?.IsCreated == false || gameObjectEntity == null)
 				return;

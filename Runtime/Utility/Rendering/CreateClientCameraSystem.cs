@@ -48,6 +48,7 @@ namespace StormiumTeam.GameBase.Utility.Rendering
 			}
 
 			Camera   = createCamera("GameCamera", typeof(GameCamera), typeof(GameObjectEntity));
+
 			UICamera = createCamera("UICamera");
 
 			UICamera.cullingMask              = 0;

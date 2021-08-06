@@ -1,17 +1,27 @@
 using System;
+using Newtonsoft.Json;
 
 namespace StormiumTeam.GameBase.Utility.Misc
 {
 	public partial struct ResPath
 	{
+		[JsonProperty]
 		public readonly EType  Type;
+		[JsonProperty]
 		public readonly string Author;
+		[JsonProperty]
 		public readonly string ModPack;
+		[JsonProperty]
 		public readonly string Resource;
 
 		private string computedFullString;
 
 		public string FullString => computedFullString ??= Create(Author, ModPack, Resource, Type);
+
+		public void Compute()
+		{
+			computedFullString = Create(Author, ModPack, Resource, Type);
+		}
 
 		public ResPath(EType type, string author, string modPack, string resource)
 		{
