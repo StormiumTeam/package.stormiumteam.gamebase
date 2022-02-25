@@ -2,7 +2,7 @@ using Unity.Entities;
 
 namespace StormiumTeam.GameBase.Bootstrapping
 {
-	public abstract class BaseBootstrapSystem : ComponentSystem
+	public abstract class BaseBootstrapSystem : SystemBase
 	{
 		private EntityQuery m_Query;
 		public  Entity      Bootstrap { get; private set; }
