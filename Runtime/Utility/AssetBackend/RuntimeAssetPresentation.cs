@@ -2,7 +2,6 @@
 using package.stormiumteam.shared.ecs;
 using Unity.Entities;
 using UnityEngine;
-using UnityEngine.Profiling;
 
 namespace StormiumTeam.GameBase.Utility.AssetBackend
 {

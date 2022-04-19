@@ -2,6 +2,7 @@
     "name": "package.stormiumteam.gamebase",
     "rootNamespace": "",
     "references": [
+        "corelink",
         "package.guerro.shared",
         "Unity.TextMeshPro",
         "Unity.ugui",

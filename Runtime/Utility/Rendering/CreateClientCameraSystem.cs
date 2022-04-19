@@ -9,7 +9,6 @@ using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
-using UnityEngine.Rendering;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
@@ -130,6 +129,7 @@ namespace StormiumTeam.GameBase.Utility.Rendering
 			{
 				Camera.gameObject.SetActive(state);
 				UICamera.gameObject.SetActive(state);
+				UICamera.gameObject.SetActive(false);
 			}
 
 			var e = Camera.GetComponent<GameObjectEntity>().Entity;
